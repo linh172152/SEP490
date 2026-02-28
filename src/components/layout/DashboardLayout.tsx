@@ -1,23 +1,41 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useStore } from '@/store/useStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { socketService } from '@/services/socket';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const currentUser = useStore((state) => state.currentUser);
+  const currentUser = useAuthStore((state) => state.user);
   const router = useRouter();
   const pathname = usePathname();
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
     // If no user, redirect to login
     if (!currentUser && !pathname.includes('/login')) {
       router.push('/login');
+    } else if (currentUser) {
+      // Client-side role guard
+      if (pathname.startsWith('/dashboard/admin') && currentUser.role !== 'ADMIN') {
+          router.push('/unauthorized');
+      } else if (pathname.startsWith('/dashboard/doctor') && currentUser.role !== 'DOCTOR') {
+          router.push('/unauthorized');
+      } else if (pathname.startsWith('/dashboard/caregiver') && currentUser.role !== 'CAREGIVER') {
+          router.push('/unauthorized');
+      } else if (pathname.startsWith('/dashboard/family') && currentUser.role !== 'FAMILY') {
+          router.push('/unauthorized');
+      }
     }
-  }, [currentUser, router, pathname]);
+  }, [currentUser, router, pathname, isMounted]);
 
   useEffect(() => {
     if (currentUser) {

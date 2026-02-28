@@ -1,13 +1,13 @@
 'use client';
 
-import { useStore } from '@/store/useStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { CaregiverDashboard } from '@/components/dashboard/CaregiverDashboard';
 import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 import { DoctorDashboard } from '@/components/dashboard/DoctorDashboard';
 import { FamilyDashboard } from '@/components/dashboard/FamilyDashboard';
 
 export default function DashboardPage() {
-  const currentUser = useStore((state) => state.currentUser);
+  const currentUser = useAuthStore((state) => state.user);
 
   if (!currentUser) return null;
 

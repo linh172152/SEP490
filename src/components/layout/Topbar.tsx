@@ -1,6 +1,6 @@
 'use client';
 
-import { useStore } from '@/store/useStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -14,7 +14,8 @@ import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function Topbar() {
-  const currentUser = useStore((state) => state.currentUser);
+  const currentUser = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
 
   if (!currentUser) return null;
 
@@ -46,8 +47,8 @@ export function Topbar() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => {
-              useStore.getState().setCurrentUser(null);
-              window.location.href = '/login';
+              logout();
+              window.location.href = '/';
             }}>
               Log out
             </DropdownMenuItem>

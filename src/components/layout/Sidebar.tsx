@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useStore } from '@/store/useStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { cn } from '@/lib/utils';
 import { 
   HeartPulse, 
@@ -34,7 +34,8 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const currentUser = useStore((state) => state.currentUser);
+  const currentUser = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
 
   if (!currentUser) return null;
 
@@ -70,8 +71,8 @@ export function Sidebar() {
           <button 
             className="flex w-full items-center rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
             onClick={() => {
-              useStore.getState().setCurrentUser(null);
-              window.location.href = '/login';
+              logout();
+              window.location.href = '/';
             }}
           >
             <LogOut className="h-5 w-5" />

@@ -43,12 +43,16 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await login(values.email, values.password);
-      // Wait a tick for Zustand store to update
-      const user = useAuthStore.getState().user;
-      if (user) {
-        toast.success(`Welcome back, ${user.name}!`);
-        const rolePath = user.role.toLowerCase();
+      
+      // Get the fresh user from the store after login completes
+      const currentUser = useAuthStore.getState().user;
+      
+      if (currentUser) {
+        toast.success(`Welcome back, ${currentUser.name}!`);
+        const rolePath = currentUser.role.toLowerCase();
         router.push(`/dashboard/${rolePath}`);
+      } else {
+        throw new Error('User data not found after login');
       }
     } catch (error: any) {
       toast.error(error.message || 'Failed to login. Please check your credentials.');

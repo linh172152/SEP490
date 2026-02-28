@@ -1,22 +1,17 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { AuthResponse, login as mockLogin } from '@/services/auth';
-import { Role } from '@/types';
-
-interface AuthUser {
-    id: string;
-    name: string;
-    role: Role;
-}
+import { AuthResponse, login as mockLogin, register as mockRegister, RegisterDTO } from '@/services/auth';
+import { User } from '@/types';
 
 interface AuthState {
-    user: AuthUser | null;
+    user: User | null;
     accessToken: string | null;
     isAuthenticated: boolean;
     isLoading: boolean;
     error: string | null;
 
     login: (email: string, password?: string) => Promise<void>;
+    register: (data: RegisterDTO) => Promise<void>;
     logout: () => void;
     clearError: () => void;
 }
@@ -48,6 +43,30 @@ export const useAuthStore = create<AuthState>()(
                 } catch (error: any) {
                     set({
                         error: error.message || 'Login failed',
+                        isLoading: false,
+                    });
+                    throw error;
+                }
+            },
+
+            register: async (data: RegisterDTO) => {
+                set({ isLoading: true, error: null });
+                try {
+                    const response: AuthResponse = await mockRegister(data);
+                    // Sync with cookies to allow Next.js Edge Middleware to read auth state
+                    if (typeof document !== 'undefined') {
+                        document.cookie = `accessToken=${response.accessToken}; path=/; max-age=86400; SameSite=Lax`;
+                        document.cookie = `userRole=${response.user.role}; path=/; max-age=86400; SameSite=Lax`;
+                    }
+                    set({
+                        user: response.user,
+                        accessToken: response.accessToken,
+                        isAuthenticated: true,
+                        isLoading: false,
+                    });
+                } catch (error: any) {
+                    set({
+                        error: error.message || 'Registration failed',
                         isLoading: false,
                     });
                     throw error;

@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 import { useAuthStore } from '@/store/useAuthStore';
 import { Button } from '@/components/ui/button';
@@ -117,10 +118,17 @@ export default function LoginPage() {
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-2 text-sm text-center text-muted-foreground">
-          <p>Mock accounts available:</p>
-          <p>admin@carebot.test | sarah@carebot.test</p>
-          <p>mark@carebot.test | john@family.test</p>
+        <CardFooter className="flex flex-col space-y-2 text-sm text-center text-muted-foreground bg-muted/20 py-4 border-t">
+          <p className="font-medium text-foreground">Demo Accounts (Password: <span className="font-mono bg-background px-1 py-0.5 rounded border">password123</span>)</p>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-left max-w-sm mx-auto w-full">
+            <p><span className="font-medium">Admin:</span> admin@carebot.com</p>
+            <p><span className="font-medium">Doctor:</span> doctor@carebot.com</p>
+            <p><span className="font-medium">Caregiver:</span> caregiver@carebot.com</p>
+            <p><span className="font-medium">Family:</span> family@example.com</p>
+          </div>
+          <div className="pt-2 text-xs">
+            <p>Don't have an account? <Link href="/register" className="text-primary hover:underline font-medium">Register here</Link></p>
+          </div>
         </CardFooter>
       </Card>
     </div>

@@ -1,5 +1,19 @@
-import { redirect } from 'next/navigation';
+import { Hero } from '@/components/landing/Hero';
+import { Features } from '@/components/landing/Features';
+import { RoleShowcase } from '@/components/landing/RoleShowcase';
+import { RobotVisualization } from '@/components/landing/RobotVisualization';
+import { Footer } from '@/components/landing/Footer';
 
 export default function Home() {
-  redirect('/login');
+  return (
+    <div className="flex flex-col min-h-screen bg-background">
+      <main className="flex-1">
+        <Hero />
+        <Features />
+        <RoleShowcase />
+        <RobotVisualization />
+      </main>
+      <Footer />
+    </div>
+  );
 }

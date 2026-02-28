@@ -12,7 +12,8 @@ import {
   Activity, 
   Settings, 
   LogOut,
-  Video
+  Video,
+  Bell
 } from 'lucide-react';
 import { Role } from '@/types';
 
@@ -24,12 +25,20 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'CAREGIVER', 'DOCTOR', 'FAMILY'] },
-  { title: 'Patients', href: '/dashboard/patients', icon: Users, roles: ['CAREGIVER', 'DOCTOR'] },
+  // Standard routes for other system roles
+  { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'DOCTOR', 'FAMILY'] },
+  { title: 'Patients', href: '/dashboard/patients', icon: Users, roles: ['DOCTOR'] },
   { title: 'Robots', href: '/dashboard/robots', icon: Bot, roles: ['ADMIN'] },
   { title: 'System Stats', href: '/dashboard/stats', icon: Activity, roles: ['ADMIN'] },
   { title: 'Video Call', href: '/dashboard/call', icon: Video, roles: ['FAMILY'] },
-  { title: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['ADMIN', 'CAREGIVER', 'DOCTOR', 'FAMILY'] },
+  { title: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['ADMIN', 'DOCTOR', 'FAMILY'] },
+
+  // Role 1 Full Feature Demo (CAREGIVER) Routes
+  { title: 'Overview', href: '/dashboard/caregiver', icon: LayoutDashboard, roles: ['CAREGIVER'] },
+  { title: 'Patients', href: '/dashboard/caregiver/patients', icon: Users, roles: ['CAREGIVER'] },
+  { title: 'Robot', href: '/dashboard/caregiver/robot', icon: Bot, roles: ['CAREGIVER'] },
+  { title: 'Alerts', href: '/dashboard/caregiver/alerts', icon: Bell, roles: ['CAREGIVER'] },
+  { title: 'Settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['CAREGIVER'] },
 ];
 
 export function Sidebar() {

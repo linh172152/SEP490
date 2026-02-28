@@ -89,8 +89,13 @@ export function RoleShowcase() {
                     <div className="absolute right-0 top-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
                     <CardHeader className="pb-4">
                       <div className="flex items-center space-x-4">
-                        <div className="p-3 bg-primary/10 rounded-lg">
-                          <role.icon className="h-8 w-8 text-primary" />
+                        <div className="p-3 bg-primary/10 rounded-lg group hover:bg-primary/20 transition-colors">
+                          <motion.div
+                            animate={{ y: [0, -4, 0] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                          >
+                            <role.icon className="h-8 w-8 text-primary" />
+                          </motion.div>
                         </div>
                         <div>
                           <CardTitle className="text-2xl">{role.title}</CardTitle>

@@ -1,6 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Activity, BellRing, Link as LinkIcon, Lock, Sparkles, UserCheck } from 'lucide-react';
 
@@ -38,6 +39,14 @@ const features = [
 ];
 
 export function Features() {
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"]
+  });
+  
+  const yBlob1 = useTransform(scrollYProgress, [0, 1], [-100, 200]);
+  const yBlob2 = useTransform(scrollYProgress, [0, 1], [100, -150]);
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -54,20 +63,22 @@ export function Features() {
   };
 
   return (
-    <section className="relative py-24 sm:py-32 bg-muted/30 overflow-hidden">
+    <section ref={containerRef} className="relative py-24 sm:py-32 bg-muted/30 overflow-hidden">
       {/* Subtle floating background elements */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <motion.div
+          style={{ y: yBlob1 }}
           animate={{
-            y: [0, -30, 0],
+            x: [0, -30, 0],
             opacity: [0.1, 0.3, 0.1],
           }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
           className="absolute top-1/4 left-1/4 h-64 w-64 rounded-full bg-primary/10 blur-[80px]"
         />
         <motion.div
+          style={{ y: yBlob2 }}
           animate={{
-            y: [0, 40, 0],
+            x: [0, 40, 0],
             opacity: [0.1, 0.2, 0.1],
           }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
@@ -102,12 +113,12 @@ export function Features() {
         >
           {features.map((feature) => (
             <motion.div key={feature.name} variants={item}>
-              <Card className="h-full border-0 shadow-md bg-background/50 backdrop-blur-sm transition-all hover:shadow-lg hover:-translate-y-1">
+              <Card className="h-full border border-border/50 shadow-md bg-background/50 backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-primary/50 hover:shadow-[0_0_25px_rgba(var(--primary),0.15)] group">
                 <CardHeader>
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                     <feature.icon className="h-6 w-6" aria-hidden="true" />
                   </div>
-                  <CardTitle className="text-xl">{feature.name}</CardTitle>
+                  <CardTitle className="text-xl transition-colors group-hover:text-primary">{feature.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <CardDescription className="text-base leading-7">

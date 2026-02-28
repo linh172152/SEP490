@@ -18,9 +18,12 @@ export function Header() {
           <Link href="#tech" className="transition-colors hover:text-primary text-muted-foreground">Technology</Link>
         </nav>
         <div className="flex items-center space-x-4">
-          <Link href="/login">
+          <Link href="/login" className="text-sm font-medium transition-colors hover:text-primary hidden sm:block">
+            Log In
+          </Link>
+          <Link href="/register">
             <Button variant="default" className="px-6 rounded-full shadow-sm">
-              Log In
+              Sign Up
             </Button>
           </Link>
         </div>

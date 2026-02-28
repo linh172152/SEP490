@@ -54,8 +54,28 @@ export function Features() {
   };
 
   return (
-    <section className="py-24 sm:py-32 bg-muted/30">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="relative py-24 sm:py-32 bg-muted/30 overflow-hidden">
+      {/* Subtle floating background elements */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <motion.div
+          animate={{
+            y: [0, -30, 0],
+            opacity: [0.1, 0.3, 0.1],
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-1/4 left-1/4 h-64 w-64 rounded-full bg-primary/10 blur-[80px]"
+        />
+        <motion.div
+          animate={{
+            y: [0, 40, 0],
+            opacity: [0.1, 0.2, 0.1],
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className="absolute bottom-1/4 right-1/4 h-80 w-80 rounded-full bg-blue-300/10 blur-[100px]"
+        />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center mb-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

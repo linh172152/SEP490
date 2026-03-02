@@ -39,8 +39,8 @@ export const useElderlyStore = create<ElderlyState>()(
                     name: 'Alice Smith',
                     age: 72,
                     gender: 'FEMALE',
-                    familyId: '4', // Mock family John Doe
-                    caregiverId: '2', // Mock caregiver Mark Therapist
+                    familyId: 'user-family-001', // Mock family John Smith
+                    caregiverId: 'user-caregiver-001', // Mock caregiver Maria Rodriguez
                     condition: 'Mild Depression',
                     address: '123 Sky Garden Ave',
                     emergencyContact: 'Family: 555-0199',
@@ -66,8 +66,8 @@ export const useElderlyStore = create<ElderlyState>()(
                     name: 'Robert Johnson',
                     age: 80,
                     gender: 'MALE',
-                    familyId: '4',
-                    caregiverId: '2',
+                    familyId: 'user-family-001',
+                    caregiverId: 'user-caregiver-001',
                     condition: 'Severe Anxiety',
                     address: '456 River Run Blvd',
                     emergencyContact: 'Family: 555-0122',

@@ -31,9 +31,35 @@ export const mockPatients: Patient[] = [
 ];
 
 export const mockRobots: RobotStatus[] = [
-    { id: 'r1', battery: 85, location: 'Room 201', status: 'ONLINE', assignedPatientId: 'p1' },
-    { id: 'r2', battery: 20, location: 'Charging Bay', status: 'CHARGING' },
-    { id: 'r3', battery: 95, location: 'Room 205', status: 'ASSISTING', assignedPatientId: 'p2' },
+    {
+        id: 'r1',
+        battery: 85,
+        location: 'Room 201',
+        status: 'ONLINE',
+        assignedPatientId: 'p1',
+        temperature: 36.5,
+        currentTask: 'Monitoring Alice Smith',
+        taskQueue: ['Scheduled Check-up at 9:00 PM', 'Medication Reminder']
+    },
+    {
+        id: 'r2',
+        battery: 18,
+        location: 'Charging Bay',
+        status: 'CHARGING',
+        temperature: 38.2,
+        currentTask: 'Charging',
+        taskQueue: ['Move to Ward B', 'Battery Calibration']
+    },
+    {
+        id: 'r3',
+        battery: 95,
+        location: 'Room 205',
+        status: 'ASSISTING',
+        assignedPatientId: 'p2',
+        temperature: 37.0,
+        currentTask: 'Assisting Robert Johnson',
+        taskQueue: ['Deliver water', 'Fetch blanket']
+    },
 ];
 
 export const mockAlerts: Alert[] = [

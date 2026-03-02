@@ -26,6 +26,9 @@ export interface RobotStatus {
     location: string;
     status: 'ONLINE' | 'OFFLINE' | 'CHARGING' | 'ASSISTING';
     assignedPatientId?: string;
+    temperature: number;
+    currentTask?: string;
+    taskQueue: string[];
 }
 
 export interface MoodLog {

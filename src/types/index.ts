@@ -43,7 +43,9 @@ export interface Alert {
     id: string;
     patientId: string;
     type: 'MOOD_DROP' | 'MISSED_MEDICATION' | 'ROBOT_ERROR' | 'EMERGENCY';
+    severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
     message: string;
     timestamp: string;
     isRead: boolean;
+    isResolved?: boolean;
 }

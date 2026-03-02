@@ -63,9 +63,9 @@ export const mockRobots: RobotStatus[] = [
 ];
 
 export const mockAlerts: Alert[] = [
-    { id: 'a1', patientId: 'p2', type: 'MOOD_DROP', message: 'Sudden drop in mood detected for Robert Johnson.', timestamp: new Date().toISOString(), isRead: false },
-    { id: 'a2', patientId: 'p1', type: 'MISSED_MEDICATION', message: 'Alice Smith missed 8:00 AM medication.', timestamp: new Date(Date.now() - 3600000).toISOString(), isRead: true },
-    { id: 'a3', patientId: 'p2', type: 'EMERGENCY', message: 'High heart rate detected for Robert Johnson.', timestamp: new Date(Date.now() - 7200000).toISOString(), isRead: false },
+    { id: 'a1', patientId: 'p2', type: 'MOOD_DROP', severity: 'HIGH', message: 'Sudden drop in mood detected for Robert Johnson.', timestamp: new Date().toISOString(), isRead: false, isResolved: false },
+    { id: 'a2', patientId: 'p1', type: 'MISSED_MEDICATION', severity: 'MEDIUM', message: 'Alice Smith missed 8:00 AM medication.', timestamp: new Date(Date.now() - 3600000).toISOString(), isRead: true, isResolved: true },
+    { id: 'a3', patientId: 'p2', type: 'EMERGENCY', severity: 'CRITICAL', message: 'High heart rate detected for Robert Johnson.', timestamp: new Date(Date.now() - 7200000).toISOString(), isRead: false, isResolved: false },
 ];
 
 export const mockMoodHistory: MoodLog[] = [

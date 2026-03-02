@@ -16,6 +16,8 @@ export interface Patient {
     moodScore: number; // 0-100
     riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
     lastMedication: string;
+    avatar?: string;
+    email: string;
 }
 
 export interface RobotStatus {

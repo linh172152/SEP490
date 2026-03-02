@@ -21,12 +21,16 @@ export interface Elderly {
     id: string;
     name: string;
     age: number;
+    gender: 'MALE' | 'FEMALE' | 'OTHER';
     familyId: string;
     caregiverId?: string;
     condition: string;
+    address: string;
+    emergencyContact: string;
     avatar?: string;
     email: string; // Contact email for family
     healthStatus: HealthStatus;
+    riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 }
 
 export interface Patient {

@@ -6,7 +6,7 @@ interface ElderlyState {
     elderlyList: Elderly[];
 
     // Actions
-    createElderly: (data: Omit<Elderly, 'id' | 'healthStatus'>) => void;
+    createElderly: (data: Omit<Elderly, 'id' | 'healthStatus' | 'riskLevel'>) => void;
     updateHealthStatus: (elderlyId: string, status: Partial<HealthStatus>) => void;
     assignCaregiver: (elderlyId: string, caregiverId: string) => void;
 
@@ -33,6 +33,7 @@ export const useElderlyStore = create<ElderlyState>()(
                         moodScore: 70,
                         timestamp: new Date().toISOString(),
                     },
+                    riskLevel: 'LOW',
                 };
                 set((state) => ({
                     elderlyList: [...state.elderlyList, newElderly],

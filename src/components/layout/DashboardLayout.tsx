@@ -6,12 +6,16 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { socketService } from '@/services/socket';
+import { useAlertSimulation } from '@/hooks/useAlertSimulation';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const currentUser = useAuthStore((state) => state.user);
   const router = useRouter();
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
+
+  // Activate alert simulation
+  useAlertSimulation();
 
   useEffect(() => {
     setIsMounted(true);

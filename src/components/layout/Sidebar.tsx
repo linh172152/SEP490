@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useElderlyStore } from '@/store/useElderlyStore';
 import { cn } from '@/lib/utils';
 import { 
   HeartPulse, 
@@ -45,6 +46,9 @@ export function Sidebar() {
   const pathname = usePathname();
   const currentUser = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const activeAlertsCount = useElderlyStore((state: any) => 
+    currentUser?.role === 'CAREGIVER' ? state.getActiveAlertsByCaregiver(currentUser.id).length : 0
+  );
 
   if (!currentUser) return null;
 
@@ -60,6 +64,8 @@ export function Sidebar() {
         <ul className="space-y-2 font-medium">
           {filteredNavItems.map((item) => {
             const isActive = pathname === item.href;
+            const isAlerts = item.title === 'Alerts';
+            
             return (
               <li key={item.href}>
                 <Link
@@ -69,7 +75,14 @@ export function Sidebar() {
                     isActive && 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground'
                   )}
                 >
-                  <item.icon className="h-5 w-5" />
+                  <div className="relative">
+                    <item.icon className="h-5 w-5" />
+                    {isAlerts && activeAlertsCount > 0 && (
+                      <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white ring-2 ring-background">
+                        {activeAlertsCount}
+                      </span>
+                    )}
+                  </div>
                   <span className="ml-3">{item.title}</span>
                 </Link>
               </li>

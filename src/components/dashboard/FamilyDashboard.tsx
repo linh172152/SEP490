@@ -80,25 +80,37 @@ export function FamilyDashboard() {
                 </CardHeader>
                 
                 <CardContent className="space-y-4 pt-2 flex-grow">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-3 space-y-1 hover:bg-slate-100 transition-colors">
-                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-tight">
-                        <HeartPulse className="h-3 w-3 text-rose-500" />
-                        Heart Rate
+                  <div className="flex flex-col gap-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-3 space-y-1 hover:bg-slate-100 transition-colors">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-tight">
+                          <HeartPulse className="h-3 w-3 text-rose-500" />
+                          Heart Rate
+                        </div>
+                        <div className="text-lg font-bold text-slate-700 dark:text-slate-300">
+                          {status.heartRate} <span className="text-xs font-medium text-slate-400">BPM</span>
+                        </div>
                       </div>
-                      <div className="text-lg font-bold text-slate-700 dark:text-slate-300">
-                        {status.heartRate} <span className="text-xs font-medium text-slate-400">BPM</span>
+                      <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-3 space-y-1 hover:bg-slate-100 transition-colors">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-tight">
+                          <Activity className="h-3 w-3 text-teal-500" />
+                          Mood
+                        </div>
+                        <div className={`text-lg font-bold ${getMoodColor(status.moodScore)}`}>
+                          {status.moodScore}%
+                        </div>
                       </div>
                     </div>
-                    <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-3 space-y-1 hover:bg-slate-100 transition-colors">
-                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-tight">
-                        <Activity className="h-3 w-3 text-teal-500" />
-                        Mood
+
+                    {/* Alert History Snapshot */}
+                    {useElderlyStore.getState().getActiveAlertsByElderly(elderly.id).length > 0 && (
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800/50 animate-pulse">
+                        <div className="h-2 w-2 rounded-full bg-rose-500" />
+                        <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
+                          {useElderlyStore.getState().getActiveAlertsByElderly(elderly.id).length} Active Alerts
+                        </span>
                       </div>
-                      <div className={`text-lg font-bold ${getMoodColor(status.moodScore)}`}>
-                        {status.moodScore}%
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2 py-1">

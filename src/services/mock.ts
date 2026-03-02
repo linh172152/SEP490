@@ -1,4 +1,4 @@
-import { Patient, RobotStatus, Alert, User, MoodLog } from '@/types';
+import { Patient, RobotStatus, Alert, User, MoodLog, ClinicalNote, ActivityEntry } from '@/types';
 
 export const mockUsers: User[] = [
     { id: '1', name: 'Dr. Sarah Jenkins', role: 'DOCTOR', email: 'sarah@carebot.test' },
@@ -63,9 +63,34 @@ export const mockRobots: RobotStatus[] = [
 ];
 
 export const mockAlerts: Alert[] = [
-    { id: 'a1', patientId: 'p2', type: 'MOOD_DROP', severity: 'HIGH', message: 'Sudden drop in mood detected for Robert Johnson.', timestamp: new Date().toISOString(), isRead: false, isResolved: false },
-    { id: 'a2', patientId: 'p1', type: 'MISSED_MEDICATION', severity: 'MEDIUM', message: 'Alice Smith missed 8:00 AM medication.', timestamp: new Date(Date.now() - 3600000).toISOString(), isRead: true, isResolved: true },
-    { id: 'a3', patientId: 'p2', type: 'EMERGENCY', severity: 'CRITICAL', message: 'High heart rate detected for Robert Johnson.', timestamp: new Date(Date.now() - 7200000).toISOString(), isRead: false, isResolved: false },
+    {
+        id: 'a1',
+        elderlyId: 'p2',
+        type: 'mood_drop',
+        severity: 'high',
+        message: 'Sudden drop in mood detected for Robert Johnson.',
+        status: 'active',
+        createdAt: new Date().toISOString()
+    },
+    {
+        id: 'a2',
+        elderlyId: 'p1',
+        type: 'heart_rate_abnormal',
+        severity: 'medium',
+        message: 'Alice Smith heart rate is slightly elevated.',
+        status: 'resolved',
+        createdAt: new Date(Date.now() - 3600000).toISOString(),
+        resolvedAt: new Date(Date.now() - 1800000).toISOString()
+    },
+    {
+        id: 'a3',
+        elderlyId: 'p2',
+        type: 'emergency',
+        severity: 'critical',
+        message: 'High heart rate detected for Robert Johnson.',
+        status: 'active',
+        createdAt: new Date(Date.now() - 7200000).toISOString()
+    },
 ];
 
 export const mockMoodHistory: MoodLog[] = [
@@ -81,4 +106,28 @@ export const mockMoodHistory: MoodLog[] = [
     { id: 'm3', patientId: 'p2', score: 50, timestamp: '2025-10-07T10:00:00Z' },
     { id: 'm4', patientId: 'p2', score: 45, timestamp: '2025-10-08T10:00:00Z' },
     { id: 'm5', patientId: 'p2', score: 40, timestamp: '2025-10-09T10:00:00Z' },
+];
+
+export const mockClinicalNotes: ClinicalNote[] = [
+    {
+        id: 'n1',
+        elderlyId: 'p2',
+        doctorId: '1',
+        content: 'Patient showing increased signs of agitation in the evenings. Recommend adjusting evening robot escort frequency.',
+        createdAt: new Date(Date.now() - 86400000).toISOString()
+    },
+    {
+        id: 'n2',
+        elderlyId: 'p2',
+        doctorId: '1',
+        content: 'Cognitive assessment shows slight decline in short-term memory recall. Initiating memory games via CareBot.',
+        createdAt: new Date(Date.now() - 43200000).toISOString()
+    }
+];
+
+export const mockActivityLogs: ActivityEntry[] = [
+    { id: 'act1', type: 'meal', message: 'Finished breakfast (Oatmeal & Fruit)', timestamp: new Date(Date.now() - 14400000).toISOString() },
+    { id: 'act2', type: 'walk', message: 'Garden walk completed (15 mins)', timestamp: new Date(Date.now() - 10800000).toISOString() },
+    { id: 'act3', type: 'sleep', message: 'Nap detected (45 mins)', timestamp: new Date(Date.now() - 7200000).toISOString() },
+    { id: 'act4', type: 'medication', message: 'Morning medication administered', timestamp: new Date(Date.now() - 18000000).toISOString() },
 ];

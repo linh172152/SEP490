@@ -139,7 +139,11 @@ export default function CreateElderlyPage() {
                     <FormItem>
                       <FormLabel>Age</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input 
+                          type="number" 
+                          {...field} 
+                          onChange={(e) => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

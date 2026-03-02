@@ -3,7 +3,7 @@
 import { ElderlyDetailView } from '@/components/dashboard/ElderlyDetailView';
 import { useParams } from 'next/navigation';
 
-export default function PatientDetailPage() {
+export default function CaregiverElderlyDetailPage() {
   const params = useParams();
   const id = params.id as string;
 

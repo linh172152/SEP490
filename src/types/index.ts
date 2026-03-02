@@ -8,6 +8,27 @@ export interface User {
     email: string;
 }
 
+export interface HealthStatus {
+    heartRate: number;
+    bloodPressure: string;
+    oxygenLevel: number;
+    sleepHours: number;
+    moodScore: number; // 0-100
+    timestamp: string;
+}
+
+export interface Elderly {
+    id: string;
+    name: string;
+    age: number;
+    familyId: string;
+    caregiverId?: string;
+    condition: string;
+    avatar?: string;
+    email: string; // Contact email for family
+    healthStatus: HealthStatus;
+}
+
 export interface Patient {
     id: string;
     name: string;
@@ -31,21 +52,29 @@ export interface RobotStatus {
     taskQueue: string[];
 }
 
-export interface MoodLog {
+export interface CaregiverAssignment {
     id: string;
-    patientId: string;
-    score: number;
-    timestamp: string;
-    notes?: string;
+    caregiverId: string;
+    elderlyId: string;
+    assignedAt: string;
+    status: 'ACTIVE' | 'PENDING' | 'INACTIVE';
 }
 
 export interface Alert {
     id: string;
-    patientId: string;
+    patientId: string; // Mapping to Elderly.id
     type: 'MOOD_DROP' | 'MISSED_MEDICATION' | 'ROBOT_ERROR' | 'EMERGENCY';
     severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
     message: string;
     timestamp: string;
     isRead: boolean;
     isResolved?: boolean;
+}
+
+export interface MoodLog {
+    id: string;
+    patientId: string;
+    score: number;
+    timestamp: string;
+    notes?: string;
 }

@@ -29,8 +29,7 @@ import {
   Thermometer,
   Zap,
   TrendingUp,
-  BrainCircuit,
-  AlertTriangle
+  BrainCircuit
 } from 'lucide-react';
 import { 
   LineChart, 

@@ -37,7 +37,7 @@ const navItems: NavItem[] = [
   // Role 1 Full Feature Demo (CAREGIVER) Routes
   { title: 'Overview', href: '/dashboard/caregiver', icon: LayoutDashboard, roles: ['CAREGIVER'] },
   { title: 'Patients', href: '/dashboard/caregiver/patients', icon: Users, roles: ['CAREGIVER'] },
-  { title: 'Robot', href: '/dashboard/caregiver/robot', icon: Bot, roles: ['CAREGIVER'] },
+  { title: 'Robots & IoT', href: '/dashboard/caregiver/robots', icon: Bot, roles: ['CAREGIVER'] },
   { title: 'Alerts', href: '/dashboard/caregiver/alerts', icon: Bell, roles: ['CAREGIVER'] },
   { title: 'Settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['CAREGIVER'] },
 ];

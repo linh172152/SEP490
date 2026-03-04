@@ -66,4 +66,5 @@ export interface RoleCapabilities {
     canAccessRoleAccess: boolean;
     canAccessProfessionalProfile: boolean;
     canUploadMedia: boolean;
+    canConfigureRobot: boolean;
 }

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PatientMediaDashboard } from '@/modules/media';
+import { PatientRobotTab } from '@/modules/patients/components/PatientRobotTab';
 import { SETTINGS_CAPABILITIES } from '@/modules/settings/constants';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -137,13 +138,20 @@ export function ElderlyDetailView({ elderlyId, role }: ElderlyDetailViewProps) {
         <span className="text-foreground font-medium">{elderly.name}</span>
       </div>
 
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="mb-6 bg-slate-100/50 dark:bg-slate-900/50 block w-max mt-2">
-          <TabsTrigger value="overview" className="px-6 py-2">Overview</TabsTrigger>
-          <TabsTrigger value="media" className="px-6 py-2">Media Portfolio</TabsTrigger>
+      <Tabs defaultValue="overview" className="w-full grid grid-cols-1 md:grid-cols-12 gap-6">
+        <TabsList className="md:col-span-2 flex flex-col items-stretch h-auto space-y-2 bg-transparent">
+          <TabsTrigger value="overview" className="justify-start px-4 py-3 data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700 data-[state=active]:dark:bg-sky-900/30">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="robot" className="justify-start px-4 py-3 data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700 data-[state=active]:dark:bg-sky-900/30">
+            Assigned Robot
+          </TabsTrigger>
+          <TabsTrigger value="media" className="justify-start px-4 py-3 data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700 data-[state=active]:dark:bg-sky-900/30">
+            Media Portfolio
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="animate-in fade-in duration-500">
+        <TabsContent value="overview" className="md:col-span-10 animate-in fade-in duration-500 m-0">
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Left Column: Profile & Robot */}
         <div className="space-y-6 lg:col-span-1">
@@ -229,46 +237,6 @@ export function ElderlyDetailView({ elderlyId, role }: ElderlyDetailViewProps) {
                   <Tooltip />
                 </RadarChart>
               </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Robot Monitor */}
-          <Card className="border-none shadow-sm overflow-hidden bg-slate-900 text-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Bot className="h-5 w-5 text-sky-400" />
-                Assigned Robot
-              </CardTitle>
-              <CardDescription className="text-slate-400">R1-Alpha Monitoring Node</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6 pt-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-[10px] uppercase font-bold text-slate-500">Activity</p>
-                  <p className="text-sm font-bold text-sky-100">Patient Escort</p>
-                </div>
-                <div className="text-right space-y-1">
-                  <p className="text-[10px] uppercase font-bold text-slate-500">Signal</p>
-                  <div className="flex items-center gap-1 justify-end">
-                    <Wifi className="h-4 w-4 text-emerald-400" />
-                    <span className="text-xs font-bold text-emerald-400">EXCELLENT</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-slate-400">Robot Battery</span>
-                  <span className="font-bold">85%</span>
-                </div>
-                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: '85%' }}
-                    className="h-full bg-emerald-500"
-                  />
-                </div>
-              </div>
             </CardContent>
           </Card>
         </div>
@@ -513,7 +481,11 @@ export function ElderlyDetailView({ elderlyId, role }: ElderlyDetailViewProps) {
       </div>
       </TabsContent>
 
-      <TabsContent value="media">
+      <TabsContent value="robot" className="md:col-span-10 m-0">
+         <PatientRobotTab patientId={elderlyId} />
+      </TabsContent>
+
+      <TabsContent value="media" className="md:col-span-10 m-0">
         <PatientMediaDashboard 
           patientId={elderlyId}
           role={role.toLowerCase()}

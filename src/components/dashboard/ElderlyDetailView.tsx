@@ -14,7 +14,7 @@ import { PatientMediaDashboard } from '@/modules/media';
 import { SETTINGS_CAPABILITIES } from '@/modules/settings/constants';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { AvatarUpload } from '@/modules/profile';
 import { 
   HeartPulse, 
   Activity, 
@@ -154,10 +154,17 @@ export function ElderlyDetailView({ elderlyId, role }: ElderlyDetailViewProps) {
                 <HeartPulse className="h-32 w-32" />
               </div>
               <div className="flex flex-col items-center text-center space-y-4 relative z-10">
-                <Avatar className="h-24 w-24 border-4 border-white/20 ring-4 ring-white/10 ring-offset-4 ring-offset-sky-600 shadow-2xl">
-                  <AvatarImage src={elderly.avatar} />
-                  <AvatarFallback className="bg-sky-400 text-3xl font-bold">{elderly.name.charAt(0)}</AvatarFallback>
-                </Avatar>
+                <AvatarUpload 
+                  userId={elderly.id} 
+                  role="elderly"
+                  currentAvatar={elderly.avatar}
+                  nameFallback={elderly.name}
+                  variant="compact"
+                  onAvatarUpdated={(url) => {
+                    // Update the local state store with the newly uploaded avatar
+                    elderlyStore.updateElderlyProfile(elderly.id, { avatar: url });
+                  }}
+                />
                 <div>
                   <h2 className="text-2xl font-bold tracking-tight">{elderly.name}</h2>
                   <div className="flex items-center justify-center gap-2 mt-1 text-sky-100/80">

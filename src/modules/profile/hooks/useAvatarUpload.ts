@@ -57,8 +57,46 @@ export function useAvatarUpload({ userId, role, onSuccess }: UseAvatarUploadProp
         }
     };
 
+    const deleteAvatar = async (publicId: string) => {
+        setIsUploading(true);
+        setUploadProgress(50);
+        try {
+            if (!publicId) throw new Error('No avatar to delete');
+
+            const response = await fetch('/api/delete-avatar', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-role': role,
+                },
+                body: JSON.stringify({ publicId, userId }),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Avatar deletion failed');
+            }
+
+            setUploadProgress(100);
+            toast.success('Avatar removed successfully');
+
+            if (onSuccess) {
+                onSuccess('');
+            }
+
+        } catch (error: any) {
+            console.error(error);
+            toast.error(error.message || 'Error deleting avatar');
+        } finally {
+            setIsUploading(false);
+            setUploadProgress(0);
+        }
+    };
+
     return {
         uploadAvatar,
+        deleteAvatar,
         isUploading,
         uploadProgress,
     };

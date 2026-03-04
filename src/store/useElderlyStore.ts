@@ -10,6 +10,7 @@ interface ElderlyState {
 
     // Actions
     createElderly: (data: Omit<Elderly, 'id' | 'healthStatus' | 'riskLevel'>) => void;
+    updateElderlyProfile: (elderlyId: string, data: Partial<Elderly>) => void;
     updateHealthStatus: (elderlyId: string, status: Partial<HealthStatus>) => void;
     assignCaregiver: (elderlyId: string, caregiverId: string) => void;
 
@@ -179,6 +180,14 @@ export const useElderlyStore = create<ElderlyState>()(
                                 healthStatus: { ...e.healthStatus, ...status, timestamp: new Date().toISOString() },
                             }
                             : e
+                    ),
+                }));
+            },
+
+            updateElderlyProfile: (elderlyId, data) => {
+                set((state) => ({
+                    elderlyList: state.elderlyList.map((e) =>
+                        e.id === elderlyId ? { ...e, ...data } : e
                     ),
                 }));
             },

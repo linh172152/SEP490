@@ -8,28 +8,43 @@ import { Button } from '@/components/ui/button';
 import { Camera, Loader2, UploadCloud, Trash2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface AvatarUploadProps {
   userId: string;
   role: string;
   currentAvatar?: string;
   nameFallback?: string;
+  variant?: 'default' | 'compact';
   onAvatarUpdated: (url: string) => void;
 }
 
-export function AvatarUpload({ userId, role, currentAvatar, nameFallback = 'U', onAvatarUpdated }: AvatarUploadProps) {
+export function AvatarUpload({ userId, role, currentAvatar, nameFallback = 'U', variant = 'default', onAvatarUpdated }: AvatarUploadProps) {
   const [preview, setPreview] = useState<string | null>(null);
 
   const handleSuccess = (optimizedUrl: string) => {
     setPreview(optimizedUrl);
+    setDeleteOpen(false); // Make sure dialog closes if it was open
     onAvatarUpdated(optimizedUrl);
   };
 
-  const { uploadAvatar, isUploading, uploadProgress } = useAvatarUpload({
+  const { uploadAvatar, deleteAvatar, isUploading, uploadProgress } = useAvatarUpload({
     userId,
     role,
     onSuccess: handleSuccess,
   });
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
@@ -63,18 +78,20 @@ export function AvatarUpload({ userId, role, currentAvatar, nameFallback = 'U', 
     disabled: isUploading
   });
 
-  const displayAvatar = preview || currentAvatar;
+  const displayAvatar = preview !== undefined && preview !== null ? preview : currentAvatar;
+  
+  // Extract Cloudinary public ID logic based on the known prefix architecture 
+  // (In real apps, the DB is the absolute source of truth for public ID, here we trace from user setup)
+  const getPublicIdFromUrl = () => `carebot-mh/avatars/${role}/${userId}`;
 
-  return (
-    <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm animate-in fade-in duration-500">
-      
-      <div {...getRootProps()} className="relative group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 rounded-full">
+  const avatarCore = (
+      <div {...getRootProps()} className={`relative group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 rounded-full flex-shrink-0 ${variant === 'compact' ? 'mx-auto' : ''}`}>
         <input {...getInputProps()} />
         
         {/* Avatar Display */}
-        <Avatar className={`h-28 w-28 border-4 ring-offset-2 ring-2 shadow-md transition-all duration-300 ${isDragActive ? 'border-sky-400 ring-sky-300 scale-105' : 'border-white dark:border-slate-950 ring-slate-100 dark:ring-slate-800'}`}>
+        <Avatar className={`${variant === 'compact' ? 'h-24 w-24 border-4 border-white/20 ring-4 ring-white/10 ring-offset-4 ring-offset-sky-600 shadow-2xl' : 'h-28 w-28 border-4 ring-offset-2 ring-2 shadow-md'} transition-all duration-300 ${isDragActive ? 'scale-105 border-sky-400 ring-sky-300 ring-offset-2' : ''} ${variant !== 'compact' && !isDragActive ? 'border-white dark:border-slate-950 ring-slate-100 dark:ring-slate-800' : ''}`}>
           <AvatarImage src={displayAvatar} className="object-cover" />
-          <AvatarFallback className="text-3xl font-bold bg-sky-100 dark:bg-sky-900 text-sky-700 dark:text-sky-300">
+          <AvatarFallback className={`font-bold ${variant === 'compact' ? 'bg-sky-400 text-3xl' : 'text-3xl bg-sky-100 dark:bg-sky-900 text-sky-700 dark:text-sky-300'}`}>
             {nameFallback.charAt(0)}
           </AvatarFallback>
         </Avatar>
@@ -99,6 +116,16 @@ export function AvatarUpload({ userId, role, currentAvatar, nameFallback = 'U', 
           )}
         </AnimatePresence>
       </div>
+  );
+
+  if (variant === 'compact') {
+    return avatarCore;
+  }
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm animate-in fade-in duration-500">
+      
+      {avatarCore}
 
       <div className="flex-1 space-y-3 text-center sm:text-left">
         <div>
@@ -133,20 +160,40 @@ export function AvatarUpload({ userId, role, currentAvatar, nameFallback = 'U', 
             </Button>
             
             {displayAvatar && (
-              <Button 
-                type="button"
-                variant="ghost" 
-                size="sm" 
-                className="text-xs h-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPreview(null);
-                  onAvatarUpdated(''); // Tell parent form the avatar is cleared
-                }}
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                Remove
-              </Button>
+              <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-xs h-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                    Remove
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Remove Profile Picture?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete your avatar from the system. You can always upload a new one later.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isUploading}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      disabled={isUploading}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        deleteAvatar(getPublicIdFromUrl());
+                      }}
+                      className="bg-rose-600 hover:bg-rose-700 focus:ring-rose-600"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
         )}

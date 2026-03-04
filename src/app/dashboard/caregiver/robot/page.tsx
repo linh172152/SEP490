@@ -19,10 +19,13 @@ import {
   Clock,
   AlertCircle,
   Zap,
-  CheckCircle2
+  CheckCircle2,
+  ArrowRight
 } from 'lucide-react';
 import { mockRobots } from '@/services/mock';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function CaregiverRobotPage() {
   const [robots, setRobots] = useState(mockRobots);
@@ -59,8 +62,8 @@ export default function CaregiverRobotPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Robot Monitoring</h1>
-        <p className="text-muted-foreground">Real-time status and telemetry for CareBot units.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Robot Control Panel</h1>
+        <p className="text-muted-foreground">Real-time status, telemetry, and remote commands for CareBot units.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -184,6 +187,50 @@ export default function CaregiverRobotPage() {
                   </div>
                 </div>
               </CardContent>
+            </Card>
+
+            {/* Quick Commands Panel */}
+            <Card className="mt-4 border-none shadow-sm group hover:shadow-md transition-shadow">
+               <CardHeader className="pb-3 px-6">
+                 <CardTitle className="text-lg flex items-center gap-2">
+                   <Zap className="h-4 w-4 text-sky-500" />
+                   Quick Commands
+                 </CardTitle>
+                 <CardDescription>Send remote mock instructions</CardDescription>
+               </CardHeader>
+               <CardContent className="px-6 pb-6 w-full space-y-3">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start hover:bg-sky-50 hover:text-sky-600 dark:hover:bg-sky-950/50 transition-colors h-11"
+                    onClick={() => toast.success(`Mock instruction sent`, { description: `Starting Check-in routine on ${robot.id}` })}
+                  >
+                    <CheckCircle2 className="mr-2 h-4 w-4" /> Start Check-in
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-950/50 transition-colors h-11"
+                    onClick={() => toast.success(`Mock instruction sent`, { description: `Playing scheduled reminder on ${robot.id}` })}
+                  >
+                    <Activity className="mr-2 h-4 w-4" /> Play Reminder
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/50 transition-colors h-11"
+                    onClick={() => toast.success(`Mock instruction sent`, { description: `Moving ${robot.id} to Living Room` })}
+                  >
+                    <div className="mr-2 h-4 w-4 flex items-center justify-center border-2 border-current rounded-full">
+                       <ArrowRight className="h-2 w-2" />
+                    </div>
+                    Move to Living Room
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    className="w-full justify-start hover:bg-red-700 transition-colors h-11"
+                    onClick={() => toast.error(`Emergency Override Sent`, { description: `Initiated emergency call via ${robot.id}` })}
+                  >
+                    <AlertCircle className="mr-2 h-4 w-4" /> Emergency Call
+                  </Button>
+               </CardContent>
             </Card>
           </motion.div>
         ))}

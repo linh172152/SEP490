@@ -2,12 +2,13 @@
 
 import { useState, useMemo } from 'react';
 import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
@@ -23,9 +24,9 @@ import {
   Clock, 
   User, 
   Filter,
-  MoreVertical,
   Check,
-  Search
+  Search,
+  BellRing
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
@@ -35,21 +36,20 @@ import { AlertSeverity } from '@/types';
 
 export default function CaregiverAlertsPage() {
   const { user: caregiver } = useAuthStore();
-  const elderlyStore = useElderlyStore();
+  const { elderlyList, getElderlyByCaregiver, alerts, resolveAlert, addAlert } = useElderlyStore();
   const [severityFilter, setSeverityFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('active'); // Default to active alerts
   const [search, setSearch] = useState('');
 
   const assignedElderly = useMemo(() => 
-    caregiver ? elderlyStore.getElderlyByCaregiver(caregiver.id) : [],
-  [caregiver, elderlyStore.elderlyList]);
+    caregiver ? getElderlyByCaregiver(caregiver.id) : [],
+  [caregiver, getElderlyByCaregiver, elderlyList]);
 
   const allAlerts = useMemo(() => {
     if (!caregiver) return [];
-    // For the list page, show all historical alerts for her assigned elderly
     const myElderlyIds = assignedElderly.map(e => e.id);
-    return elderlyStore.alerts.filter(a => myElderlyIds.includes(a.elderlyId));
-  }, [caregiver, assignedElderly, elderlyStore.alerts]);
+    return alerts.filter(a => myElderlyIds.includes(a.elderlyId));
+  }, [caregiver, assignedElderly, alerts]);
 
   const filteredAlerts = allAlerts.filter(alert => {
     const elderly = assignedElderly.find(e => e.id === alert.elderlyId);
@@ -71,11 +71,40 @@ export default function CaregiverAlertsPage() {
     }
   };
 
+  const handleGenerateMockAlerts = () => {
+    if (assignedElderly.length === 0) return;
+    const randomElderly1 = assignedElderly[Math.floor(Math.random() * assignedElderly.length)];
+    const randomElderly2 = assignedElderly[Math.floor(Math.random() * assignedElderly.length)];
+    
+    addAlert(randomElderly1.id, {
+        type: 'heart_rate_abnormal',
+        severity: 'critical',
+        message: `Critical heart rate spike detected for ${randomElderly1.name}`,
+    });
+    addAlert(randomElderly2.id, {
+        type: 'mood_drop',
+        severity: 'medium',
+        message: `Sudden mood drop recorded for ${randomElderly2.name}`,
+    });
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Alert Center</h1>
-        <p className="text-muted-foreground">Monitor and resolve patient-related alerts for your care circle.</p>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6 max-w-6xl mx-auto pb-10"
+    >
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Alert Center</h1>
+          <p className="text-muted-foreground">Monitor and resolve patient-related alerts for your care circle.</p>
+        </div>
+        {allAlerts.length === 0 && assignedElderly.length > 0 && (
+            <Button onClick={handleGenerateMockAlerts} className="shrink-0 bg-rose-600 hover:bg-rose-700">
+                <BellRing className="mr-2 h-4 w-4" /> Generate Mock Alerts
+            </Button>
+        )}
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -114,99 +143,116 @@ export default function CaregiverAlertsPage() {
         </div>
       </div>
 
-      <div className="space-y-4">
-        <AnimatePresence mode="popLayout">
-          {filteredAlerts.length > 0 ? (
-            filteredAlerts.map((alert) => {
-              const elderly = assignedElderly.find(e => e.id === alert.elderlyId);
-              const isResolved = alert.status === 'resolved';
-              
-              return (
-                <motion.div
-                  key={alert.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.98, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.98, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Card className={`overflow-hidden border-none shadow-sm group hover:ring-2 hover:ring-sky-500/10 transition-all ${isResolved ? 'opacity-60 bg-slate-50/50 dark:bg-slate-900/20' : ''}`}>
-                    <div className="flex">
-                      {/* Left Indicator bar */}
-                      <div className={`w-1.5 ${isResolved ? 'bg-slate-300' : 
-                        alert.severity === 'critical' ? 'bg-rose-500 animate-pulse' : 
-                        alert.severity === 'high' ? 'bg-orange-500' : 
-                        alert.severity === 'medium' ? 'bg-amber-500' : 'bg-sky-500'}`} 
-                      />
-                      
-                      <div className="flex-1 p-5 sm:p-6">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          <div className="flex-1 space-y-2">
-                            <div className="flex items-center gap-3">
-                              <Badge variant="outline" className={`font-bold uppercase tracking-wider text-[10px] ${getSeverityStyles(alert.severity)}`}>
-                                {alert.severity}
-                              </Badge>
-                              {isResolved && (
-                                <Badge variant="secondary" className="bg-teal-50 text-teal-700 border-teal-100 text-[10px] uppercase font-bold">
-                                  Resolved
-                                </Badge>
-                              )}
-                            </div>
-                            <h3 className={`text-lg font-bold leading-tight ${isResolved ? 'text-slate-500' : 'text-slate-900 dark:text-slate-100'}`}>
-                              {alert.message}
-                            </h3>
-                            <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1.5">
-                                <User className="h-4 w-4" />
-                                <span className="font-semibold text-slate-700 dark:text-slate-300">{elderly?.name || 'Unknown'}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <Clock className="h-4 w-4" />
-                                <span>{new Date(alert.createdAt).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 sm:self-center">
-                            {!isResolved ? (
-                              <Button 
-                                size="sm" 
-                                className="bg-sky-600 hover:bg-sky-700 text-white shadow-sm"
-                                onClick={() => elderlyStore.resolveAlert(alert.id)}
-                              >
-                                <CheckCircle2 className="mr-2 h-4 w-4" />
-                                Resolve
-                              </Button>
-                            ) : (
-                              <Button variant="ghost" size="sm" disabled className="text-teal-600 font-bold dark:text-teal-400">
-                                <Check className="mr-2 h-4 w-4" />
-                                Handled
-                              </Button>
-                            )}
-                          </div>
-                        </div>
+      <div className="rounded-2xl border bg-white dark:bg-slate-950 shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-slate-50/50 dark:bg-slate-900/50 h-12">
+              <TableHead className="pl-6 w-1/4">Elderly Name</TableHead>
+              <TableHead className="w-1/4 bg-transparent hidden sm:table-cell">Type & Message</TableHead>
+              <TableHead>Severity</TableHead>
+              <TableHead>Created At</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right pr-6">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <AnimatePresence>
+              {filteredAlerts.map((alert) => {
+                const elderly = assignedElderly.find(e => e.id === alert.elderlyId);
+                const isResolved = alert.status === 'resolved';
+
+                return (
+                  <motion.tr
+                    key={alert.id}
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className={`h-20 hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors border-b last:border-0 ${
+                        isResolved ? 'opacity-70 bg-slate-50/30' : ''
+                    }`}
+                  >
+                    <TableCell className="pl-6">
+                      <div className="flex items-center gap-3">
+                         <div className={`mt-0.5 p-2 rounded-full ${isResolved ? 'bg-slate-100 text-slate-500' : alert.severity === 'critical' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 animate-pulse' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'}`}>
+                           {alert.severity === 'critical' && !isResolved ? <AlertTriangle className="h-4 w-4" /> : <BellRing className="h-4 w-4" />}
+                         </div>
+                         <div className="font-semibold text-slate-900 dark:text-slate-100">
+                             {elderly?.name || 'Unknown Patient'}
+                         </div>
                       </div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-0.5">{alert.type.replace(/_/g, ' ')}</span>
+                        <span className={`text-sm ${isResolved ? 'text-slate-500' : 'text-slate-700 dark:text-slate-300 font-medium'} line-clamp-2`}>
+                            {alert.message}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={`font-bold uppercase tracking-wider text-[10px] px-2 py-0.5 ${getSeverityStyles(alert.severity)}`}>
+                        {alert.severity}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                        <Clock className="h-3 w-3" />
+                        {new Date(alert.createdAt).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {isResolved ? (
+                        <Badge variant="secondary" className="bg-teal-50 text-teal-700 border-teal-100 dark:bg-teal-900/20 dark:border-teal-800 text-[10px] uppercase font-bold">
+                          Resolved
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="border-sky-200 bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:border-sky-800 text-[10px] uppercase font-bold">
+                          Active
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right pr-6">
+                      {!isResolved ? (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="hover:bg-teal-50 hover:text-teal-700 hover:border-teal-200 transition-colors"
+                          onClick={() => resolveAlert(alert.id)}
+                        >
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                          Resolve
+                        </Button>
+                      ) : (
+                        <Button variant="ghost" size="sm" disabled className="text-slate-400">
+                          <Check className="mr-2 h-4 w-4" />
+                          Handled
+                        </Button>
+                      )}
+                    </TableCell>
+                  </motion.tr>
+                );
+              })}
+            </AnimatePresence>
+            {filteredAlerts.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="h-40 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <div className="h-12 w-12 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center mb-2">
+                      <AlertTriangle className="h-6 w-6 text-slate-300" />
                     </div>
-                  </Card>
-                </motion.div>
-              );
-            })
-          ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-              <div className="h-16 w-16 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-                <AlertTriangle className="h-8 w-8 text-slate-300" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold">No Alerts Found</h3>
-                <p className="text-muted-foreground max-w-[250px]">Try adjusting your filters or search query.</p>
-              </div>
-              <Button variant="outline" onClick={() => { setSeverityFilter('ALL'); setStatusFilter('ALL'); setSearch(''); }}>
-                Clear All Filters
-              </Button>
-            </div>
-          )}
-        </AnimatePresence>
+                    <p className="text-lg font-bold text-slate-400">No Alerts Found</p>
+                    <p className="text-sm text-slate-400">Try adjusting your filters or search query.</p>
+                    <Button variant="outline" size="sm" className="mt-2" onClick={() => { setSeverityFilter('ALL'); setStatusFilter('ALL'); setSearch(''); }}>
+                      Clear All Filters
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
-    </div>
+    </motion.div>
   );
 }

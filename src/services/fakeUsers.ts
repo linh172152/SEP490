@@ -33,5 +33,40 @@ export const fakeUsers: FakeUser[] = [
         email: 'family@example.com',
         password: 'password123',
         role: 'FAMILY',
+    },
+    {
+        id: 'user-caregiver-002',
+        name: 'Sarah Specialist',
+        email: 'sarah.c@carebot.com',
+        password: 'password123',
+        role: 'CAREGIVER',
+    },
+    {
+        id: 'user-caregiver-003',
+        name: 'David Nurse',
+        email: 'david.n@carebot.com',
+        password: 'password123',
+        role: 'CAREGIVER',
+    },
+    {
+        id: 'user-caregiver-004',
+        name: 'Emily Care',
+        email: 'emily.c@carebot.com',
+        password: 'password123',
+        role: 'CAREGIVER',
+    },
+    {
+        id: 'user-caregiver-005',
+        name: 'Michael Support',
+        email: 'michael.s@carebot.com',
+        password: 'password123',
+        role: 'CAREGIVER',
+    },
+    {
+        id: 'user-caregiver-006',
+        name: 'Jessica Aide',
+        email: 'jessica.a@carebot.com',
+        password: 'password123',
+        role: 'CAREGIVER',
     }
 ];

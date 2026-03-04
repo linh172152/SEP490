@@ -9,6 +9,9 @@ import {
   CardTitle,
   CardFooter 
 } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PatientMediaDashboard } from '@/modules/media';
+import { SETTINGS_CAPABILITIES } from '@/modules/settings/constants';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -134,8 +137,15 @@ export function ElderlyDetailView({ elderlyId, role }: ElderlyDetailViewProps) {
         <span className="text-foreground font-medium">{elderly.name}</span>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left Column: Profile & Robot */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="mb-6 bg-slate-100/50 dark:bg-slate-900/50 block w-max mt-2">
+          <TabsTrigger value="overview" className="px-6 py-2">Overview</TabsTrigger>
+          <TabsTrigger value="media" className="px-6 py-2">Media Portfolio</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="animate-in fade-in duration-500">
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Left Column: Profile & Robot */}
         <div className="space-y-6 lg:col-span-1">
           {/* Enhanced Profile Card */}
           <Card className="border-none shadow-xl bg-gradient-to-b from-sky-600 to-sky-700 text-white overflow-hidden">
@@ -494,6 +504,16 @@ export function ElderlyDetailView({ elderlyId, role }: ElderlyDetailViewProps) {
           </Card>
         </div>
       </div>
+      </TabsContent>
+
+      <TabsContent value="media">
+        <PatientMediaDashboard 
+          patientId={elderlyId}
+          role={role.toLowerCase()}
+          capabilities={SETTINGS_CAPABILITIES[role.toLowerCase() as keyof typeof SETTINGS_CAPABILITIES]}
+        />
+      </TabsContent>
+      </Tabs>
     </div>
   );
 }

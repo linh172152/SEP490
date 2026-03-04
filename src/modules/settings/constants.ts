@@ -7,6 +7,7 @@ export const SETTINGS_CAPABILITIES: Record<RoleType, RoleCapabilities> = {
         canAccessAuditLogs: true,
         canAccessRoleAccess: true,
         canAccessProfessionalProfile: false,
+        canUploadMedia: false,
     },
     doctor: {
         canEditRiskThreshold: true,
@@ -14,6 +15,7 @@ export const SETTINGS_CAPABILITIES: Record<RoleType, RoleCapabilities> = {
         canAccessAuditLogs: false,
         canAccessRoleAccess: false,
         canAccessProfessionalProfile: true,
+        canUploadMedia: false,
     },
     caregiver: {
         canEditRiskThreshold: false,
@@ -21,6 +23,7 @@ export const SETTINGS_CAPABILITIES: Record<RoleType, RoleCapabilities> = {
         canAccessAuditLogs: false,
         canAccessRoleAccess: false,
         canAccessProfessionalProfile: false,
+        canUploadMedia: true,
     },
     family: {
         canEditRiskThreshold: false,
@@ -28,5 +31,6 @@ export const SETTINGS_CAPABILITIES: Record<RoleType, RoleCapabilities> = {
         canAccessAuditLogs: false,
         canAccessRoleAccess: false,
         canAccessProfessionalProfile: false,
+        canUploadMedia: false,
     }
 };

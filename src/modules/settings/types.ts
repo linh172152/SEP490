@@ -65,4 +65,5 @@ export interface RoleCapabilities {
     canAccessAuditLogs: boolean;
     canAccessRoleAccess: boolean;
     canAccessProfessionalProfile: boolean;
+    canUploadMedia: boolean;
 }

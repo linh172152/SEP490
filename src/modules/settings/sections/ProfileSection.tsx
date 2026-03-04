@@ -9,9 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Save } from 'lucide-react';
-import { toast } from 'sonner';
+import { Save } from 'lucide-react';
+import { AvatarUpload } from '@/modules/profile';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const profileSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
@@ -32,6 +32,7 @@ interface ProfileSectionProps {
 }
 
 export function ProfileSection({ settings, capabilities, updateProfile, isSaving }: ProfileSectionProps) {
+  const { user } = useAuthStore();
   const [avatarPreview, setAvatarPreview] = useState(settings.profile.avatar);
 
   const form = useForm<ProfileFormValues>({
@@ -54,12 +55,9 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
     }
   }
 
-  const handleAvatarMockUpload = () => {
-    // Mocking an avatar change
-    const mockAvatars = ['https://github.com/shadcn.png', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka'];
-    const randomAvatar = mockAvatars[Math.floor(Math.random() * mockAvatars.length)];
-    setAvatarPreview(randomAvatar);
-    toast.success('Avatar updated (Mock)');
+  const handleAvatarUpdated = (url: string) => {
+    setAvatarPreview(url);
+    form.setValue('avatar' as any, url, { shouldDirty: true });
   };
 
   return (
@@ -75,31 +73,14 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
           <CardDescription>Update your avatar and basic details</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex items-center gap-6">
-            <div className="relative group">
-              <Avatar className="h-24 w-24 border-2 border-slate-100 ring-4 ring-white dark:ring-slate-950">
-                <AvatarImage src={avatarPreview} alt="User avatar" />
-                <AvatarFallback className="text-2xl bg-sky-50 text-sky-600">
-                  {settings.profile.firstName[0]}{settings.profile.lastName[0]}
-                </AvatarFallback>
-              </Avatar>
-              <button 
-                type="button"
-                onClick={handleAvatarMockUpload}
-                className="absolute bottom-0 right-0 p-2 bg-slate-900 dark:bg-slate-100 dark:text-slate-900 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:scale-105 active:scale-95 shadow-sm"
-              >
-                <Camera className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="flex flex-col gap-1">
-              <h4 className="font-semibold text-lg">{settings.profile.firstName} {settings.profile.lastName}</h4>
-              <p className="text-sm text-muted-foreground">{settings.profile.email}</p>
-              <div className="flex gap-2 mt-2">
-                <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-sky-50 text-sky-700 border-sky-200 uppercase tracking-wider dark:bg-sky-900/30 dark:border-sky-800 dark:text-sky-300">
-                  {capabilities.canAccessProfessionalProfile ? 'Medical Professional' : 'Care Team'}
-                </span>
-              </div>
-            </div>
+          <div className="mb-8">
+            <AvatarUpload 
+              userId={user?.id || 'demo-user-1'} 
+              role={user?.role || 'caregiver'}
+              currentAvatar={avatarPreview}
+              nameFallback={settings.profile.firstName + ' ' + settings.profile.lastName}
+              onAvatarUpdated={handleAvatarUpdated}
+            />
           </div>
 
           <Form {...form}>

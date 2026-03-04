@@ -138,15 +138,15 @@ export function ElderlyDetailView({ elderlyId, role }: ElderlyDetailViewProps) {
         <span className="text-foreground font-medium">{elderly.name}</span>
       </div>
 
-      <Tabs defaultValue="overview" className="w-full grid grid-cols-1 md:grid-cols-12 gap-6">
-        <TabsList className="md:col-span-2 flex flex-col items-stretch h-auto space-y-2 bg-transparent">
-          <TabsTrigger value="overview" className="justify-start px-4 py-3 data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700 data-[state=active]:dark:bg-sky-900/30">
+      <Tabs orientation="vertical" defaultValue="overview" className="w-full grid grid-cols-1 md:grid-cols-12 gap-6">
+        <TabsList className="md:col-span-2 flex flex-col items-stretch h-auto space-y-2 bg-transparent p-0 justify-start w-full">
+          <TabsTrigger value="overview" className="justify-start px-4 py-3 w-full data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700 data-[state=active]:dark:bg-sky-900/30">
             Overview
           </TabsTrigger>
-          <TabsTrigger value="robot" className="justify-start px-4 py-3 data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700 data-[state=active]:dark:bg-sky-900/30">
+          <TabsTrigger value="robot" className="justify-start px-4 py-3 w-full data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700 data-[state=active]:dark:bg-sky-900/30">
             Assigned Robot
           </TabsTrigger>
-          <TabsTrigger value="media" className="justify-start px-4 py-3 data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700 data-[state=active]:dark:bg-sky-900/30">
+          <TabsTrigger value="media" className="justify-start px-4 py-3 w-full data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700 data-[state=active]:dark:bg-sky-900/30">
             Media Portfolio
           </TabsTrigger>
         </TabsList>

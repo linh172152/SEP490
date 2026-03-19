@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { AuthResponse, login as mockLogin, register as mockRegister, RegisterDTO } from '@/services/auth';
+import { authService, AccountResponse, RegisterDTO } from '@/services/api'; // Thêm RegisterDTO nếu chưa có
 import { User } from '@/types';
 
 interface AuthState {
@@ -10,7 +10,7 @@ interface AuthState {
     isLoading: boolean;
     error: string | null;
 
-    login: (email: string, password?: string) => Promise<void>;
+    login: (username: string, password: string) => Promise<void>;
     register: (data: RegisterDTO) => Promise<void>;
     logout: () => void;
     clearError: () => void;
@@ -25,24 +25,51 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
 
-            login: async (email: string, password?: string) => {
+            login: async (username: string, password: string) => {
                 set({ isLoading: true, error: null });
                 try {
-                    const response: AuthResponse = await mockLogin(email, password);
-                    // Sync with cookies to allow Next.js Edge Middleware to read auth state
-                    if (typeof document !== 'undefined') {
-                        document.cookie = `accessToken=${response.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-                        document.cookie = `userRole=${response.user.role}; path=/; max-age=86400; SameSite=Lax`;
+                    const loginResponse: AccountResponse = await authService.login({ username, password });
+                    const token = loginResponse.token;
+
+                    if (!token) {
+                        throw new Error("Không nhận được token từ hệ thống");
                     }
+
+                    authService.setToken(token);
+                    
+                    // Fetch full profile with role
+                    const me: AccountResponse = await authService.getMe();
+                    
+                    // Cookie from me.role
+                    if (typeof document !== 'undefined') {
+                        document.cookie = `accessToken=${token}; path=/; max-age=86400; SameSite=Lax`;
+                        const rawRole = me.role || 'Caregiver';
+                        const mappedRole = rawRole === 'Administrator' ? 'ADMIN' : 
+                                           rawRole === 'Caregiver' ? 'CAREGIVER' : 
+                                           rawRole === 'FamilyMember' ? 'FAMILY' : 
+                                           rawRole === 'ElderlyUser' ? 'CAREGIVER' : 
+                                           rawRole.toUpperCase();
+                        document.cookie = `userRole=${mappedRole}; path=/; max-age=86400; SameSite=Lax`;
+                    }
+                    
+                    const user: User = {
+                        id: me.id.toString(),
+                        name: me.FullName || loginResponse.FullName,
+                        email: me.email,
+                        phone: me.phone,
+                        role: me.role || 'Administrator',
+                        avatar: undefined,
+                    };
+                    
                     set({
-                        user: response.user,
-                        accessToken: response.accessToken,
+                        user,
+                        accessToken: token,
                         isAuthenticated: true,
                         isLoading: false,
                     });
                 } catch (error: any) {
                     set({
-                        error: error.message || 'Login failed',
+                        error: error.response?.data?.message || error.message || 'Đăng nhập thất bại',
                         isLoading: false,
                     });
                     throw error;
@@ -52,29 +79,27 @@ export const useAuthStore = create<AuthState>()(
             register: async (data: RegisterDTO) => {
                 set({ isLoading: true, error: null });
                 try {
-                    const response: AuthResponse = await mockRegister(data);
-                    // Sync with cookies to allow Next.js Edge Middleware to read auth state
-                    if (typeof document !== 'undefined') {
-                        document.cookie = `accessToken=${response.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-                        document.cookie = `userRole=${response.user.role}; path=/; max-age=86400; SameSite=Lax`;
-                    }
-                    set({
-                        user: response.user,
-                        accessToken: response.accessToken,
-                        isAuthenticated: true,
-                        isLoading: false,
+                    await authService.register({
+                        fullName: data.name,
+                        email: data.email,
+                        phone: data.phone || '',
+                        password: data.password,
+                        role: data.role,
+                        gender: data.gender,
                     });
                 } catch (error: any) {
                     set({
-                        error: error.message || 'Registration failed',
+                        error: error.response?.data?.message || error.message || 'Đăng ký thất bại',
                         isLoading: false,
                     });
                     throw error;
+                } finally {
+                    set({ isLoading: false });
                 }
             },
 
             logout: () => {
-                // Clear cookies on logout
+                authService.logout();
                 if (typeof document !== 'undefined') {
                     document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
                     document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';

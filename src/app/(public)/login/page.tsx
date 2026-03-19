@@ -23,9 +23,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { HeartPulse, Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
-  email: z.string().email('Please enter a valid email address.'),
+  username: z.string().min(1, 'Username or email is required.'),
   password: z.string().min(1, 'Password is required.'),
 });
+
+// Map API role names to dashboard routes
+function getRolePath(role: string): string {
+  const roleMap: Record<string, string> = {
+    'administrator': 'admin',
+    'administrator': 'admin',  // BE role
+
+    'admin': 'admin',
+    'caregiver': 'caregiver',
+    'familymember': 'family',
+    'family member': 'family',
+    'elderlyuser': 'caregiver', // Fallback to caregiver for elderly
+    'elderly user': 'caregiver',
+    'doctor': 'doctor',
+  };
+  
+  return roleMap[role?.toLowerCase() || 'caregiver'] || 'caregiver';
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,28 +53,29 @@ export default function LoginPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      await login(values.email, values.password);
+      await login(values.username, values.password);
       
       // Get the fresh user from the store after login completes
       const currentUser = useAuthStore.getState().user;
       
       if (currentUser) {
-        toast.success(`Welcome back, ${currentUser.name}!`);
-        const rolePath = currentUser.role.toLowerCase();
+        toast.success(`Chào mừng, ${currentUser.name}!`);
+        const safeRole = currentUser?.role || 'caregiver';
+        const rolePath = getRolePath(safeRole);
         router.push(`/dashboard/${rolePath}`);
       } else {
-        throw new Error('User data not found after login');
+        throw new Error('Không tìm thấy thông tin người dùng');
       }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to login. Please check your credentials.');
+      toast.error(error.message || 'Đăng nhập thất bại. Vui lòng kiểm tra thông tin.');
     } finally {
       setIsLoading(false);
     }
@@ -81,12 +100,12 @@ export default function LoginPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="email"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Username or Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" type="email" disabled={isLoading} {...field} />
+                      <Input placeholder="username or email" disabled={isLoading} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

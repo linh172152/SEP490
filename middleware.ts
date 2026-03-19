@@ -15,18 +15,19 @@ export function middleware(request: NextRequest) {
         const path = request.nextUrl.pathname;
 
         // Validate role-based access
-        if (path.startsWith('/dashboard/admin') && role !== 'ADMIN') {
+        if (path.startsWith('/dashboard/admin') && !role?.includes('ADMIN')) {
             return NextResponse.redirect(new URL('/unauthorized', request.url));
         }
-        if (path.startsWith('/dashboard/doctor') && role !== 'DOCTOR') {
+        if (path.startsWith('/dashboard/doctor') && !role?.includes('DOCTOR')) {
             return NextResponse.redirect(new URL('/unauthorized', request.url));
         }
-        if (path.startsWith('/dashboard/caregiver') && role !== 'CAREGIVER') {
+        if (path.startsWith('/dashboard/caregiver') && !role?.includes('CAREGIVER')) {
             return NextResponse.redirect(new URL('/unauthorized', request.url));
         }
-        if (path.startsWith('/dashboard/family') && role !== 'FAMILY') {
+        if (path.startsWith('/dashboard/family') && !role?.includes('FAMILY')) {
             return NextResponse.redirect(new URL('/unauthorized', request.url));
         }
+
     }
 
     return NextResponse.next();

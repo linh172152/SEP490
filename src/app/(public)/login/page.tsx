@@ -23,26 +23,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { HeartPulse, Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
-  username: z.string().min(1, 'Username or email is required.'),
+  // BE xác thực bằng phone (Account.getUsername() trả về phone), không phải email.
+  username: z.string().min(1, 'Phone is required.'),
   password: z.string().min(1, 'Password is required.'),
 });
 
 // Map API role names to dashboard routes
 function getRolePath(role: string): string {
+  const key = role?.trim().toLowerCase() || 'caregiver';
   const roleMap: Record<string, string> = {
-    'administrator': 'admin',
-    'administrator': 'admin',  // BE role
+    // values used in FE middleware cookie
+    admin: 'admin',
+    doctor: 'doctor',
+    caregiver: 'caregiver',
+    family: 'family',
 
-    'admin': 'admin',
-    'caregiver': 'caregiver',
-    'familymember': 'family',
-    'family member': 'family',
-    'elderlyuser': 'caregiver', // Fallback to caregiver for elderly
+    // values from BE Role enum (may or may not be returned by /api/login)
+    administrator: 'admin',
+    elderlyuser: 'caregiver', // Fallback to caregiver for elderly
     'elderly user': 'caregiver',
-    'doctor': 'doctor',
+    caregiveruser: 'caregiver',
+    familymember: 'family',
+    'family member': 'family',
   };
-  
-  return roleMap[role?.toLowerCase() || 'caregiver'] || 'caregiver';
+
+  return roleMap[key] || 'caregiver';
 }
 
 export default function LoginPage() {
@@ -68,14 +73,26 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
       
       if (currentUser) {
         toast.success(`Chào mừng, ${currentUser.name}!`);
-        const safeRole = currentUser?.role || 'caregiver';
-        const rolePath = getRolePath(safeRole);
-        router.push(`/dashboard/${rolePath}`);
+        const rolePath = getRolePath(currentUser.role || 'caregiver');
+        // Replace để tránh người dùng bấm Back quay lại trang login
+        router.replace(`/dashboard/${rolePath}`);
       } else {
         throw new Error('Không tìm thấy thông tin người dùng');
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Đăng nhập thất bại. Vui lòng kiểm tra thông tin.');
+    } catch (error: unknown) {
+      const looksLikeEmail = values.username?.includes('@');
+      if (looksLikeEmail) {
+        toast.error('Backend dùng `phone` làm username. Hãy nhập số điện thoại đúng (10 số, bắt đầu 0...).');
+      } else {
+        const message =
+          error instanceof Error
+            ? error.message
+            : typeof error === 'object' && error !== null && 'message' in error
+              ? String((error as { message?: unknown }).message || '')
+              : undefined;
+
+        toast.error(message || 'Đăng nhập thất bại. Vui lòng kiểm tra thông tin.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -103,9 +120,9 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username or Email</FormLabel>
+                    <FormLabel>Phone</FormLabel>
                     <FormControl>
-                      <Input placeholder="username or email" disabled={isLoading} {...field} />
+                      <Input placeholder="phone (e.g., 09xxxxxxxx)" disabled={isLoading} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -138,15 +155,17 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
           </Form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2 text-sm text-center text-muted-foreground bg-muted/20 py-4 border-t">
-          <p className="font-medium text-foreground">Demo Accounts (Password: <span className="font-mono bg-background px-1 py-0.5 rounded border">password123</span>)</p>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-left max-w-sm mx-auto w-full">
-            <p><span className="font-medium">Admin:</span> admin@carebot.com</p>
-            <p><span className="font-medium">Doctor:</span> doctor@carebot.com</p>
-            <p><span className="font-medium">Caregiver:</span> caregiver@carebot.com</p>
-            <p><span className="font-medium">Family:</span> family@example.com</p>
-          </div>
+          <p className="font-medium text-foreground">
+            Demo (Backend dùng <span className="font-mono bg-background px-1 py-0.5 rounded border">phone</span> làm username,
+            Password: <span className="font-mono bg-background px-1 py-0.5 rounded border">password123</span>)
+          </p>
           <div className="pt-2 text-xs">
-            <p>Don't have an account? <Link href="/register" className="text-primary hover:underline font-medium">Register here</Link></p>
+            <p>
+              Don&apos;t have an account?{' '}
+              <Link href="/register" className="text-primary hover:underline font-medium">
+                Register here
+              </Link>
+            </p>
           </div>
         </CardFooter>
       </Card>

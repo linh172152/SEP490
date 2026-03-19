@@ -1,6 +1,16 @@
 import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://sep490-be-3.onrender.com/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://sep490-be-3.onrender.com";
+const BASE_URL = API_BASE_URL.replace(/\/+$/, "");
+// If baseURL already ends with `/api` and endpoint also starts with `/api`,
+// we'll get double path like `/api/api/login`.
+const BASE_URL_HAS_API_PREFIX = BASE_URL.toLowerCase().endsWith("/api");
+
+function normalizeEndpoint(endpoint: string): string {
+  if (!BASE_URL_HAS_API_PREFIX) return endpoint;
+  if (endpoint.startsWith("/api")) return endpoint.slice("/api".length); // e.g. /api/login -> /login
+  return endpoint;
+}
 
 export interface ApiErrorResponse {
   message?: string;
@@ -92,7 +102,7 @@ export class ApiClient {
     endpoint: string,
     config?: AxiosRequestConfig
   ): Promise<T> {
-    const response = await this.client.get<T>(endpoint, config);
+    const response = await this.client.get<T>(normalizeEndpoint(endpoint), config);
     return response.data;
   }
 
@@ -102,7 +112,7 @@ export class ApiClient {
     data: unknown,
     config?: AxiosRequestConfig
   ): Promise<T> {
-    const response = await this.client.post<T>(endpoint, data, config);
+    const response = await this.client.post<T>(normalizeEndpoint(endpoint), data, config);
     return response.data;
   }
 
@@ -112,7 +122,7 @@ export class ApiClient {
     data: unknown,
     config?: AxiosRequestConfig
   ): Promise<T> {
-    const response = await this.client.put<T>(endpoint, data, config);
+    const response = await this.client.put<T>(normalizeEndpoint(endpoint), data, config);
     return response.data;
   }
 
@@ -122,7 +132,7 @@ export class ApiClient {
     data: unknown,
     config?: AxiosRequestConfig
   ): Promise<T> {
-    const response = await this.client.patch<T>(endpoint, data, config);
+    const response = await this.client.patch<T>(normalizeEndpoint(endpoint), data, config);
     return response.data;
   }
 
@@ -131,7 +141,7 @@ export class ApiClient {
     endpoint: string,
     config?: AxiosRequestConfig
   ): Promise<T> {
-    const response = await this.client.delete<T>(endpoint, config);
+    const response = await this.client.delete<T>(normalizeEndpoint(endpoint), config);
     return response.data;
   }
 
@@ -149,3 +159,4 @@ export class ApiClient {
 }
 
 export const apiClient = new ApiClient();
+

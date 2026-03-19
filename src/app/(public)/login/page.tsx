@@ -23,9 +23,32 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { HeartPulse, Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
-  email: z.string().email('Please enter a valid email address.'),
+  // BE xác thực bằng phone (Account.getUsername() trả về phone), không phải email.
+  username: z.string().min(1, 'Phone is required.'),
   password: z.string().min(1, 'Password is required.'),
 });
+
+// Map API role names to dashboard routes
+function getRolePath(role: string): string {
+  const key = role?.trim().toLowerCase() || 'caregiver';
+  const roleMap: Record<string, string> = {
+    // values used in FE middleware cookie
+    admin: 'admin',
+    doctor: 'doctor',
+    caregiver: 'caregiver',
+    family: 'family',
+
+    // values from BE Role enum (may or may not be returned by /api/login)
+    administrator: 'admin',
+    elderlyuser: 'caregiver', // Fallback to caregiver for elderly
+    'elderly user': 'caregiver',
+    caregiveruser: 'caregiver',
+    familymember: 'family',
+    'family member': 'family',
+  };
+
+  return roleMap[key] || 'caregiver';
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,28 +58,41 @@ export default function LoginPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      await login(values.email, values.password);
+      await login(values.username, values.password);
       
       // Get the fresh user from the store after login completes
       const currentUser = useAuthStore.getState().user;
       
       if (currentUser) {
-        toast.success(`Welcome back, ${currentUser.name}!`);
-        const rolePath = currentUser.role.toLowerCase();
-        router.push(`/dashboard/${rolePath}`);
+        toast.success(`Chào mừng, ${currentUser.name}!`);
+        const rolePath = getRolePath(currentUser.role || 'caregiver');
+        // Replace để tránh người dùng bấm Back quay lại trang login
+        router.replace(`/dashboard/${rolePath}`);
       } else {
-        throw new Error('User data not found after login');
+        throw new Error('Không tìm thấy thông tin người dùng');
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to login. Please check your credentials.');
+    } catch (error: unknown) {
+      const looksLikeEmail = values.username?.includes('@');
+      if (looksLikeEmail) {
+        toast.error('Backend dùng `phone` làm username. Hãy nhập số điện thoại đúng (10 số, bắt đầu 0...).');
+      } else {
+        const message =
+          error instanceof Error
+            ? error.message
+            : typeof error === 'object' && error !== null && 'message' in error
+              ? String((error as { message?: unknown }).message || '')
+              : undefined;
+
+        toast.error(message || 'Đăng nhập thất bại. Vui lòng kiểm tra thông tin.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -81,12 +117,12 @@ export default function LoginPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="email"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Phone</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" type="email" disabled={isLoading} {...field} />
+                      <Input placeholder="phone (e.g., 09xxxxxxxx)" disabled={isLoading} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -119,15 +155,17 @@ export default function LoginPage() {
           </Form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2 text-sm text-center text-muted-foreground bg-muted/20 py-4 border-t">
-          <p className="font-medium text-foreground">Demo Accounts (Password: <span className="font-mono bg-background px-1 py-0.5 rounded border">password123</span>)</p>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-left max-w-sm mx-auto w-full">
-            <p><span className="font-medium">Admin:</span> admin@carebot.com</p>
-            <p><span className="font-medium">Doctor:</span> doctor@carebot.com</p>
-            <p><span className="font-medium">Caregiver:</span> caregiver@carebot.com</p>
-            <p><span className="font-medium">Family:</span> family@example.com</p>
-          </div>
+          <p className="font-medium text-foreground">
+            Demo (Backend dùng <span className="font-mono bg-background px-1 py-0.5 rounded border">phone</span> làm username,
+            Password: <span className="font-mono bg-background px-1 py-0.5 rounded border">password123</span>)
+          </p>
           <div className="pt-2 text-xs">
-            <p>Don't have an account? <Link href="/register" className="text-primary hover:underline font-medium">Register here</Link></p>
+            <p>
+              Don&apos;t have an account?{' '}
+              <Link href="/register" className="text-primary hover:underline font-medium">
+                Register here
+              </Link>
+            </p>
           </div>
         </CardFooter>
       </Card>

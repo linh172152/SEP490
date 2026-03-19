@@ -1,11 +1,12 @@
-export type Role = 'ADMIN' | 'CAREGIVER' | 'DOCTOR' | 'FAMILY';
+export type Role = 'ElderlyUser' | 'Caregiver' | 'FamilyMember' | 'MANAGER' | 'Administrator' | string;
 
 export interface User {
     id: string;
     name: string;
-    role: Role;
+    role: Role | string;
     avatar?: string;
     email: string;
+    phone?: string;
 }
 
 export interface HealthStatus {

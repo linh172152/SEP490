@@ -28,16 +28,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     if (!currentUser && !pathname.includes('/login')) {
       router.push('/login');
     } else if (currentUser) {
-      // Client-side role guard
-      if (pathname.startsWith('/dashboard/admin') && currentUser.role !== 'ADMIN') {
+      // Client-side role guard - case insensitive + default allow admin
+if (pathname.startsWith('/dashboard/admin') && !currentUser.role?.toLowerCase().includes('admin')) {
           router.push('/unauthorized');
-      } else if (pathname.startsWith('/dashboard/doctor') && currentUser.role !== 'DOCTOR') {
+      } else if (pathname.startsWith('/dashboard/doctor') && !currentUser.role?.toLowerCase().includes('doctor')) {
           router.push('/unauthorized');
-      } else if (pathname.startsWith('/dashboard/caregiver') && currentUser.role !== 'CAREGIVER') {
+      } else if (pathname.startsWith('/dashboard/caregiver') && !currentUser.role?.toLowerCase().includes('caregiver')) {
           router.push('/unauthorized');
-      } else if (pathname.startsWith('/dashboard/family') && currentUser.role !== 'FAMILY') {
+      } else if (pathname.startsWith('/dashboard/family') && !currentUser.role?.toLowerCase().includes('family')) {
           router.push('/unauthorized');
       }
+
     }
   }, [currentUser, router, pathname, isMounted]);
 

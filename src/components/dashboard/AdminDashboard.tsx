@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -16,11 +17,25 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { mockUsers, mockRobots } from '@/services/mock';
-import { Users, Bot, Activity, Server } from 'lucide-react';
+import { Users, Bot, Activity, Server, Loader2 } from 'lucide-react';
+
+const mockUsers = [
+  { name: 'Dr. Sarah', role: 'DOCTOR', email: 'sarah@example.com' },
+  { name: 'Mark', role: 'CAREGIVER', email: 'mark@example.com' },
+  { name: 'Admin', role: 'ADMIN', email: 'admin@example.com' },
+];
+
+const mockRobots = [
+  { id: 1, robotName: 'Bot1', model: 'v1', status: 'active', firmwareVersion: '1.0' },
+  { id: 2, robotName: 'Bot2', model: 'v1', status: 'assisting', firmwareVersion: '1.0' },
+];
 
 export function AdminDashboard() {
-  const activeRobots = mockRobots.filter(r => r.status === 'ONLINE' || r.status === 'ASSISTING').length;
+  const robots = mockRobots as any[];
+  const loading = false;
+  const error = null;
+
+  const activeRobots = robots.filter(r => r.status === 'active' || r.status === 'ASSISTING').length;
 
   return (
     <div className="space-y-6">
@@ -46,8 +61,14 @@ export function AdminDashboard() {
             <Bot className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeRobots} / {mockRobots.length}</div>
-            <p className="text-xs text-muted-foreground">Currently deployed</p>
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{activeRobots} / {robots.length}</div>
+                <p className="text-xs text-muted-foreground">Currently deployed</p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -110,46 +131,47 @@ export function AdminDashboard() {
             <CardDescription>Monitor individual CareBot states</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Bot ID</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Battery</TableHead>
-                  <TableHead>Location</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mockRobots.map((robot) => (
-                  <TableRow key={robot.id}>
-                    <TableCell className="font-medium">{robot.id.toUpperCase()}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={
-                          robot.status === 'ONLINE' ? 'default' : 
-                          robot.status === 'ASSISTING' ? 'secondary' : 
-                          robot.status === 'CHARGING' ? 'outline' : 'destructive'
-                        }
-                      >
-                        {robot.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full ${robot.battery > 20 ? 'bg-primary' : 'bg-destructive'}`} 
-                            style={{ width: `${robot.battery}%` }}
-                          />
-                        </div>
-                        <span className="text-xs">{robot.battery}%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{robot.location}</TableCell>
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <p>Loading robots...</p>
+              </div>
+            ) : error ? (
+              <p className="text-red-600 text-sm">{error.message}</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Model</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Firmware</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {robots.map((robot) => (
+                    <TableRow key={robot.id}>
+                      <TableCell className="font-medium">{robot.robotName}</TableCell>
+                      <TableCell>{robot.model}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={
+                            robot.status === 'active' ? 'default' : 
+                            robot.status === 'assisting' ? 'secondary' : 
+                            'outline'
+                          }
+                        >
+                          {robot.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {robot.firmwareVersion}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>

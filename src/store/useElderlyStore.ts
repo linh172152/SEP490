@@ -39,8 +39,8 @@ export const useElderlyStore = create<ElderlyState>()(
                     name: 'Alice Smith',
                     age: 72,
                     gender: 'FEMALE',
-                    familyId: '4', // Mock family John Doe
-                    caregiverId: '2', // Mock caregiver Mark Therapist
+                    familyId: 'user-family-001', // Mock family John Smith
+                    caregiverId: 'user-caregiver-001', // Mock caregiver Maria Rodriguez
                     condition: 'Mild Depression',
                     address: '123 Sky Garden Ave',
                     emergencyContact: 'Family: 555-0199',
@@ -66,8 +66,8 @@ export const useElderlyStore = create<ElderlyState>()(
                     name: 'Robert Johnson',
                     age: 80,
                     gender: 'MALE',
-                    familyId: '4',
-                    caregiverId: '2',
+                    familyId: 'user-family-001',
+                    caregiverId: 'user-caregiver-001',
                     condition: 'Severe Anxiety',
                     address: '456 River Run Blvd',
                     emergencyContact: 'Family: 555-0122',
@@ -95,7 +95,7 @@ export const useElderlyStore = create<ElderlyState>()(
             createElderly: (data) => {
                 const newElderly: Elderly = {
                     ...data,
-                    id: `elderly-${Date.now()}`,
+                    id: `elderly-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                     healthStatus: {
                         heartRate: 75,
                         bloodPressure: '120/80',
@@ -117,7 +117,7 @@ export const useElderlyStore = create<ElderlyState>()(
             addAlert: (elderlyId, data) => {
                 const newAlert: Alert = {
                     ...data,
-                    id: `alert-${Date.now()}`,
+                    id: `alert-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                     elderlyId,
                     status: 'active',
                     createdAt: new Date().toISOString(),
@@ -139,7 +139,7 @@ export const useElderlyStore = create<ElderlyState>()(
 
             addClinicalNote: (elderlyId, doctorId, content) => {
                 const newNote: ClinicalNote = {
-                    id: `note-${Date.now()}`,
+                    id: `note-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                     elderlyId,
                     doctorId,
                     content,
@@ -160,7 +160,7 @@ export const useElderlyStore = create<ElderlyState>()(
                                     ...(e.activityLog || []),
                                     {
                                         ...activity,
-                                        id: `act-${Date.now()}`,
+                                        id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                                         timestamp: new Date().toISOString(),
                                     },
                                 ],

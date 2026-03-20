@@ -31,11 +31,28 @@ import {
 import { Role } from '@/types';
 
 const formSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters.'),
-  email: z.string().email('Please enter a valid email address.'),
-  password: z.string().min(6, 'Password must be at least 6 characters.'),
-  role: z.enum(['ADMIN', 'CAREGIVER', 'DOCTOR', 'FAMILY']),
+  name: z.string().min(2, 'Tên ít nhất 2 ký tự.'),
+  email: z.string().email('Email không hợp lệ.'),
+  phone: z.string().regex(/^(84|0[3|5|7|8|9])+([0-9]{8})\b/, 'Số điện thoại VN không hợp lệ (10 số, bắt đầu 0[3|5|7|8|9]).'),
+  password: z.string().min(6, 'Mật khẩu ít nhất 6 ký tự.'),
+  role: z.enum(['Administrator', 'Caregiver', 'FamilyMember', 'ElderlyUser']),
+  gender: z.enum(['Male', 'Female'], { errorMap: () => ({ message: 'Vui lòng chọn giới tính.' }) }),
 });
+
+// Map API role names to dashboard routes
+function getRolePath(role: string): string {
+  const roleMap: Record<string, string> = {
+    'administrator': 'admin',
+    'manager': 'admin',
+    'caregiver': 'caregiver',
+    'familymember': 'family',
+    'family': 'family',
+    'elderlyuser': 'caregiver',
+    'elderly user': 'caregiver',
+  };
+  
+  return roleMap[role?.toLowerCase() || 'caregiver'] || 'caregiver';
+}
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -47,32 +64,30 @@ export default function RegisterPage() {
     defaultValues: {
       name: '',
       email: '',
+      phone: '',
       password: '',
       role: undefined,
+      gender: undefined,
     },
+
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
       await register({
         name: values.name,
         email: values.email,
+        phone: values.phone,
         password: values.password,
-        role: values.role as Role,
+        role: values.role,
+        gender: values.gender,
       });
       
-      const currentUser = useAuthStore.getState().user;
-      
-      if (currentUser) {
-        toast.success(`Account created successfully! Welcome, ${currentUser.name}.`);
-        const rolePath = currentUser.role.toLowerCase();
-        router.push(`/dashboard/${rolePath}`);
-      } else {
-        throw new Error('User data not found after registration');
-      }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to create account.');
+      toast.success('Đăng ký thành công! Chuyển đến trang đăng nhập...');
+      router.push('/login');
+    } catch (error: unknown) {
+      toast.error((error as Error).message || 'Tạo tài khoản thất bại.');
     } finally {
       setIsLoading(false);
     }
@@ -115,7 +130,20 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" type="email" disabled={isLoading} {...field} />
+                      <Input placeholder="example@gmail.com" type="email" disabled={isLoading} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Số điện thoại</FormLabel>
+                    <FormControl>
+                      <Input placeholder="09xxxxxxxx" disabled={isLoading} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -147,10 +175,32 @@ export default function RegisterPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="DOCTOR">Doctor / Clinician</SelectItem>
-                        <SelectItem value="CAREGIVER">Caregiver</SelectItem>
-                        <SelectItem value="FAMILY">Family Member</SelectItem>
-                        <SelectItem value="ADMIN">System Admin</SelectItem>
+                        <SelectItem value="Caregiver">Caregiver</SelectItem>
+                        <SelectItem value="FamilyMember">Family Member</SelectItem>
+                        <SelectItem value="ElderlyUser">Elderly User</SelectItem>
+                        <SelectItem value="Administrator">Administrator</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="gender"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Gender</FormLabel>
+                    <Select disabled={isLoading} onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

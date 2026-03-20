@@ -1,10 +1,15 @@
 import { Patient, RobotStatus, Alert, User, MoodLog, ClinicalNote, ActivityEntry } from '@/types';
 
 export const mockUsers: User[] = [
-    { id: '1', name: 'Dr. Sarah Jenkins', role: 'DOCTOR', email: 'sarah@carebot.test' },
-    { id: '2', name: 'Mark Therapist', role: 'CAREGIVER', email: 'mark@carebot.test' },
-    { id: '3', name: 'Admin User', role: 'ADMIN', email: 'admin@carebot.test' },
-    { id: '4', name: 'John Doe', role: 'FAMILY', email: 'john@family.test' },
+    { id: 'user-doctor-001', name: 'Dr. Sarah Jenkins', role: 'DOCTOR', email: 'doctor@carebot.com' },
+    { id: 'user-caregiver-001', name: 'Maria Rodriguez', role: 'CAREGIVER', email: 'caregiver@carebot.com' },
+    { id: 'user-admin-001', name: 'Alex Admin', role: 'ADMIN', email: 'admin@carebot.com' },
+    { id: 'user-family-001', name: 'John Smith', role: 'FAMILY', email: 'family@example.com' },
+    { id: 'user-caregiver-002', name: 'Sarah Specialist', role: 'CAREGIVER', email: 'sarah.c@carebot.com' },
+    { id: 'user-caregiver-003', name: 'David Nurse', role: 'CAREGIVER', email: 'david.n@carebot.com' },
+    { id: 'user-caregiver-004', name: 'Emily Care', role: 'CAREGIVER', email: 'emily.c@carebot.com' },
+    { id: 'user-caregiver-005', name: 'Michael Support', role: 'CAREGIVER', email: 'michael.s@carebot.com' },
+    { id: 'user-caregiver-006', name: 'Jessica Aide', role: 'CAREGIVER', email: 'jessica.a@carebot.com' },
 ];
 
 export const mockPatients: Patient[] = [

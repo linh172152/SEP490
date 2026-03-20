@@ -58,7 +58,7 @@ export default function CreateElderlyPage() {
   const mockCaregivers = mockUsers.filter(u => u.role === 'CAREGIVER');
 
   const form = useForm<ElderlyFormValues>({
-    resolver: zodResolver(elderlyFormSchema),
+    resolver: zodResolver(elderlyFormSchema) as any,
     defaultValues: {
       name: '',
       age: 70,
@@ -108,7 +108,7 @@ export default function CreateElderlyPage() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6">
           <Card className="border-none shadow-md overflow-hidden">
             <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50">
               <CardTitle className="text-lg flex items-center gap-2 text-sky-600">
@@ -120,7 +120,7 @@ export default function CreateElderlyPage() {
             <CardContent className="pt-6 space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
@@ -133,7 +133,7 @@ export default function CreateElderlyPage() {
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="age"
                   render={({ field }) => (
                     <FormItem>
@@ -153,7 +153,7 @@ export default function CreateElderlyPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="gender"
                   render={({ field }) => (
                     <FormItem>
@@ -175,7 +175,7 @@ export default function CreateElderlyPage() {
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="email"
                   render={({ field }) => (
                     <FormItem>
@@ -201,7 +201,7 @@ export default function CreateElderlyPage() {
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="condition"
                 render={({ field }) => (
                   <FormItem>
@@ -214,7 +214,7 @@ export default function CreateElderlyPage() {
                 )}
               />
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="caregiverId"
                 render={({ field }) => (
                   <FormItem>
@@ -250,7 +250,7 @@ export default function CreateElderlyPage() {
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="address"
                 render={({ field }) => (
                   <FormItem>
@@ -263,7 +263,7 @@ export default function CreateElderlyPage() {
                 )}
               />
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="emergencyContact"
                 render={({ field }) => (
                   <FormItem>

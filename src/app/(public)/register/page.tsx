@@ -36,7 +36,7 @@ const formSchema = z.object({
   phone: z.string().regex(/^(84|0[3|5|7|8|9])+([0-9]{8})\b/, 'Số điện thoại VN không hợp lệ (10 số, bắt đầu 0[3|5|7|8|9]).'),
   password: z.string().min(6, 'Mật khẩu ít nhất 6 ký tự.'),
   role: z.enum(['Administrator', 'Caregiver', 'FamilyMember', 'ElderlyUser']),
-  gender: z.enum(['Male', 'Female'], { errorMap: () => ({ message: 'Vui lòng chọn giới tính.' }) }),
+  gender: z.enum(['Male', 'Female']),
 });
 
 // Map API role names to dashboard routes
@@ -84,8 +84,8 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
         gender: values.gender,
       });
       
-      toast.success('Đăng ký thành công! Chuyển đến trang đăng nhập...');
-      router.push('/login');
+      toast.success('Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP.');
+      router.push(`/verify-otp?email=${encodeURIComponent(values.email)}`);
     } catch (error: unknown) {
       toast.error((error as Error).message || 'Tạo tài khoản thất bại.');
     } finally {

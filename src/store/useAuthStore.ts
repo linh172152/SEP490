@@ -10,8 +10,9 @@ interface AuthState {
     isLoading: boolean;
     error: string | null;
 
-    login: (username: string, password: string) => Promise<void>;
+    login: (email: string, password: string) => Promise<void>;
     register: (data: RegisterDTO) => Promise<void>;
+    verifyOtp: (email: string, otp: string) => Promise<void>;
     logout: () => void;
     clearError: () => void;
 }
@@ -25,10 +26,10 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
 
-            login: async (username: string, password: string) => {
+            login: async (email: string, password: string) => {
                 set({ isLoading: true, error: null });
                 try {
-                    const loginResponse: AccountResponse = await authService.login({ username, password });
+                    const loginResponse: AccountResponse = await authService.login({ email, password });
                     const token = loginResponse.token;
 
                     if (!token) {
@@ -105,7 +106,7 @@ export const useAuthStore = create<AuthState>()(
                         email: data.email,
                         phone: data.phone || '',
                         password: data.password,
-                        role: data.role,
+                        role: data.role as any,
                         gender: data.gender,
                     });
                 } catch (error: unknown) {
@@ -118,6 +119,28 @@ export const useAuthStore = create<AuthState>()(
 
                     set({
                         error: message || 'Đăng ký thất bại',
+                        isLoading: false,
+                    });
+                    throw error;
+                } finally {
+                    set({ isLoading: false });
+                }
+            },
+
+            verifyOtp: async (email: string, otp: string) => {
+                set({ isLoading: true, error: null });
+                try {
+                    await authService.verifyOtp({ email, otp });
+                } catch (error: unknown) {
+                    const message =
+                        error instanceof Error
+                            ? error.message
+                            : typeof error === 'object' && error !== null && 'message' in error
+                              ? String((error as { message?: unknown }).message || '')
+                              : '';
+
+                    set({
+                        error: message || 'Xác thực OTP thất bại',
                         isLoading: false,
                     });
                     throw error;

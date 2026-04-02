@@ -14,7 +14,7 @@ const MOCK_AUDIT_LOGS: AuditLogEntry[] = [
 
 const INITIAL_SETTINGS: SettingsData = {
     profile: {
-        avatar: 'https://github.com/shadcn.png',
+        avatar: 'https://api.dicebear.com/7.x/notionists/svg?seed=John',
         firstName: 'John',
         lastName: 'Doe',
         email: 'john.doe@example.com',
@@ -29,7 +29,7 @@ const INITIAL_SETTINGS: SettingsData = {
         systemAlerts: { email: true, sms: false, push: false },
     },
     preferences: {
-        theme: 'system',
+        theme: 'light',
         language: 'en',
         timezone: 'UTC',
         dataRefreshInterval: '5m',

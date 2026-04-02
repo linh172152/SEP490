@@ -1,6 +1,6 @@
 // Authentication Types
 export interface LoginRequest {
-  username: string;
+  email: string;
   password: string;
 }
 
@@ -20,6 +20,11 @@ export interface RegisterDTO {
   password: string;
   role: string;
   gender: string;
+}
+
+export interface VerifyOtpRequest {
+  email: string;
+  otp: string;
 }
 
 // Voice Profile Types

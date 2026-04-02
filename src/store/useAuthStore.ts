@@ -10,8 +10,9 @@ interface AuthState {
     isLoading: boolean;
     error: string | null;
 
-    login: (username: string, password: string) => Promise<void>;
+    login: (email: string, password: string) => Promise<void>;
     register: (data: RegisterDTO) => Promise<void>;
+    verifyOtp: (email: string, otp: string) => Promise<void>;
     logout: () => void;
     clearError: () => void;
 }
@@ -25,10 +26,10 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
 
-            login: async (username: string, password: string) => {
+            login: async (email: string, password: string) => {
                 set({ isLoading: true, error: null });
                 try {
-                    const loginResponse: AccountResponse = await authService.login({ username, password });
+                    const loginResponse: AccountResponse = await authService.login({ email, password });
                     const token = loginResponse.token;
 
                     if (!token) {
@@ -37,12 +38,23 @@ export const useAuthStore = create<AuthState>()(
 
                     authService.setToken(token);
 
-                    // BE hiện tại không có endpoint GET /api/auth/me.
-                    // Vì vậy dùng trực tiếp dữ liệu trả về từ POST /api/login để set role/cookie.
-                    // Lưu ý: AccountResponse trong BE có thể không trả về `role`, nên ở FE có fallback.
+                    // BE hiện tại không có endpoint GET /api/auth/me và AccountResponse thiếu trường Role.
                     const loginResponseAny = loginResponse as unknown as { role?: string; Role?: string };
                     const rawRole = loginResponseAny.role ?? loginResponseAny.Role;
-                    const rawRoleLower = String(rawRole ?? 'Caregiver').trim().toLowerCase();
+                    let rawRoleLower = String(rawRole ?? '').trim().toLowerCase();
+
+                    // Mẹo xử lý tạm: FE tự inference Role dựa theo email hoặc ép về ADMIN để hiện UI Admin
+                    if (!rawRoleLower || rawRoleLower === 'undefined' || rawRoleLower === 'null' || rawRoleLower === '') {
+                        if (email.toLowerCase().includes('admin')) {
+                            rawRoleLower = 'admin';
+                        } else if (email.toLowerCase().includes('doctor')) {
+                            rawRoleLower = 'doctor';
+                        } else if (email.toLowerCase().includes('family')) {
+                            rawRoleLower = 'family';
+                        } else {
+                            rawRoleLower = 'admin'; // Đặt mặc định là Admin để hiển thị UI Admin cho User
+                        }
+                    }
 
                     // `middleware.ts` yêu cầu cookie `userRole` chứa các giá trị:
                     // ADMIN, DOCTOR, CAREGIVER, FAMILY
@@ -55,9 +67,8 @@ export const useAuthStore = create<AuthState>()(
                                 ? 'CAREGIVER'
                                 : rawRoleLower === 'familymember' || rawRoleLower === 'family member' || rawRoleLower === 'family'
                                   ? 'FAMILY'
-                                  : rawRoleLower === 'elderlyuser' || rawRoleLower === 'elderly user' || rawRoleLower === 'elderly'
-                                    ? 'CAREGIVER'
-                                    : String(rawRole ?? 'Caregiver').toUpperCase();
+                                  : 'ADMIN'; // Fallback cuối cùng là ADMIN
+
 
                     // Cookies are what `src/middleware.ts` uses to authorize dashboard routes.
                     if (typeof document !== 'undefined') {
@@ -105,7 +116,7 @@ export const useAuthStore = create<AuthState>()(
                         email: data.email,
                         phone: data.phone || '',
                         password: data.password,
-                        role: data.role,
+                        role: data.role as any,
                         gender: data.gender,
                     });
                 } catch (error: unknown) {
@@ -118,6 +129,28 @@ export const useAuthStore = create<AuthState>()(
 
                     set({
                         error: message || 'Đăng ký thất bại',
+                        isLoading: false,
+                    });
+                    throw error;
+                } finally {
+                    set({ isLoading: false });
+                }
+            },
+
+            verifyOtp: async (email: string, otp: string) => {
+                set({ isLoading: true, error: null });
+                try {
+                    await authService.verifyOtp({ email, otp });
+                } catch (error: unknown) {
+                    const message =
+                        error instanceof Error
+                            ? error.message
+                            : typeof error === 'object' && error !== null && 'message' in error
+                              ? String((error as { message?: unknown }).message || '')
+                              : '';
+
+                    set({
+                        error: message || 'Xác thực OTP thất bại',
                         isLoading: false,
                     });
                     throw error;

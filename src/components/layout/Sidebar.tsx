@@ -4,46 +4,57 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useElderlyStore } from '@/store/useElderlyStore';
+import { useI18nStore } from '@/store/useI18nStore';
 import { cn } from '@/lib/utils';
 import { 
   HeartPulse, 
   LayoutDashboard, 
   Users, 
   Bot, 
-  Activity, 
   Settings, 
   LogOut,
   Video,
-  Bell
+  Bell,
+  Package,
+  FileText,
+  UserCog
 } from 'lucide-react';
 import { Role } from '@/types';
 
 interface NavItem {
-  title: string;
+  i18nKey: string;
   href: string;
   icon: any;
   roles: Role[];
 }
 
 const navItems: NavItem[] = [
+  // Admin Routes
+  { i18nKey: 'sidebar.overview', href: '/dashboard/admin', icon: LayoutDashboard, roles: ['ADMIN'] },
+  { i18nKey: 'sidebar.robot_fleet', href: '/dashboard/admin/robots', icon: Bot, roles: ['ADMIN'] },
+  { i18nKey: 'sidebar.service_plans', href: '/dashboard/admin/service-packages', icon: Package, roles: ['ADMIN'] },
+  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/admin/user-packages', icon: UserCog, roles: ['ADMIN'] },
+  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/admin/users', icon: Users, roles: ['ADMIN'] }, // Accounts mapped to user_mgt conceptually
+  { i18nKey: 'sidebar.system_logs', href: '/dashboard/admin/system', icon: FileText, roles: ['ADMIN'] },
+  { i18nKey: 'sidebar.settings', href: '/dashboard/admin/settings', icon: Settings, roles: ['ADMIN'] },
+
   // Standard routes for other system roles
-  { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'DOCTOR', 'FAMILY'] },
-  { title: 'Patients', href: '/dashboard/patients', icon: Users, roles: ['DOCTOR'] },
-  { title: 'Robots', href: '/dashboard/robots', icon: Bot, roles: ['ADMIN'] },
-  { title: 'System Stats', href: '/dashboard/stats', icon: Activity, roles: ['ADMIN'] },
-  { title: 'Video Call', href: '/dashboard/call', icon: Video, roles: ['FAMILY'] },
-  { title: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['ADMIN', 'DOCTOR', 'FAMILY'] },
+  { i18nKey: 'sidebar.overview', href: '/dashboard', icon: LayoutDashboard, roles: ['DOCTOR', 'FAMILY'] },
+  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/patients', icon: Users, roles: ['DOCTOR'] }, // 'Patients'
+  { i18nKey: 'sidebar.overview', href: '/dashboard/call', icon: Video, roles: ['FAMILY'] }, // 'Video Call' mapped temporarily
+  { i18nKey: 'sidebar.settings', href: '/dashboard/settings', icon: Settings, roles: ['DOCTOR', 'FAMILY'] },
 
   // Role 1 Full Feature Demo (CAREGIVER) Routes
-  { title: 'Overview', href: '/dashboard/caregiver', icon: LayoutDashboard, roles: ['CAREGIVER'] },
-  { title: 'Patients', href: '/dashboard/caregiver/patients', icon: Users, roles: ['CAREGIVER'] },
-  { title: 'Robot', href: '/dashboard/caregiver/robot', icon: Bot, roles: ['CAREGIVER'] },
-  { title: 'Alerts', href: '/dashboard/caregiver/alerts', icon: Bell, roles: ['CAREGIVER'] },
-  { title: 'Settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['CAREGIVER'] },
+  { i18nKey: 'sidebar.overview', href: '/dashboard/caregiver', icon: LayoutDashboard, roles: ['CAREGIVER'] },
+  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/caregiver/patients', icon: Users, roles: ['CAREGIVER'] },
+  { i18nKey: 'sidebar.robot_fleet', href: '/dashboard/caregiver/robot', icon: Bot, roles: ['CAREGIVER'] },
+  { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/alerts', icon: Bell, roles: ['CAREGIVER'] }, // 'Alerts' mapped temporarily
+  { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['CAREGIVER'] },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { t, language } = useI18nStore();
   const currentUser = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const activeAlertsCount = useElderlyStore((state: any) => 
@@ -64,7 +75,7 @@ export function Sidebar() {
         <ul className="space-y-2 font-medium">
           {filteredNavItems.map((item) => {
             const isActive = pathname === item.href;
-            const isAlerts = item.title === 'Alerts';
+            const isAlerts = item.i18nKey.includes('alerts'); // Using generic condition for alerts if needed
             
             return (
               <li key={item.href}>
@@ -83,7 +94,7 @@ export function Sidebar() {
                       </span>
                     )}
                   </div>
-                  <span className="ml-3">{item.title}</span>
+                  <span className="ml-3">{t(item.i18nKey)}</span>
                 </Link>
               </li>
             );
@@ -98,7 +109,7 @@ export function Sidebar() {
             }}
           >
             <LogOut className="h-5 w-5" />
-            <span className="ml-3">Log out</span>
+            <span className="ml-3">{t('sidebar.logout')}</span>
           </button>
         </div>
       </div>

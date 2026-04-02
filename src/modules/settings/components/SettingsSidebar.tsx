@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { RoleCapabilities } from '../types';
+import { useI18nStore } from '@/store/useI18nStore';
 import { 
     User, 
     BellRing, 
@@ -19,16 +20,17 @@ interface SettingsSidebarProps extends React.HTMLAttributes<HTMLElement> {
 }
 
 export function SettingsSidebar({ className, activeTab, onTabChange, capabilities, ...props }: SettingsSidebarProps) {
-  
+  const { t, language } = useI18nStore();
+
   const navItems = [
-    { title: 'Profile', id: 'profile', icon: User, show: true },
-    { title: 'Notifications', id: 'notifications', icon: BellRing, show: true },
-    { title: 'Preferences', id: 'preferences', icon: SlidersHorizontal, show: true },
-    { title: 'Security', id: 'security', icon: ShieldCheck, show: true },
-    { title: 'Risk Management', id: 'risk', icon: Activity, show: capabilities.canEditRiskThreshold },
-    { title: 'Role Access', id: 'role', icon: LockKeyhole, show: capabilities.canAccessRoleAccess },
-    { title: 'Data Export', id: 'data', icon: DownloadCloud, show: true },
-    { title: 'Audit Logs', id: 'audit', icon: ScrollText, show: capabilities.canAccessAuditLogs },
+    { titleKey: 'settings.sidebar.profile', id: 'profile', icon: User, show: true },
+    { titleKey: 'settings.sidebar.notifications', id: 'notifications', icon: BellRing, show: true },
+    { titleKey: 'settings.sidebar.preferences', id: 'preferences', icon: SlidersHorizontal, show: true },
+    { titleKey: 'settings.sidebar.security', id: 'security', icon: ShieldCheck, show: true },
+    { titleKey: 'settings.sidebar.risk_management', id: 'risk', icon: Activity, show: capabilities.canEditRiskThreshold },
+    { titleKey: 'settings.sidebar.role_access', id: 'role', icon: LockKeyhole, show: capabilities.canAccessRoleAccess },
+    { titleKey: 'settings.sidebar.data_export', id: 'data', icon: DownloadCloud, show: true },
+    { titleKey: 'settings.sidebar.audit_logs', id: 'audit', icon: ScrollText, show: capabilities.canAccessAuditLogs },
   ];
 
   return (
@@ -52,7 +54,7 @@ export function SettingsSidebar({ className, activeTab, onTabChange, capabilitie
           onClick={() => onTabChange(item.id)}
         >
           <item.icon className="mr-2 h-4 w-4 shrink-0" />
-          {item.title}
+          {t(item.titleKey)}
         </Button>
       ))}
     </nav>

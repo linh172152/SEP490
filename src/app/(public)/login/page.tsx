@@ -23,8 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { HeartPulse, Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
-  // BE xác thực bằng phone (Account.getUsername() trả về phone), không phải email.
-  username: z.string().min(1, 'Phone is required.'),
+  email: z.string().email('Invalid email address.'),
   password: z.string().min(1, 'Password is required.'),
 });
 
@@ -58,7 +57,7 @@ export default function LoginPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: '',
+      email: '',
       password: '',
     },
   });
@@ -66,7 +65,7 @@ export default function LoginPage() {
 async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      await login(values.username, values.password);
+      await login(values.email, values.password);
       
       // Get the fresh user from the store after login completes
       const currentUser = useAuthStore.getState().user;
@@ -80,10 +79,6 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
         throw new Error('Không tìm thấy thông tin người dùng');
       }
     } catch (error: unknown) {
-      const looksLikeEmail = values.username?.includes('@');
-      if (looksLikeEmail) {
-        toast.error('Backend dùng `phone` làm username. Hãy nhập số điện thoại đúng (10 số, bắt đầu 0...).');
-      } else {
         const message =
           error instanceof Error
             ? error.message
@@ -91,8 +86,19 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
               ? String((error as { message?: unknown }).message || '')
               : undefined;
 
-        toast.error(message || 'Đăng nhập thất bại. Vui lòng kiểm tra thông tin.');
-      }
+        if (message?.toLowerCase().includes('verify otp')) {
+            toast.error('Tài khoản chưa được kích hoạt. Đang chuyển hướng đến trang xác thực...', {
+                action: {
+                    label: 'Xác thực ngay',
+                    onClick: () => router.push(`/verify-otp?email=${values.email}`)
+                }
+            });
+            setTimeout(() => {
+                router.push(`/verify-otp?email=${values.email}`);
+            }, 2500);
+        } else {
+            toast.error(message || 'Đăng nhập thất bại. Vui lòng kiểm tra thông tin.');
+        }
     } finally {
       setIsLoading(false);
     }
@@ -117,12 +123,12 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="username"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="phone (e.g., 09xxxxxxxx)" disabled={isLoading} {...field} />
+                      <Input placeholder="example@gmail.com" type="email" disabled={isLoading} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -155,15 +161,17 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
           </Form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2 text-sm text-center text-muted-foreground bg-muted/20 py-4 border-t">
-          <p className="font-medium text-foreground">
-            Demo (Backend dùng <span className="font-mono bg-background px-1 py-0.5 rounded border">phone</span> làm username,
-            Password: <span className="font-mono bg-background px-1 py-0.5 rounded border">password123</span>)
-          </p>
           <div className="pt-2 text-xs">
             <p>
               Don&apos;t have an account?{' '}
               <Link href="/register" className="text-primary hover:underline font-medium">
                 Register here
+              </Link>
+            </p>
+            <p className="mt-1">
+              Need to verify your account?{' '}
+              <Link href="/verify-otp" className="text-primary hover:underline font-medium">
+                Verify OTP here
               </Link>
             </p>
           </div>
@@ -172,3 +180,4 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
     </div>
   );
 }
+

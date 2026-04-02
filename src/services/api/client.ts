@@ -88,12 +88,21 @@ export class ApiClient {
   }
 
   private formatError(error: AxiosError): ApiErrorResponse {
-    const errorResponse = error.response?.data as ApiErrorResponse;
+    const errorData = error.response?.data;
+    let message = "An error occurred";
+
+    if (typeof errorData === "string" && errorData.length > 0) {
+      message = errorData;
+    } else if (errorData && typeof errorData === "object" && "message" in (errorData as any)) {
+      message = (errorData as any).message;
+    } else if (error.message) {
+      message = error.message;
+    }
 
     return {
-      message: errorResponse?.message || error.message || "An error occurred",
+      message: message,
       statusCode: error.response?.status,
-      details: error.response?.data,
+      details: errorData,
     };
   }
 

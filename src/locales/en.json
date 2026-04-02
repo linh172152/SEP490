@@ -1,0 +1,168 @@
+{
+  "settings": {
+    "workspace_title": "Settings Workspace",
+    "workspace_desc": "Manage system configurations, personal preferences, and security protocols relative to your access clearance.",
+    "audit_logs": "System Activity Logs",
+    "data_export": "Export Data Logs",
+    "sidebar": {
+      "profile": "Profile",
+      "notifications": "Notifications",
+      "preferences": "Preferences",
+      "security": "Security",
+      "risk_management": "Risk Management",
+      "role_access": "Role Access",
+      "data_export": "Data Export",
+      "audit_logs": "Audit Logs"
+    },
+    "preferences": {
+      "title": "System Preferences",
+      "desc": "Customize your viewing experience and localization parameters.",
+      "display_card_title": "Display & Environment",
+      "display_card_desc": "Adjust how the CareBot-MH interface looks and behaves for you.",
+      "theme_label": "Theme Preference",
+      "theme_placeholder": "Select theme",
+      "theme_light": "Light Mode",
+      "theme_dark": "Dark Mode",
+      "theme_system": "System Default",
+      "language_label": "Language Setting",
+      "language_placeholder": "Select language",
+      "lang_en": "English (US)",
+      "lang_vi": "Tiếng Việt"
+    },
+    "security": {
+      "title": "Security & Authentication",
+      "desc": "Manage your account security and authentication methods.",
+      "change_password_title": "Change Password",
+      "change_password_desc": "Ensure your account is using a long, random password to stay secure.",
+      "current_password": "Current Password",
+      "new_password": "New Password",
+      "confirm_password": "Confirm New Password",
+      "button_update": "Update Password",
+      "button_updating": "Updating...",
+      "success_update": "Password updated successfully",
+      "error_mismatch": "New passwords do not match",
+      "error_invalid": "Invalid current password or new password too short",
+      "error_failed": "Failed to change password"
+    }
+  },
+  "sidebar": {
+    "overview": "Overview",
+    "robot_fleet": "Robot Fleet",
+    "service_plans": "Service Plans",
+    "user_mgt": "User Management",
+    "system_logs": "System Logs",
+    "settings": "Settings",
+    "logout": "Log out"
+  },
+  "admin": {
+    "overview": {
+      "title": "System Overview",
+      "welcome": "Hello, Administrator! Here is what's happening today.",
+      "total_accounts": "Total Accounts (Mocked)",
+      "total_accounts_desc": "Pending real API implementation",
+      "robots_status": "Robots Status",
+      "robots_status_desc": "Registered and active",
+      "service_packages": "Service Packages",
+      "service_packages_desc": "Total configurations",
+      "system_uptime": "System Uptime",
+      "uptime_desc": "Stable operation",
+      "recent_packages": "Recent Service Packages",
+      "recent_packages_desc": "Available service plans for users",
+      "recent_robots": "Recent Robots",
+      "recent_robots_desc": "Monitor individual CareBot systems",
+      "table": {
+        "level": "Level",
+        "name": "Name",
+        "price": "Price ($)",
+        "model": "Model",
+        "status": "Status",
+        "no_data_packages": "No service packages found",
+        "no_data_robots": "No robots found"
+      }
+    },
+    "robots": {
+      "title": "Robot Management",
+      "desc": "Monitor, register, and maintain the medical robot fleet.",
+      "register_btn": "Register New Robot",
+      "search_placeholder": "Search by name, ID or model...",
+      "status": {
+        "active": "Active",
+        "maintenance": "Maintenance",
+        "offline": "Offline"
+      },
+      "card": {
+        "model": "Model",
+        "firmware": "Firmware",
+        "assignment": "Assignment",
+        "assigned_to": "Assigned to",
+        "unassigned": "Available for assignment",
+        "battery": "Battery",
+        "last_ping": "Last ping"
+      },
+      "delete_btn": "Delete System",
+      "confirm_delete": "Are you sure you want to delete this robot?"
+    },
+    "packages": {
+      "title": "Service Packages",
+      "desc": "Configure and manage subscription plans.",
+      "create_btn": "Create Package",
+      "table_card_title": "Available Service Tiers",
+      "table_card_desc": "All defined service packages that can be assigned to user accounts.",
+      "table": {
+        "level": "Level",
+        "name": "Name",
+        "desc": "Description",
+        "price": "Price",
+        "status": "Status",
+        "actions": "Actions",
+        "active": "Active",
+        "inactive": "Inactive",
+        "no_data": "No service packages configured yet.",
+        "confirm_delete": "Are you sure you want to delete this package?"
+      }
+    },
+    "logs": {
+      "title": "System Logs",
+      "desc": "Monitor system events, audit trails, and robot-to-server communications.",
+      "table": {
+        "timestamp": "Timestamp",
+        "level": "Level",
+        "account": "Executing Account",
+        "source": "Source",
+        "message": "Activity Message",
+        "details": "Details",
+        "no_data": "No system logs found for the current period."
+      }
+    },
+    "user_packages": {
+      "title": "User Package Assignments",
+      "desc": "Manage service assignments for users.",
+      "assign_btn": "Assign Package",
+      "table_card_title": "User Assignments",
+      "table_card_desc": "Track which accounts are assigned to which service packages.",
+      "table": {
+        "assignment_id": "Assignment ID",
+        "account_id": "Account ID",
+        "package_id": "Service Package ID",
+        "assigned_date": "Assigned Date",
+        "expiry_date": "Expiry Date",
+        "no_data": "No users are currently assigned to any service package.",
+        "confirm_revoke": "Are you sure you want to revoke this package?"
+      }
+    },
+    "users": {
+        "title": "Account Management",
+        "desc": "Manage administrative, medical, and caregiver accounts.",
+        "create_btn": "Create Account",
+        "table": {
+            "name": "Full Name",
+            "email": "Email Address",
+            "role": "Role",
+            "status": "Status",
+            "last_login": "Last Login",
+            "actions": "Actions",
+            "no_data": "No accounts found matches your criteria."
+        }
+    }
+  }
+}

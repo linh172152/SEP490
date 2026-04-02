@@ -55,9 +55,10 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
   }
 
   const handleAvatarMockUpload = () => {
-    // Mocking an avatar change
-    const mockAvatars = ['https://github.com/shadcn.png', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka'];
-    const randomAvatar = mockAvatars[Math.floor(Math.random() * mockAvatars.length)];
+    // Mocking an avatar change with consistent style
+    const mockSeeds = ['Felix', 'Aneka', 'James', 'Sophie'];
+    const randomSeed = mockSeeds[Math.floor(Math.random() * mockSeeds.length)];
+    const randomAvatar = `https://api.dicebear.com/7.x/notionists/svg?seed=${randomSeed}`;
     setAvatarPreview(randomAvatar);
     toast.success('Avatar updated (Mock)');
   };

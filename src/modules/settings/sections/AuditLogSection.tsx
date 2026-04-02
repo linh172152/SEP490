@@ -41,7 +41,7 @@ export function AuditLogSection({ capabilities, auditLogs }: AuditLogSectionProp
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h3 className="text-lg font-medium">System Audit Logs</h3>
+          <h3 className="text-lg font-medium line-through decoration-destructive/50 opacity-60 italic">System Audit Logs</h3>
           <p className="text-sm text-muted-foreground">Immutable record of system access and configuration changes.</p>
         </div>
         <Button variant="outline" className="shrink-0 bg-white dark:bg-slate-950">

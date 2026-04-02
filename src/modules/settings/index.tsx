@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { RoleType } from './types';
 import { useSettings } from './hooks/useSettings';
+import { useI18nStore } from '@/store/useI18nStore';
 import { SettingsSidebar } from './components/SettingsSidebar';
 import { ProfileSection } from './sections/ProfileSection';
 import { NotificationSection } from './sections/NotificationSection';
@@ -55,6 +56,8 @@ export function SettingsModule({ role }: SettingsModuleProps) {
     }
   }, [activeTab, fetchAuditLogs, capabilities]);
 
+  const { t, language } = useI18nStore();
+
   if (isLoading || !settings) {
     return (
       <div className="flex h-[400px] w-full items-center justify-center">
@@ -69,9 +72,9 @@ export function SettingsModule({ role }: SettingsModuleProps) {
   return (
     <div className="space-y-6 pb-16 block">
       <div className="space-y-0.5">
-        <h2 className="text-2xl font-bold tracking-tight">Settings Workspace</h2>
+        <h2 className="text-2xl font-bold tracking-tight">{t('settings.workspace_title')}</h2>
         <p className="text-muted-foreground">
-          Manage system configurations, personal preferences, and security protocols relative to your access clearance.
+          {t('settings.workspace_desc')}
         </p>
       </div>
       <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">

@@ -1,10 +1,13 @@
 'use client';
 
+import { useTheme } from 'next-themes';
+import { useI18nStore } from '@/store/useI18nStore';
 import { SettingsData } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Globe, LayoutTemplate, Moon, Clock } from 'lucide-react';
+import { Globe, Moon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface PreferenceSectionProps {
   settings: SettingsData;
@@ -12,101 +15,66 @@ interface PreferenceSectionProps {
   isSaving: boolean;
 }
 
-export function PreferenceSection({ settings, updatePreferences, isSaving }: PreferenceSectionProps) {
-  
-  const handleSelectChange = (key: keyof SettingsData['preferences'], value: string) => {
-    updatePreferences({ [key]: value });
-  };
+export function PreferenceSection({ isSaving }: PreferenceSectionProps) {
+  const { theme, setTheme } = useTheme();
+  const { language, setLanguage, t } = useI18nStore();
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch on theme
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h3 className="text-lg font-medium">System Preferences</h3>
-        <p className="text-sm text-muted-foreground">Customize your viewing experience and localization parameters.</p>
+        <h3 className="text-lg font-medium">{t('settings.preferences.title')}</h3>
+        <p className="text-sm text-muted-foreground">{t('settings.preferences.desc')}</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Display & Environment</CardTitle>
-          <CardDescription>Adjust how the CareBot-MH interface looks and behaves for you.</CardDescription>
+          <CardTitle>{t('settings.preferences.display_card_title')}</CardTitle>
+          <CardDescription>{t('settings.preferences.display_card_desc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
               <Label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                <Moon className="h-4 w-4" /> Theme Preference
+                <Moon className="h-4 w-4" /> {t('settings.preferences.theme_label')}
               </Label>
               <Select 
                 disabled={isSaving} 
-                value={settings.preferences.theme} 
-                onValueChange={(v) => handleSelectChange('theme', v)}
+                value={theme === 'dark' ? 'dark' : 'light'} 
+                onValueChange={(v) => setTheme(v)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select theme" />
+                  <SelectValue placeholder={t('settings.preferences.theme_placeholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="light">Light Mode</SelectItem>
-                  <SelectItem value="dark">Dark Mode</SelectItem>
-                  <SelectItem value="system">System Default</SelectItem>
+                  <SelectItem value="light">{t('settings.preferences.theme_light')}</SelectItem>
+                  <SelectItem value="dark">{t('settings.preferences.theme_dark')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-3">
               <Label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                <Globe className="h-4 w-4" /> Language Setting
+                <Globe className="h-4 w-4" /> {t('settings.preferences.language_label')}
               </Label>
               <Select 
                 disabled={isSaving} 
-                value={settings.preferences.language} 
-                onValueChange={(v) => handleSelectChange('language', v)}
+                value={language} 
+                onValueChange={(v) => setLanguage(v as any)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select language" />
+                  <SelectValue placeholder={t('settings.preferences.language_placeholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English (US)</SelectItem>
-                  <SelectItem value="vi">Tiếng Việt</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                <Clock className="h-4 w-4" /> Device Timezone
-              </Label>
-              <Select 
-                disabled={isSaving} 
-                value={settings.preferences.timezone} 
-                onValueChange={(v) => handleSelectChange('timezone', v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select timezone" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="UTC">UTC (Universal)</SelectItem>
-                  <SelectItem value="America/New_York">Eastern Time (US)</SelectItem>
-                  <SelectItem value="Asia/Ho_Chi_Minh">Indochina Time (ICT)</SelectItem>
-                  <SelectItem value="Europe/London">British Summer Time (BST)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                <LayoutTemplate className="h-4 w-4" /> Data Table Density
-              </Label>
-              <Select 
-                disabled={isSaving} 
-                value={settings.preferences.tableDensity} 
-                onValueChange={(v) => handleSelectChange('tableDensity', v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select density" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="compact">Compact (More items)</SelectItem>
-                  <SelectItem value="comfortable">Comfortable (Larger rows)</SelectItem>
+                  <SelectItem value="en">{t('settings.preferences.lang_en')}</SelectItem>
+                  <SelectItem value="vi">{t('settings.preferences.lang_vi')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

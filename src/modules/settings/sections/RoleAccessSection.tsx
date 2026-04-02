@@ -45,7 +45,7 @@ export function RoleAccessSection({ capabilities }: RoleAccessSectionProps) {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h3 className="text-lg font-medium">Role & Access Management</h3>
+        <h3 className="text-lg font-medium line-through decoration-destructive/50 opacity-60 italic">Role & Access Management</h3>
         <p className="text-sm text-muted-foreground">Configure system permissions and feature flags.</p>
       </div>
 

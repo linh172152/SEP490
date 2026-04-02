@@ -44,7 +44,7 @@ export function RiskManagementSection({ settings, capabilities, updateRiskManage
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h3 className="text-lg font-medium text-rose-700 dark:text-rose-400">Risk Management Config</h3>
+        <h3 className="text-lg font-medium text-rose-700 dark:text-rose-400 line-through decoration-destructive/50 opacity-60 italic">Risk Management Config</h3>
         <p className="text-sm text-muted-foreground">Adjust clinical AI sensitivities for escalation policies.</p>
       </div>
 

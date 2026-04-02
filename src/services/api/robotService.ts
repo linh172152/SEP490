@@ -8,50 +8,50 @@ import {
 
 class RobotService {
   async getAll(): Promise<RobotResponse[]> {
-    return apiClient.get<RobotResponse[]>("/robots");
+    return apiClient.get<RobotResponse[]>("/api/robots");
   }
 
   async getById(id: number): Promise<RobotResponse> {
-    return apiClient.get<RobotResponse>(`/robots/${id}`);
+    return apiClient.get<RobotResponse>(`/api/robots/${id}`);
   }
 
   async create(data: RobotRequest): Promise<RobotResponse> {
-    return apiClient.post<RobotResponse>("/robots", data);
+    return apiClient.post<RobotResponse>("/api/robots", data);
   }
 
   async update(id: number, data: RobotRequest): Promise<RobotResponse> {
-    return apiClient.put<RobotResponse>(`/robots/${id}`, data);
+    return apiClient.put<RobotResponse>(`/api/robots/${id}`, data);
   }
 
   async delete(id: number): Promise<void> {
-    return apiClient.delete<void>(`/robots/${id}`);
+    return apiClient.delete<void>(`/api/robots/${id}`);
   }
 
   // Robot Status Logs
   async getAllStatusLogs(): Promise<RobotStatusLogResponse[]> {
-    return apiClient.get<RobotStatusLogResponse[]>("/robot-status-logs");
+    return apiClient.get<RobotStatusLogResponse[]>("/api/robot-status-logs");
   }
 
   async getStatusLogsByRobot(
     robotId: number
   ): Promise<RobotStatusLogResponse[]> {
     return apiClient.get<RobotStatusLogResponse[]>(
-      `/robot-status-logs/robot/${robotId}`
+      `/api/robot-status-logs/robot/${robotId}`
     );
   }
 
   async getStatusLogById(id: number): Promise<RobotStatusLogResponse> {
-    return apiClient.get<RobotStatusLogResponse>(`/robot-status-logs/${id}`);
+    return apiClient.get<RobotStatusLogResponse>(`/api/robot-status-logs/${id}`);
   }
 
   async createStatusLog(
     data: RobotStatusLogRequest
   ): Promise<RobotStatusLogResponse> {
-    return apiClient.post<RobotStatusLogResponse>("/robot-status-logs", data);
+    return apiClient.post<RobotStatusLogResponse>("/api/robot-status-logs", data);
   }
 
   async deleteStatusLog(id: number): Promise<void> {
-    return apiClient.delete<void>(`/robot-status-logs/${id}`);
+    return apiClient.delete<void>(`/api/robot-status-logs/${id}`);
   }
 }
 

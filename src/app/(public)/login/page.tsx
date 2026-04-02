@@ -161,10 +161,6 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
           </Form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2 text-sm text-center text-muted-foreground bg-muted/20 py-4 border-t">
-          <p className="font-medium text-foreground">
-            Demo (Backend dùng <span className="font-mono bg-background px-1 py-0.5 rounded border">email</span> làm username,
-            Password: <span className="font-mono bg-background px-1 py-0.5 rounded border">password123</span>)
-          </p>
           <div className="pt-2 text-xs">
             <p>
               Don&apos;t have an account?{' '}

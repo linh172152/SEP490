@@ -28,7 +28,7 @@ export function DataExportSection() {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h3 className="text-lg font-medium">Data & Compliance</h3>
+        <h3 className="text-lg font-medium line-through decoration-destructive/50 opacity-60 italic">Data & Compliance</h3>
         <p className="text-sm text-muted-foreground">Manage your personal data, portability, and GDPR requirements.</p>
       </div>
 

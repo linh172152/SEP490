@@ -1,0 +1,168 @@
+{
+  "settings": {
+    "workspace_title": "Không Gian Cài Đặt",
+    "workspace_desc": "Quản lý tùy chọn hệ thống, sở thích cá nhân và hệ thống bảo mật dựa theo quyền hạn của bạn.",
+    "audit_logs": "Nhật Ký Hoạt Động",
+    "data_export": "Xuất Dữ Liệu Nhật Ký",
+    "sidebar": {
+      "profile": "Hồ Sơ",
+      "notifications": "Thông Báo",
+      "preferences": "Tùy Chọn Hiển Thị",
+      "security": "Bảo Mật",
+      "risk_management": "Quản Lý Rủi Ro",
+      "role_access": "Quyền Truy Cập",
+      "data_export": "Xuất Dữ Liệu",
+      "audit_logs": "Nhật Ký Hệ Thống"
+    },
+    "preferences": {
+      "title": "Tùy Chọn Hệ Thống",
+      "desc": "Tùy chỉnh trải nghiệm hiển thị và cài đặt ngôn ngữ của bạn.",
+      "display_card_title": "Hiển Thị & Môi Trường",
+      "display_card_desc": "Điều chỉnh cách hệ thống CareBot-MH phục vụ đôi mắt của bạn.",
+      "theme_label": "Giao Diện Sáng Tối",
+      "theme_placeholder": "Chọn giao diện",
+      "theme_light": "Chế độ Sáng",
+      "theme_dark": "Chế độ Tối",
+      "theme_system": "Theo hệ thống máy",
+      "language_label": "Ngôn Ngữ",
+      "language_placeholder": "Chọn ngôn ngữ",
+      "lang_en": "English (US)",
+      "lang_vi": "Tiếng Việt"
+    },
+    "security": {
+      "title": "Bảo Mật & Xác Thực",
+      "desc": "Quản lý bảo mật tài khoản và các phương thức xác thực của bạn.",
+      "change_password_title": "Đổi Mật Khẩu",
+      "change_password_desc": "Đảm bảo tài khoản của bạn đang sử dụng một mật khẩu dài, ngẫu nhiên để giữ an toàn.",
+      "current_password": "Mật khẩu hiện tại",
+      "new_password": "Mật khẩu mới",
+      "confirm_password": "Xác nhận mật khẩu mới",
+      "button_update": "Cập nhật mật khẩu",
+      "button_updating": "Đang cập nhật...",
+      "success_update": "Cập nhật mật khẩu thành công",
+      "error_mismatch": "Mật khẩu mới không khớp nhau",
+      "error_invalid": "Mật khẩu hiện tại không đúng hoặc mật khẩu mới quá ngắn",
+      "error_failed": "Lỗi khi đổi mật khẩu"
+    }
+  },
+  "sidebar": {
+    "overview": "Tổng Quan",
+    "robot_fleet": "Đội Hình Robot",
+    "service_plans": "Gói Dịch Vụ",
+    "user_mgt": "Quản Lý Người Dùng",
+    "system_logs": "Nhật Ký Hệ Thống",
+    "settings": "Cài Đặt",
+    "logout": "Đăng Xuất"
+  },
+  "admin": {
+    "overview": {
+      "title": "Tổng Quan Hệ Thống",
+      "welcome": "Chào Quản Trị Viên! Đây là những gì đang diễn ra hôm nay.",
+      "total_accounts": "Tổng Số Tài Khoản (Giả lập)",
+      "total_accounts_desc": "Đang chờ triển khai API thực tế",
+      "robots_status": "Trạng Thái Robot",
+      "robots_status_desc": "Đã đăng ký và đang hoạt động",
+      "service_packages": "Gói Dịch Vụ",
+      "service_packages_desc": "Tổng số cấu hình gói",
+      "system_uptime": "Thời Gian Hoạt Động",
+      "uptime_desc": "Hệ thống vận hành ổn định",
+      "recent_packages": "Gói Dịch Vụ Gần Đây",
+      "recent_packages_desc": "Các gói dịch vụ khả dụng cho người dùng",
+      "recent_robots": "Robot Gần Đây",
+      "recent_robots_desc": "Theo dõi từng hệ thống CareBot",
+      "table": {
+        "level": "Cấp độ",
+        "name": "Tên gói",
+        "price": "Giá ($)",
+        "model": "Dòng máy",
+        "status": "Trạng thái",
+        "no_data_packages": "Không tìm thấy gói dịch vụ",
+        "no_data_robots": "Không tìm thấy robot nào"
+      }
+    },
+    "robots": {
+      "title": "Quản Lý Robot",
+      "desc": "Theo dõi, đăng ký và bảo trì đội hình robot y tế.",
+      "register_btn": "Đăng Ký Robot Mới",
+      "search_placeholder": "Tìm theo tên, ID hoặc dòng máy...",
+      "status": {
+        "active": "Hoạt động",
+        "maintenance": "Bảo trì",
+        "offline": "Ngoại tuyến"
+      },
+      "card": {
+        "model": "Dòng máy",
+        "firmware": "Vi chương trình",
+        "assignment": "Phân bổ",
+        "assigned_to": "Gán cho",
+        "unassigned": "Sẵn sàng để bàn giao",
+        "battery": "Pin",
+        "last_ping": "Tín hiệu cuối"
+      },
+      "delete_btn": "Xóa hệ thống",
+      "confirm_delete": "Bạn có chắc chắn muốn xóa robot này không?"
+    },
+    "packages": {
+      "title": "Gói Dịch Vụ",
+      "desc": "Cấu hình và quản lý các gói đăng ký dịch vụ.",
+      "create_btn": "Tạo Gói Mới",
+      "table_card_title": "Danh sách cấp độ dịch vụ",
+      "table_card_desc": "Tất cả các gói dịch vụ đã định nghĩa có thể được gán cho tài khoản người dùng.",
+      "table": {
+        "level": "Cấp độ",
+        "name": "Tên gói",
+        "desc": "Mô tả",
+        "price": "Giá",
+        "status": "Trạng thái",
+        "actions": "Thao tác",
+        "active": "Hoạt động",
+        "inactive": "Ngừng nhận",
+        "no_data": "Chưa có gói dịch vụ nào được cấu hình.",
+        "confirm_delete": "Bạn có chắc chắn muốn xóa gói dịch vụ này không?"
+      }
+    },
+    "logs": {
+      "title": "Nhật Ký Hệ Thống",
+      "desc": "Theo dõi sự kiện hệ thống, dấu vết kiểm toán và thông tin giao tiếp robot-máy chủ.",
+      "table": {
+        "timestamp": "Thời gian",
+        "level": "Mức độ",
+        "account": "Người thực hiện",
+        "source": "Nguồn",
+        "message": "Chi tiết hoạt động",
+        "details": "Mô tả",
+        "no_data": "Không tìm thấy nhật ký hệ thống nào trong khoảng thời gian này."
+      }
+    },
+    "user_packages": {
+      "title": "Gán Gói Dịch Vụ",
+      "desc": "Quản lý việc phân bổ dịch vụ cho các tài khoản người dùng.",
+      "assign_btn": "Gán Gói Mới",
+      "table_card_title": "Danh sách bàn giao",
+      "table_card_desc": "Theo dõi xem tài khoản nào đang sử dụng cấp độ dịch vụ nào.",
+      "table": {
+        "assignment_id": "Mã bàn giao",
+        "account_id": "Mã tài khoản",
+        "package_id": "Mã gói dịch vụ",
+        "assigned_date": "Ngày gán",
+        "expiry_date": "Ngày hết hạn",
+        "no_data": "Hiện chưa có người dùng nào được gán gói dịch vụ.",
+        "confirm_revoke": "Bạn có chắc chắn muốn thu hồi gói dịch vụ này không?"
+      }
+    },
+    "users": {
+        "title": "Quản Lý Tài Khoản",
+        "desc": "Quản trị danh sách tài khoản Quản trị, Bác sĩ và Người chăm sóc.",
+        "create_btn": "Tạo Tài Khoản",
+        "table": {
+            "name": "Họ và Tên",
+            "email": "Địa chỉ Email",
+            "role": "Vai trò",
+            "status": "Trạng thái",
+            "last_login": "Đăng nhập cuối",
+            "actions": "Thao tác",
+            "no_data": "Không tìm thấy tài khoản nào khớp với tiêu chí."
+        }
+    }
+  }
+}

@@ -35,7 +35,6 @@ const formSchema = z.object({
   email: z.string().email('Email không hợp lệ.'),
   phone: z.string().regex(/^(84|0[3|5|7|8|9])+([0-9]{8})\b/, 'Số điện thoại VN không hợp lệ (10 số, bắt đầu 0[3|5|7|8|9]).'),
   password: z.string().min(6, 'Mật khẩu ít nhất 6 ký tự.'),
-  role: z.enum(['Administrator', 'Caregiver', 'FamilyMember', 'ElderlyUser']),
   gender: z.enum(['Male', 'Female']),
 });
 
@@ -66,7 +65,6 @@ export default function RegisterPage() {
       email: '',
       phone: '',
       password: '',
-      role: undefined,
       gender: undefined,
     },
 
@@ -80,7 +78,7 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
         email: values.email,
         phone: values.phone,
         password: values.password,
-        role: values.role,
+        role: 'FamilyMember',
         gender: values.gender,
       });
       
@@ -162,29 +160,7 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Role</FormLabel>
-                    <Select disabled={isLoading} onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Caregiver">Caregiver</SelectItem>
-                        <SelectItem value="FamilyMember">Family Member</SelectItem>
-                        <SelectItem value="ElderlyUser">Elderly User</SelectItem>
-                        <SelectItem value="Administrator">Administrator</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Role field removed - defaulting to FamilyMember */}
               <FormField
                 control={form.control}
                 name="gender"

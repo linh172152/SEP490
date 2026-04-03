@@ -12,11 +12,7 @@ export function Header() {
           <HeartPulse className="h-6 w-6 text-primary" />
           <span className="text-xl font-bold tracking-tight">CareBot-MH</span>
         </Link>
-        <nav className="hidden md:flex flex-1 items-center justify-center space-x-8 text-sm font-medium">
-          <Link href="#features" className="transition-colors hover:text-primary text-muted-foreground">Features</Link>
-          <Link href="#roles" className="transition-colors hover:text-primary text-muted-foreground">Roles</Link>
-          <Link href="#tech" className="transition-colors hover:text-primary text-muted-foreground">Technology</Link>
-        </nav>
+
         <div className="flex items-center space-x-4">
           <Link href="/login" className="text-sm font-medium transition-colors hover:text-primary hidden sm:block">
             Log In

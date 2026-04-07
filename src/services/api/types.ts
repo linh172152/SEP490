@@ -187,6 +187,7 @@ export interface ExerciseScriptResponse extends ExerciseScriptRequest {
 
 // Elderly Profile Types
 export interface ElderlyProfileRequest {
+  name: string;
   dateOfBirth: string;
   healthNotes: string;
   preferredLanguage: string;
@@ -197,11 +198,13 @@ export interface ElderlyProfileResponse extends ElderlyProfileRequest {
   id: number;
   accountId: number;
   deleted: boolean;
+  name: string;
 }
 
 // Caregiver Profile Types
 export interface CaregiverProfileRequest {
   accountId: number;
+  name: string;
   relationship: string;
   notificationPreference: string;
 }
@@ -209,6 +212,7 @@ export interface CaregiverProfileRequest {
 export interface CaregiverProfileResponse extends CaregiverProfileRequest {
   id: number;
   accountEmail: string;
+  name: string;
 }
 
 // Account Response from BE

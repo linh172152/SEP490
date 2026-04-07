@@ -1,5 +1,5 @@
-import { FamilyDashboard } from '@/components/dashboard/FamilyDashboard';
+import { FamilyOverview } from '@/components/dashboard/family/Overview';
 
-export default function FamilyPage() {
-  return <FamilyDashboard />;
+export default function FamilyDashboardPage() {
+  return <FamilyOverview />;
 }

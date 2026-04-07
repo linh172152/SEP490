@@ -47,27 +47,26 @@ export const useAuthStore = create<AuthState>()(
                     if (!rawRoleLower || rawRoleLower === 'undefined' || rawRoleLower === 'null' || rawRoleLower === '') {
                         if (email.toLowerCase().includes('admin')) {
                             rawRoleLower = 'admin';
-                        } else if (email.toLowerCase().includes('doctor')) {
-                            rawRoleLower = 'doctor';
-                        } else if (email.toLowerCase().includes('family')) {
-                            rawRoleLower = 'family';
+                        } else if (email.toLowerCase().includes('manager')) {
+                            rawRoleLower = 'manager';
+                        } else if (email.toLowerCase().includes('elderly')) {
+                            rawRoleLower = 'elderly';
                         } else {
                             rawRoleLower = 'admin'; // Đặt mặc định là Admin để hiển thị UI Admin cho User
                         }
                     }
 
-                    // `middleware.ts` yêu cầu cookie `userRole` chứa các giá trị:
-                    // ADMIN, DOCTOR, CAREGIVER, FAMILY
+                    // ADMIN, MANAGER, CAREGIVER, ELDERLY
                     const mappedRole =
                         rawRoleLower === 'administrator' || rawRoleLower === 'admin'
                             ? 'ADMIN'
-                            : rawRoleLower === 'doctor'
-                              ? 'DOCTOR'
-                              : rawRoleLower === 'caregiver'
-                                ? 'CAREGIVER'
-                                : rawRoleLower === 'familymember' || rawRoleLower === 'family member' || rawRoleLower === 'family'
-                                  ? 'FAMILY'
-                                  : 'ADMIN'; // Fallback cuối cùng là ADMIN
+                            : rawRoleLower === 'manager' || rawRoleLower === 'doctor'
+                                ? 'MANAGER'
+                                : rawRoleLower === 'caregiver'
+                                    ? 'CAREGIVER'
+                                    : rawRoleLower === 'elderly' || rawRoleLower === 'family' || rawRoleLower === 'familymember'
+                                        ? 'ELDERLY'
+                                        : 'ADMIN'; // Fallback cuối cùng là ADMIN
 
 
                     // Cookies are what `src/middleware.ts` uses to authorize dashboard routes.
@@ -85,7 +84,7 @@ export const useAuthStore = create<AuthState>()(
                         role: mappedRole,
                         avatar: undefined,
                     };
-                    
+
                     set({
                         user,
                         accessToken: token,
@@ -97,8 +96,8 @@ export const useAuthStore = create<AuthState>()(
                         error instanceof Error
                             ? error.message
                             : typeof error === 'object' && error !== null && 'message' in error
-                              ? String((error as { message?: unknown }).message || '')
-                              : '';
+                                ? String((error as { message?: unknown }).message || '')
+                                : '';
 
                     set({
                         error: message || 'Đăng nhập thất bại',
@@ -124,8 +123,8 @@ export const useAuthStore = create<AuthState>()(
                         error instanceof Error
                             ? error.message
                             : typeof error === 'object' && error !== null && 'message' in error
-                              ? String((error as { message?: unknown }).message || '')
-                              : '';
+                                ? String((error as { message?: unknown }).message || '')
+                                : '';
 
                     set({
                         error: message || 'Đăng ký thất bại',
@@ -146,8 +145,8 @@ export const useAuthStore = create<AuthState>()(
                         error instanceof Error
                             ? error.message
                             : typeof error === 'object' && error !== null && 'message' in error
-                              ? String((error as { message?: unknown }).message || '')
-                              : '';
+                                ? String((error as { message?: unknown }).message || '')
+                                : '';
 
                     set({
                         error: message || 'Xác thực OTP thất bại',

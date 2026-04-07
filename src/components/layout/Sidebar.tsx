@@ -34,21 +34,27 @@ const navItems: NavItem[] = [
   { i18nKey: 'sidebar.robot_fleet', href: '/dashboard/admin/robots', icon: Bot, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.service_plans', href: '/dashboard/admin/service-packages', icon: Package, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.user_mgt', href: '/dashboard/admin/user-packages', icon: UserCog, roles: ['ADMIN'] },
-  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/admin/users', icon: Users, roles: ['ADMIN'] }, // Accounts mapped to user_mgt conceptually
+  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/admin/users', icon: Users, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.system_logs', href: '/dashboard/admin/system', icon: FileText, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.settings', href: '/dashboard/admin/settings', icon: Settings, roles: ['ADMIN'] },
 
-  // Standard routes for other system roles
-  { i18nKey: 'sidebar.overview', href: '/dashboard', icon: LayoutDashboard, roles: ['DOCTOR', 'FAMILY'] },
-  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/patients', icon: Users, roles: ['DOCTOR'] }, // 'Patients'
-  { i18nKey: 'sidebar.overview', href: '/dashboard/call', icon: Video, roles: ['FAMILY'] }, // 'Video Call' mapped temporarily
-  { i18nKey: 'sidebar.settings', href: '/dashboard/settings', icon: Settings, roles: ['DOCTOR', 'FAMILY'] },
+  // Family / Elderly Routes
+  { i18nKey: 'sidebar.overview', href: '/dashboard/family', icon: LayoutDashboard, roles: ['ELDERLY'] },
+  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/family/elderly', icon: Users, roles: ['ELDERLY'] },
+  { i18nKey: 'sidebar.reminders', href: '/dashboard/family/reminders', icon: Bell, roles: ['ELDERLY'] },
+  { i18nKey: 'sidebar.service_plans', href: '/dashboard/family/packages', icon: Package, roles: ['ELDERLY'] },
+  { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['ELDERLY'] }, // Reuse caregiver settings for now
 
-  // Role 1 Full Feature Demo (CAREGIVER) Routes
+  // Manager / Doctor Routes
+  { i18nKey: 'sidebar.overview', href: '/dashboard', icon: LayoutDashboard, roles: ['MANAGER'] },
+  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/patients', icon: Users, roles: ['MANAGER'] },
+  { i18nKey: 'sidebar.settings', href: '/dashboard/settings', icon: Settings, roles: ['MANAGER'] },
+
+  // Caregiver Routes
   { i18nKey: 'sidebar.overview', href: '/dashboard/caregiver', icon: LayoutDashboard, roles: ['CAREGIVER'] },
   { i18nKey: 'sidebar.user_mgt', href: '/dashboard/caregiver/patients', icon: Users, roles: ['CAREGIVER'] },
   { i18nKey: 'sidebar.robot_fleet', href: '/dashboard/caregiver/robot', icon: Bot, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/alerts', icon: Bell, roles: ['CAREGIVER'] }, // 'Alerts' mapped temporarily
+  { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/alerts', icon: Bell, roles: ['CAREGIVER'] },
   { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['CAREGIVER'] },
 ];
 

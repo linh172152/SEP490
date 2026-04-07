@@ -31,11 +31,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       // Client-side role guard - case insensitive + default allow admin
 if (pathname.startsWith('/dashboard/admin') && !currentUser.role?.toLowerCase().includes('admin')) {
           router.push('/unauthorized');
-      } else if (pathname.startsWith('/dashboard/doctor') && !currentUser.role?.toLowerCase().includes('doctor')) {
+      } else if (pathname.startsWith('/dashboard/manager') && !currentUser.role?.toLowerCase().includes('manager')) {
           router.push('/unauthorized');
       } else if (pathname.startsWith('/dashboard/caregiver') && !currentUser.role?.toLowerCase().includes('caregiver')) {
           router.push('/unauthorized');
-      } else if (pathname.startsWith('/dashboard/family') && !currentUser.role?.toLowerCase().includes('family')) {
+      } else if (pathname.startsWith('/dashboard/elderly') && !currentUser.role?.toLowerCase().includes('elderly')) {
           router.push('/unauthorized');
       }
 

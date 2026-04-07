@@ -1,4 +1,4 @@
-export type Role = 'ElderlyUser' | 'Caregiver' | 'FamilyMember' | 'MANAGER' | 'Administrator' | string;
+export type Role = 'ELDERLY' | 'CAREGIVER' | 'MANAGER' | 'ADMIN' | string;
 
 export interface User {
     id: string;
@@ -47,29 +47,19 @@ export interface Elderly {
 export interface ClinicalNote {
     id: string;
     elderlyId: string;
-    doctorId: string;
+    managerId: string;
     content: string;
     createdAt: string;
 }
 
-export interface Patient {
-    id: string;
-    name: string;
-    age: number;
-    condition: string;
-    moodScore: number; // 0-100
-    riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-    lastMedication: string;
-    avatar?: string;
-    email: string;
-}
+
 
 export interface RobotStatus {
     id: string;
     battery: number;
     location: string;
     status: 'ONLINE' | 'OFFLINE' | 'CHARGING' | 'ASSISTING';
-    assignedPatientId?: string;
+    assignedElderlyId?: string;
     temperature: number;
     currentTask?: string;
     taskQueue: string[];
@@ -99,7 +89,7 @@ export interface Alert {
 
 export interface MoodLog {
     id: string;
-    patientId: string;
+    elderlyId: string;
     score: number;
     timestamp: string;
     notes?: string;

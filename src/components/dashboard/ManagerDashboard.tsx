@@ -27,7 +27,7 @@ import Link from 'next/link';
 import { ArrowUpRight, Search } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-export function DoctorDashboard() {
+export function ManagerDashboard() {
   const { elderlyList } = useElderlyStore();
   
   const chartData = mockMoodHistory.map(log => ({

@@ -33,14 +33,15 @@ function getRolePath(role: string): string {
   const roleMap: Record<string, string> = {
     // values used in FE middleware cookie
     admin: 'admin',
-    doctor: 'doctor',
+    manager: 'manager',
     caregiver: 'caregiver',
     family: 'family',
+    elderly: 'family',
 
     // values from BE Role enum (may or may not be returned by /api/login)
     administrator: 'admin',
-    elderlyuser: 'caregiver', // Fallback to caregiver for elderly
-    'elderly user': 'caregiver',
+    elderlyuser: 'family', 
+    'elderly user': 'family',
     caregiveruser: 'caregiver',
     familymember: 'family',
     'family member': 'family',

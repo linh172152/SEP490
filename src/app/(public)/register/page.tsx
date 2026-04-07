@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { HeartPulse, Loader2 } from 'lucide-react';
+import { HeartPulse, Loader2, Mail } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -28,36 +28,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Role } from '@/types';
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from '@/components/ui/alert-dialog';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Tên ít nhất 2 ký tự.'),
   email: z.string().email('Email không hợp lệ.'),
   phone: z.string().regex(/^(84|0[3|5|7|8|9])+([0-9]{8})\b/, 'Số điện thoại VN không hợp lệ (10 số, bắt đầu 0[3|5|7|8|9]).'),
   password: z.string().min(6, 'Mật khẩu ít nhất 6 ký tự.'),
-  role: z.enum(['Administrator', 'Caregiver', 'FamilyMember', 'ElderlyUser']),
   gender: z.enum(['Male', 'Female']),
 });
 
-// Map API role names to dashboard routes
-function getRolePath(role: string): string {
-  const roleMap: Record<string, string> = {
-    'administrator': 'admin',
-    'manager': 'admin',
-    'caregiver': 'caregiver',
-    'familymember': 'family',
-    'family': 'family',
-    'elderlyuser': 'caregiver',
-    'elderly user': 'caregiver',
-  };
-  
-  return roleMap[role?.toLowerCase() || 'caregiver'] || 'caregiver';
-}
-
 export default function RegisterPage() {
   const router = useRouter();
-  const { register } = useAuthStore();
+  const { register, verifyOtp } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  
+  const [showOtpDialog, setShowOtpDialog] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [otpValue, setOtpValue] = useState('');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -66,13 +55,11 @@ export default function RegisterPage() {
       email: '',
       phone: '',
       password: '',
-      role: undefined,
       gender: undefined,
     },
-
   });
 
-async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
       await register({
@@ -80,16 +67,43 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
         email: values.email,
         phone: values.phone,
         password: values.password,
-        role: values.role,
+        role: 'familymember',
         gender: values.gender,
       });
       
       toast.success('Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP.');
-      router.push(`/verify-otp?email=${encodeURIComponent(values.email)}`);
+      setRegisteredEmail(values.email);
+      setShowOtpDialog(true);
     } catch (error: unknown) {
       toast.error((error as Error).message || 'Tạo tài khoản thất bại.');
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleVerifyOtp() {
+    if (!otpValue || otpValue.length !== 6) {
+      toast.error('Vui lòng nhập mã OTP gồm 6 chữ số hợp lệ.');
+      return;
+    }
+    
+    setIsVerifying(true);
+    try {
+      await verifyOtp(registeredEmail, otpValue);
+      toast.success('Xác thực OTP thành công! Bạn có thể đăng nhập ngay bây giờ.');
+      setShowOtpDialog(false);
+      router.push('/login');
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'object' && error !== null && 'message' in error
+            ? String((error as { message?: unknown }).message || '')
+            : undefined;
+
+      toast.error(message || 'Xác thực OTP thất bại. Vui lòng kiểm tra lại mã.');
+    } finally {
+      setIsVerifying(false);
     }
   }
 
@@ -164,29 +178,6 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
               />
               <FormField
                 control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Role</FormLabel>
-                    <Select disabled={isLoading} onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Caregiver">Caregiver</SelectItem>
-                        <SelectItem value="FamilyMember">Family Member</SelectItem>
-                        <SelectItem value="ElderlyUser">Elderly User</SelectItem>
-                        <SelectItem value="Administrator">Administrator</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
                 name="gender"
                 render={({ field }) => (
                   <FormItem>
@@ -200,7 +191,6 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
                       <SelectContent>
                         <SelectItem value="Male">Male</SelectItem>
                         <SelectItem value="Female">Female</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -224,6 +214,55 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
           <p>Already have an account? <Link href="/login" className="text-primary hover:underline font-medium">Sign in here</Link></p>
         </CardFooter>
       </Card>
+
+      <AlertDialog open={showOtpDialog} onOpenChange={setShowOtpDialog}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <Mail className="h-8 w-8 text-primary" />
+            </div>
+            <AlertDialogTitle className="text-center text-2xl font-bold">Xác thực OTP</AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              Chúng tôi đã gửi mã OTP đến email <b>{registeredEmail}</b>. Vui lòng nhập mã bên dưới để kích hoạt tài khoản.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex flex-col items-center space-y-6 py-4">
+            <div className="w-full">
+              <label className="mb-2 block text-sm font-medium">Mã OTP (6 chữ số)</label>
+              <Input
+                placeholder="000000"
+                maxLength={6}
+                value={otpValue}
+                onChange={(e) => setOtpValue(e.target.value)}
+                disabled={isVerifying}
+                className="text-center text-2xl tracking-[0.5em] font-bold h-14"
+              />
+            </div>
+            <Button 
+              onClick={handleVerifyOtp} 
+              className="w-full" 
+              disabled={isVerifying || otpValue.length !== 6}
+            >
+              {isVerifying ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang xác thực...
+                </>
+              ) : (
+                'Xác nhận OTP'
+              )}
+            </Button>
+          </div>
+          <AlertDialogFooter className="sm:justify-center">
+             <div className="text-sm text-muted-foreground text-center">
+                Chưa nhận được mã?{' '}
+                <button className="text-primary hover:underline font-medium" type="button" onClick={() => toast.info('Tính năng gửi lại OTP đang được phát triển!')}>
+                   Gửi lại OTP
+                </button>
+             </div>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -18,13 +18,16 @@ export function middleware(request: NextRequest) {
         if (path.startsWith('/dashboard/admin') && !role?.includes('ADMIN')) {
             return NextResponse.redirect(new URL('/unauthorized', request.url));
         }
-        if (path.startsWith('/dashboard/doctor') && !role?.includes('DOCTOR')) {
+        if (path.startsWith('/dashboard/manager') && !role?.includes('MANAGER')) {
             return NextResponse.redirect(new URL('/unauthorized', request.url));
         }
         if (path.startsWith('/dashboard/caregiver') && !role?.includes('CAREGIVER')) {
             return NextResponse.redirect(new URL('/unauthorized', request.url));
         }
-        if (path.startsWith('/dashboard/family') && !role?.includes('FAMILY')) {
+        if (path.startsWith('/dashboard/elderly') && !role?.includes('ELDERLY')) {
+            return NextResponse.redirect(new URL('/unauthorized', request.url));
+        }
+        if (path.startsWith('/dashboard/family') && !role?.includes('ELDERLY')) {
             return NextResponse.redirect(new URL('/unauthorized', request.url));
         }
 

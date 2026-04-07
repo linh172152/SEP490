@@ -24,12 +24,12 @@ export function SettingsSidebar({ className, activeTab, onTabChange, capabilitie
 
   const navItems = [
     { titleKey: 'settings.sidebar.profile', id: 'profile', icon: User, show: true },
-    { titleKey: 'settings.sidebar.notifications', id: 'notifications', icon: BellRing, show: true },
+    { titleKey: 'settings.sidebar.notifications', id: 'notifications', icon: BellRing, show: capabilities.canAccessNotifications },
     { titleKey: 'settings.sidebar.preferences', id: 'preferences', icon: SlidersHorizontal, show: true },
     { titleKey: 'settings.sidebar.security', id: 'security', icon: ShieldCheck, show: true },
     { titleKey: 'settings.sidebar.risk_management', id: 'risk', icon: Activity, show: capabilities.canEditRiskThreshold },
     { titleKey: 'settings.sidebar.role_access', id: 'role', icon: LockKeyhole, show: capabilities.canAccessRoleAccess },
-    { titleKey: 'settings.sidebar.data_export', id: 'data', icon: DownloadCloud, show: true },
+    { titleKey: 'settings.sidebar.data_export', id: 'data', icon: DownloadCloud, show: capabilities.canAccessDataExport },
     { titleKey: 'settings.sidebar.audit_logs', id: 'audit', icon: ScrollText, show: capabilities.canAccessAuditLogs },
   ];
 

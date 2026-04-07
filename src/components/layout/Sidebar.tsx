@@ -17,7 +17,11 @@ import {
   Bell,
   Package,
   FileText,
-  UserCog
+  UserCog,
+  Activity,
+  ShieldCheck,
+  Cpu,
+  History
 } from 'lucide-react';
 import { Role } from '@/types';
 
@@ -29,26 +33,31 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  // Admin Routes
+  // Admin Routes (System & Platform Administration)
   { i18nKey: 'sidebar.overview', href: '/dashboard/admin', icon: LayoutDashboard, roles: ['ADMIN'] },
-  { i18nKey: 'sidebar.robot_fleet', href: '/dashboard/admin/robots', icon: Bot, roles: ['ADMIN'] },
-  { i18nKey: 'sidebar.service_plans', href: '/dashboard/admin/service-packages', icon: Package, roles: ['ADMIN'] },
-  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/admin/user-packages', icon: UserCog, roles: ['ADMIN'] },
-  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/admin/users', icon: Users, roles: ['ADMIN'] }, // Accounts mapped to user_mgt conceptually
-  { i18nKey: 'sidebar.system_logs', href: '/dashboard/admin/system', icon: FileText, roles: ['ADMIN'] },
+  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/admin/users', icon: Users, roles: ['ADMIN'] },
+  { i18nKey: 'sidebar.data_security', href: '/dashboard/admin/security', icon: ShieldCheck, roles: ['ADMIN'] },
+  { i18nKey: 'sidebar.software_updates', href: '/dashboard/admin/fleet', icon: Cpu, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.settings', href: '/dashboard/admin/settings', icon: Settings, roles: ['ADMIN'] },
+
+  // Manager Routes (Platform & Service Management)
+  { i18nKey: 'sidebar.overview', href: '/dashboard/manager', icon: LayoutDashboard, roles: ['MANAGER'] },
+  { i18nKey: 'sidebar.robot_fleet', href: '/dashboard/manager/robots', icon: Bot, roles: ['MANAGER'] },
+  { i18nKey: 'sidebar.service_plans', href: '/dashboard/manager/service-packages', icon: Package, roles: ['MANAGER'] },
+  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/manager/user-packages', icon: UserCog, roles: ['MANAGER'] },
+  { i18nKey: 'sidebar.usage_analytics', href: '/dashboard/manager/analytics', icon: Activity, roles: ['MANAGER'] },
 
   // Standard routes for other system roles
   { i18nKey: 'sidebar.overview', href: '/dashboard', icon: LayoutDashboard, roles: ['DOCTOR', 'FAMILY'] },
-  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/patients', icon: Users, roles: ['DOCTOR'] }, // 'Patients'
-  { i18nKey: 'sidebar.overview', href: '/dashboard/call', icon: Video, roles: ['FAMILY'] }, // 'Video Call' mapped temporarily
+  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/patients', icon: Users, roles: ['DOCTOR'] },
+  { i18nKey: 'sidebar.overview', href: '/dashboard/call', icon: Video, roles: ['FAMILY'] },
   { i18nKey: 'sidebar.settings', href: '/dashboard/settings', icon: Settings, roles: ['DOCTOR', 'FAMILY'] },
 
   // Role 1 Full Feature Demo (CAREGIVER) Routes
   { i18nKey: 'sidebar.overview', href: '/dashboard/caregiver', icon: LayoutDashboard, roles: ['CAREGIVER'] },
   { i18nKey: 'sidebar.user_mgt', href: '/dashboard/caregiver/patients', icon: Users, roles: ['CAREGIVER'] },
   { i18nKey: 'sidebar.robot_fleet', href: '/dashboard/caregiver/robot', icon: Bot, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/alerts', icon: Bell, roles: ['CAREGIVER'] }, // 'Alerts' mapped temporarily
+  { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/alerts', icon: Bell, roles: ['CAREGIVER'] },
   { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['CAREGIVER'] },
 ];
 

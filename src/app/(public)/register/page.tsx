@@ -35,8 +35,8 @@ const formSchema = z.object({
   email: z.string().email('Email không hợp lệ.'),
   phone: z.string().regex(/^(84|0[3|5|7|8|9])\d{8}$/, 'Số điện thoại VN không hợp lệ (10 số, bắt đầu 0[3|5|7|8|9] hoặc 84).'),
   password: z.string().min(6, 'Mật khẩu ít nhất 6 ký tự.'),
-  gender: z.enum(['Male', 'Female', 'Other'], {
-    errorMap: () => ({ message: 'Vui lòng chọn giới tính' }),
+  gender: z.union([z.literal('Male'), z.literal('Female'), z.literal('Other')], {
+    message: 'Vui lòng chọn giới tính',
   }),
 });
 

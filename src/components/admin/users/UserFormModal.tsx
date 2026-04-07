@@ -27,8 +27,8 @@ const formSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().regex(/^(84|0[3|5|7|8|9])\d{8}$/, "Điện thoại không hợp lệ (10 số, b.đầu 0[3,5,7,8,9] hoặc 84)"),
   password: z.string().min(6, "Password must be at least 6 characters").optional().or(z.literal("")),
-  role: z.enum(["MANAGER", "ADMINISTRATOR"], {
-    required_error: "Please select a role",
+  role: z.union([z.literal("MANAGER"), z.literal("ADMINISTRATOR")], {
+    message: "Please select a role",
   }),
   gender: z.string().min(1, "Please select gender"),
   status: z.string().optional()

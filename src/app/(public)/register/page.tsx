@@ -86,9 +86,9 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
       
       toast.success('Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP.');
       router.push(`/verify-otp?email=${encodeURIComponent(values.email)}`);
-    } catch (error: any) {
+    } catch (err: unknown) {
       // Trích xuất lỗi chi tiết từ Backend (Ví dụ: "Duplicate Email!")
-      const errorMessage = error?.message || 'Tạo tài khoản thất bại.';
+      const errorMessage = err instanceof Error ? err.message : 'Tạo tài khoản thất bại.';
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);

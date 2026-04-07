@@ -51,6 +51,10 @@
     "service_plans": "Service Plans",
     "user_mgt": "User Management",
     "system_logs": "System Logs",
+    "usage_analytics": "Usage Analytics",
+    "data_security": "Data & Security",
+    "software_updates": "Software Updates",
+    "audit_logs": "Audit Logs",
     "settings": "Settings",
     "logout": "Log out"
   },

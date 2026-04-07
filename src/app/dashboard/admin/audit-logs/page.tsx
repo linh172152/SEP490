@@ -39,7 +39,7 @@ export default function SystemLogsPage() {
           <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <FileText className="h-8 w-8 text-primary" /> {t('admin.logs.title')}
           </h2>
-          <p className="text-muted-foreground mt-1">{t('admin.logs.desc')}</p>
+
         </div>
         <Button variant="outline" className="flex items-center gap-2">
           <Download className="h-4 w-4" /> {t('settings.data_export') || 'Export CSV'}
@@ -49,7 +49,7 @@ export default function SystemLogsPage() {
       <Card>
         <CardHeader>
           <CardTitle>{t('settings.audit_logs') || 'Global Activity Logs'}</CardTitle>
-          <CardDescription>{t('admin.logs.desc')}</CardDescription>
+
         </CardHeader>
         <CardContent>
           {loading ? (

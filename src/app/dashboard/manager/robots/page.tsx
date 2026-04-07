@@ -46,14 +46,13 @@ export default function RobotsManagePage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Bot className="h-8 w-8 text-primary" /> {t('admin.robots.title')}
+          <h2 className="text-3xl font-black tracking-tight flex items-center gap-2">
+            <Bot className="h-8 w-8 text-indigo-600" /> {t('admin.robots.title')}
           </h2>
-          <p className="text-muted-foreground mt-1">{t('admin.robots.desc')}</p>
+          <p className="text-sm text-muted-foreground mt-1 font-medium italic">
+             Giám sát hoạt động của Robot. <span className="text-indigo-600">(Quản trị kỹ thuật bởi Admin)</span>
+          </p>
         </div>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" /> {t('admin.robots.register_btn')}
-        </Button>
       </div>
 
       {loading ? (
@@ -143,17 +142,8 @@ export default function RobotsManagePage() {
                   </div>
                 </CardContent>
                 
-                <CardContent className="pt-0 pb-5">
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    className="w-full sm:w-auto ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 mt-2 bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white"
-                    onClick={() => handleDelete(robot.id)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    {t('admin.robots.delete_btn') || 'Delete System'}
-                  </Button>
-                </CardContent>
+                {/* Read-only view for Manager */}
+                <div className="pb-5 px-6" />
               </Card>
             );
           })}

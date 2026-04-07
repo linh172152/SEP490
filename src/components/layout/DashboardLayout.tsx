@@ -31,6 +31,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       // Client-side role guard - case insensitive + default allow admin
 if (pathname.startsWith('/dashboard/admin') && !currentUser.role?.toLowerCase().includes('admin')) {
           router.push('/unauthorized');
+      } else if (pathname.startsWith('/dashboard/manager') && !currentUser.role?.toLowerCase().includes('manager')) {
+          router.push('/unauthorized');
       } else if (pathname.startsWith('/dashboard/doctor') && !currentUser.role?.toLowerCase().includes('doctor')) {
           router.push('/unauthorized');
       } else if (pathname.startsWith('/dashboard/caregiver') && !currentUser.role?.toLowerCase().includes('caregiver')) {

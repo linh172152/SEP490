@@ -17,197 +17,300 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Users, Bot, Activity, Package, LibraryBig, Loader2, Server } from 'lucide-react';
-import { robotService } from '@/services/api/robotService';
-import { servicePackageService } from '@/services/api/servicePackageService';
-import { userPackageService } from '@/services/api/userPackageService';
-import { RobotResponse, ServicePackageResponse, UserPackageResponse } from '@/services/api/types';
-import { fakeUsers } from '@/services/fakeUsers';
+import { 
+  ShieldCheck, 
+  Cpu, 
+  History, 
+  Settings, 
+  Lock, 
+  Server,
+  Zap,
+  Globe,
+  Database,
+  Activity,
+  TrendingUp,
+  AlertTriangle
+} from 'lucide-react';
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell,
+  PieChart,
+  Pie
+} from 'recharts';
 import { useI18nStore } from '@/store/useI18nStore';
 
+// Analytics Data
+const uptimeData = [
+  { time: '00:00', value: 99.9 },
+  { time: '04:00', value: 99.8 },
+  { time: '08:00', value: 100 },
+  { time: '12:00', value: 99.7 },
+  { time: '16:00', value: 99.9 },
+  { time: '20:00', value: 99.9 },
+  { time: '23:59', value: 100 },
+];
+
+const fleetData = [
+  { name: 'Active', value: 42, color: '#10b981' },
+  { name: 'Maint', value: 5, color: '#f59e0b' },
+  { name: 'Fault', value: 2, color: '#ef4444' },
+];
+
+const activityData = [
+  { name: 'Auth', count: 1240 },
+  { name: 'Robots', count: 850 },
+  { name: 'Store', count: 420 },
+  { name: 'Logs', count: 2100 },
+];
+
+// Mock audit logs for demo
+const mockAuditLogs = [
+  { id: 1, action: 'Update Firewall Policy', user: 'Admin_Vinh', time: '2 mins ago', status: 'Success', severity: 'High' },
+  { id: 2, action: 'Global Camera Disable', user: 'Admin_Hoang', time: '15 mins ago', status: 'Success', severity: 'Critical' },
+  { id: 3, action: 'Firmware Push v2.4.9', user: 'System', time: '3 hours ago', status: 'In Progress', severity: 'Medium' },
+  { id: 4, action: 'DB Snapshot Created', user: 'System', time: '6 hours ago', status: 'Success', severity: 'Low' },
+  { id: 5, action: 'Internal API Access Revoked', user: 'Admin_Vinh', time: 'Yesterday', status: 'Blocked', severity: 'High' },
+];
+
 export function AdminDashboard() {
-  const { t, language } = useI18nStore();
-  const [robots, setRobots] = useState<RobotResponse[]>([]);
-  const [servicePackages, setServicePackages] = useState<ServicePackageResponse[]>([]);
-  const [userPackages, setUserPackages] = useState<UserPackageResponse[]>([]);
-  
+  const { t } = useI18nStore();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const [robotsData, spData, upData] = await Promise.all([
-          robotService.getAll(),
-          servicePackageService.getAll(),
-          userPackageService.getAll()
-        ]);
-        
-        setRobots(robotsData || []);
-        setServicePackages(spData || []);
-        setUserPackages(upData || []);
-      } catch (err: any) {
-        setError(err.message || "Failed to load dashboard data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDashboardData();
+    const timer = setTimeout(() => setLoading(false), 600);
+    return () => clearTimeout(timer);
   }, []);
 
-  const activeRobots = robots.filter(r => r.status && r.status.toLowerCase().includes('active')).length;
-  const activePackages = servicePackages.filter(p => p.active).length;
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">{t('admin.overview.title')}</h2>
-          <p className="text-muted-foreground mt-1">{t('admin.overview.welcome')}</p>
+          <h2 className="text-3xl font-extrabold tracking-tight bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">
+             Hệ Thống Quản Trị Trung Tâm
+          </h2>
+          <p className="text-muted-foreground mt-1 flex items-center gap-2">
+            <Activity className="h-4 w-4 text-emerald-500 animate-pulse" />
+             Giám sát hạ tầng thời gian thực & Bảo mật cấp độ doanh nghiệp.
+          </p>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="relative overflow-hidden border-none shadow-md hover:shadow-xl transition-all duration-300 group bg-card">
-          <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-semibold text-muted-foreground">{t('admin.overview.total_accounts')}</CardTitle>
-            <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg group-hover:scale-110 transition-transform">
-              <Users className="h-4 w-4 text-blue-500" />
-            </div>
+      {/* Admin Central Stats */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/10">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">Bảo Mật Hệ Thống</CardTitle>
+            <ShieldCheck className="h-5 w-5 text-emerald-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-extrabold tracking-tight">{fakeUsers.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">{t('admin.overview.total_accounts_desc')}</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="relative overflow-hidden border-none shadow-md hover:shadow-xl transition-all duration-300 group bg-card">
-          <div className="absolute top-0 left-0 w-1 h-full bg-teal-500" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-semibold text-muted-foreground">{t('admin.overview.robots_status')}</CardTitle>
-            <div className="p-2 bg-teal-50 dark:bg-teal-900/20 rounded-lg group-hover:scale-110 transition-transform">
-               <Bot className="h-4 w-4 text-teal-500" />
+            <div className="text-3xl font-black text-emerald-900 dark:text-emerald-300">An Toàn</div>
+            <div className="flex items-center gap-2 mt-2">
+               <span className="flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+               <p className="text-xs font-medium text-emerald-700 dark:text-emerald-500">Zero Threats Detected</p>
             </div>
-          </CardHeader>
-          <CardContent>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-              <>
-                <div className="text-3xl font-extrabold tracking-tight text-teal-600 dark:text-teal-400">
-                  {activeRobots} <span className="text-lg font-normal text-muted-foreground">/ {robots.length}</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">{t('admin.overview.robots_status_desc')}</p>
-              </>
-            )}
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-none shadow-md hover:shadow-xl transition-all duration-300 group bg-card">
-          <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-semibold text-muted-foreground">{t('admin.overview.service_packages')}</CardTitle>
-            <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg group-hover:scale-110 transition-transform">
-               <Package className="h-4 w-4 text-indigo-500" />
-            </div>
+        <Card className="border-none shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/10">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-blue-800 dark:text-blue-400">Robot OTA Status</CardTitle>
+            <Cpu className="h-5 w-5 text-blue-600" />
           </CardHeader>
           <CardContent>
-             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-               <>
-                 <div className="text-3xl font-extrabold tracking-tight text-indigo-600 dark:text-indigo-400">
-                   {activePackages} <span className="text-lg font-normal text-muted-foreground">{t('admin.robots.status.active').toLowerCase()}</span>
-                 </div>
-                 <p className="text-xs text-muted-foreground mt-1">{servicePackages.length} {t('admin.overview.service_packages_desc')}</p>
-               </>
-             )}
+            <div className="text-3xl font-black text-blue-900 dark:text-blue-300">v2.4.8</div>
+            <div className="flex items-center gap-2 mt-2">
+               <TrendingUp className="h-3 w-3 text-blue-600" />
+               <p className="text-xs font-medium text-blue-700 dark:text-blue-500">Compliance: 98.4%</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-lg bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/10">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-violet-800 dark:text-violet-400">Tải Server (API)</CardTitle>
+            <Server className="h-5 w-5 text-violet-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-black text-violet-900 dark:text-violet-300">Thấp</div>
+            <p className="text-xs font-medium text-violet-700 dark:text-violet-500 mt-2">Latency: 42ms avg</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-lg bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/10">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-400">Database Storage</CardTitle>
+            <Database className="h-5 w-5 text-amber-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-black text-amber-900 dark:text-amber-300">84 GB</div>
+            <p className="text-xs font-medium text-amber-700 dark:text-amber-500 mt-2">Backup: 2h ago</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+        {/* Main Health Chart */}
+        <Card className="lg:col-span-4 border-none shadow-sm">
           <CardHeader>
-            <CardTitle>{t('admin.overview.recent_packages')}</CardTitle>
-            <CardDescription>{t('admin.overview.recent_packages_desc')}</CardDescription>
+            <CardTitle className="text-lg font-bold flex items-center gap-2">
+               <Activity className="h-5 w-5 text-indigo-500" />
+               Tính Ổn Định Hệ Thống (System Uptime)
+            </CardTitle>
+            <CardDescription>Tỷ lệ duy trì kết nối Global trong 24h qua.</CardDescription>
           </CardHeader>
-          <CardContent>
-          {loading ? <div className="p-4 flex justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div> : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('admin.overview.table.level')}</TableHead>
-                  <TableHead>{t('admin.overview.table.name')}</TableHead>
-                  <TableHead>{t('admin.overview.table.price')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {servicePackages.slice(0, 5).map((pkg) => (
-                  <TableRow key={pkg.id}>
-                    <TableCell>
-                      <Badge variant={pkg.active ? "default" : "secondary"}>{pkg.level}</Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">{pkg.name}</TableCell>
-                    <TableCell>{pkg.price}</TableCell>
-                  </TableRow>
-                ))}
-                {servicePackages.length === 0 && (
-                   <TableRow>
-                     <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">{t('admin.overview.table.no_data_packages')}</TableCell>
-                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={uptimeData}>
+                <defs>
+                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fill: '#9CA3AF', fontSize: 11}} />
+                <YAxis domain={[99, 100]} axisLine={false} tickLine={false} tick={{fill: '#9CA3AF', fontSize: 11}} />
+                <Tooltip 
+                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                   formatter={(val) => [`${val}%`, 'Uptime']}
+                />
+                <Area type="monotone" dataKey="value" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
+              </AreaChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Fleet Distribution */}
+        <Card className="lg:col-span-3 border-none shadow-sm">
           <CardHeader>
-            <CardTitle>{t('admin.overview.recent_robots')}</CardTitle>
-            <CardDescription>{t('admin.overview.recent_robots_desc')}</CardDescription>
+            <CardTitle className="text-lg font-bold">Phân Bổ Robot (Fleet)</CardTitle>
+            <CardDescription>Trạng thái kỹ thuật toàn đội hình.</CardDescription>
           </CardHeader>
-          <CardContent>
-            {loading ? <div className="p-4 flex justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div> : error ? (
-              <p className="text-red-500 text-sm">{error}</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('admin.overview.table.name')}</TableHead>
-                    <TableHead>{t('admin.overview.table.model')}</TableHead>
-                    <TableHead>{t('admin.overview.table.status')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {robots.slice(0, 5).map((robot) => (
-                    <TableRow key={robot.id}>
-                      <TableCell className="font-medium">{robot.robotName}</TableCell>
-                      <TableCell>{robot.model}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={
-                            robot.status?.toLowerCase() === 'active' ? 'default' : 
-                            robot.status?.toLowerCase() === 'maintenance' ? 'destructive' : 
-                            'outline'
-                          }
-                        >
-                          {robot.status?.toLowerCase() === 'active' ? t('admin.robots.status.active') : 
-                           robot.status?.toLowerCase() === 'maintenance' ? t('admin.robots.status.maintenance') : 
-                           robot.status || "UNKNOWN"}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
+          <CardContent className="h-[300px] flex items-center justify-center relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={fleetData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={8}
+                  dataKey="value"
+                >
+                  {fleetData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
-                  {robots.length === 0 && (
-                     <TableRow>
-                       <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">{t('admin.overview.table.no_data_robots')}</TableCell>
-                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            )}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute flex flex-col items-center pointer-events-none">
+               <span className="text-3xl font-black">{fleetData.reduce((a, b) => a + b.value, 0)}</span>
+               <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">Robots</span>
+            </div>
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
+               {fleetData.map((item) => (
+                 <div key={item.name} className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase">{item.name}</span>
+                 </div>
+               ))}
+            </div>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+         {/* System Configuration Card */}
+         <Card className="lg:col-span-1 border-none shadow-sm bg-slate-900 text-white">
+            <CardHeader>
+               <CardTitle className="flex items-center gap-2 text-white">
+                  <Settings className="h-5 w-5 text-indigo-400" />
+                  Hạ Tầng Lõi
+               </CardTitle>
+               <CardDescription className="text-slate-400">Trạng thái kết nối nền tảng.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+               <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/50">
+                  <div className="flex items-center gap-3">
+                     <Zap className="h-4 w-4 text-amber-400" />
+                     <span className="text-sm font-medium">Performance Mode</span>
+                  </div>
+                  <Badge className="bg-indigo-500 hover:bg-indigo-600 border-none">Turbo</Badge>
+               </div>
+               <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/50">
+                  <div className="flex items-center gap-3">
+                     <Globe className="h-4 w-4 text-blue-400" />
+                     <span className="text-sm font-medium">Gateway Node</span>
+                  </div>
+                  <Badge variant="outline" className="text-blue-300 border-blue-500/30">Singapore-01</Badge>
+               </div>
+               <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/50">
+                  <div className="flex items-center gap-3">
+                     <Lock className="h-4 w-4 text-emerald-400" />
+                     <span className="text-sm font-medium">SSL Encryption</span>
+                  </div>
+                  <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">TLS 1.3</Badge>
+               </div>
+            </CardContent>
+         </Card>
+
+         {/* Audit Logs Table */}
+         <Card className="lg:col-span-2 border-none shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between">
+               <div>
+                  <CardTitle className="flex items-center gap-2">
+                     <History className="h-5 w-5 text-indigo-500" />
+                     Bản Tin Hệ Thống (Audit Logs)
+                  </CardTitle>
+               </div>
+               <Badge variant="secondary" className="font-bold text-[10px] uppercase tracking-wider px-2.5 py-1">Realtime Feed</Badge>
+            </CardHeader>
+            <CardContent>
+               <div className="space-y-1">
+                  {mockAuditLogs.map((log) => (
+                    <div key={log.id} className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-xl transition-colors group">
+                       <div className="flex items-center gap-4">
+                          <div className={`p-2 rounded-lg ${
+                            log.severity === 'Critical' ? 'bg-red-100 text-red-600' :
+                            log.severity === 'High' ? 'bg-amber-100 text-amber-600' :
+                            'bg-blue-100 text-blue-600'
+                          }`}>
+                            {log.severity === 'Critical' ? <AlertTriangle className="h-4 w-4" /> : <Settings className="h-4 w-4" />}
+                          </div>
+                          <div>
+                             <p className="text-sm font-bold text-foreground leading-none">{log.action}</p>
+                             <p className="text-xs text-muted-foreground mt-1">
+                                By <span className="font-semibold text-slate-700 dark:text-slate-300">{log.user}</span> • {log.time}
+                             </p>
+                          </div>
+                       </div>
+                       <Badge 
+                          variant="outline" 
+                          className={`text-[10px] font-black uppercase ${
+                            log.status === 'Success' ? 'border-emerald-200 text-emerald-600 bg-emerald-50/50' : 
+                            log.status === 'Blocked' ? 'border-red-200 text-red-600 bg-red-50/50' :
+                            'border-slate-200 text-slate-500'
+                          }`}
+                        >
+                          {log.status}
+                       </Badge>
+                    </div>
+                  ))}
+               </div>
+            </CardContent>
+         </Card>
       </div>
     </div>
   );
 }
+

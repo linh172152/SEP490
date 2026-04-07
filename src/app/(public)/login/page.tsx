@@ -33,6 +33,7 @@ function getRolePath(role: string): string {
   const roleMap: Record<string, string> = {
     // values used in FE middleware cookie
     admin: 'admin',
+    manager: 'manager',
     doctor: 'doctor',
     caregiver: 'caregiver',
     family: 'family',

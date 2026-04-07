@@ -27,7 +27,40 @@ class RobotService {
     return apiClient.delete<void>(`/api/robots/${id}`);
   }
 
-  // Robot Status Logs
+  // --- ADMIN TECHNICAL OPERATIONS (FR17) ---
+
+  /**
+   * Simulate OTA Firmware Update
+   */
+  async updateFirmware(robotId: number, version: string): Promise<void> {
+    console.log(`[Admin] Initiating OTA Update for Robot #${robotId} to version ${version}`);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    // In production, this would call PATCH /api/robots/${robotId}/firmware
+  }
+
+  /**
+   * Simulate Global Hardware Feature Toggle
+   */
+  async toggleHardwareFeature(feature: string, status: boolean): Promise<void> {
+    console.log(`[Admin] Global Toggle: ${feature} set to ${status ? 'ON' : 'OFF'}`);
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    // In production, this would call POST /api/robots/global-toggle
+  }
+
+  /**
+   * Fetch Rooms (Mocked until BE creates Room entity)
+   */
+  async getRooms(): Promise<any[]> {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return [
+      { id: 101, name: "Room 101 (Geriatrics)", elderlyCount: 3, floor: 1 },
+      { id: 102, name: "Room 102 (ICU)", elderlyCount: 1, floor: 1 },
+      { id: 201, name: "Room 201 (Post-Op)", elderlyCount: 4, floor: 2 },
+      { id: 205, name: "Room 205 (Standard)", elderlyCount: 2, floor: 2 },
+    ];
+  }
+
+  // --- Robot Status Logs ---
   async getAllStatusLogs(): Promise<RobotStatusLogResponse[]> {
     return apiClient.get<RobotStatusLogResponse[]>("/api/robot-status-logs");
   }

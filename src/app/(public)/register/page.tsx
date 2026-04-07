@@ -31,11 +31,11 @@ import {
 import { Role } from '@/types';
 
 const formSchema = z.object({
-  name: z.string().min(2, 'Tên ít nhất 2 ký tự.'),
+  name: z.string().min(2, 'Họ tên ít nhất 2 ký tự.'),
   email: z.string().email('Email không hợp lệ.'),
-  phone: z.string().regex(/^(84|0[3|5|7|8|9])+([0-9]{8})\b/, 'Số điện thoại VN không hợp lệ (10 số, bắt đầu 0[3|5|7|8|9]).'),
+  phone: z.string().regex(/^(84|0[3|5|7|8|9])\d{8}$/, 'Số điện thoại VN không hợp lệ (10 số, bắt đầu 0[3|5|7|8|9] hoặc 84).'),
   password: z.string().min(6, 'Mật khẩu ít nhất 6 ký tự.'),
-  gender: z.enum(['Male', 'Female']),
+  gender: z.string().min(1, 'Vui lòng chọn giới tính').refine(val => val === 'Male' || val === 'Female', 'Giới tính không hợp lệ'),
 });
 
 // Map API role names to dashboard routes
@@ -78,14 +78,16 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
         email: values.email,
         phone: values.phone,
         password: values.password,
-        role: 'FamilyMember',
+        role: 'FAMILYMEMBER',
         gender: values.gender,
       });
       
       toast.success('Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP.');
       router.push(`/verify-otp?email=${encodeURIComponent(values.email)}`);
-    } catch (error: unknown) {
-      toast.error((error as Error).message || 'Tạo tài khoản thất bại.');
+    } catch (error: any) {
+      // Trích xuất lỗi chi tiết từ Backend (Ví dụ: "Duplicate Email!")
+      const errorMessage = error?.message || 'Tạo tài khoản thất bại.';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

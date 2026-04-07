@@ -38,36 +38,28 @@ export const useAuthStore = create<AuthState>()(
 
                     authService.setToken(token);
 
-                    // BE hiện tại không có endpoint GET /api/auth/me và AccountResponse thiếu trường Role.
-                    const loginResponseAny = loginResponse as unknown as { role?: string; Role?: string };
-                    const rawRole = loginResponseAny.role ?? loginResponseAny.Role;
-                    let rawRoleLower = String(rawRole ?? '').trim().toLowerCase();
-
-                    // Mẹo xử lý tạm: FE tự inference Role dựa theo email hoặc ép về ADMIN để hiện UI Admin
-                    if (!rawRoleLower || rawRoleLower === 'undefined' || rawRoleLower === 'null' || rawRoleLower === '') {
-                        if (email.toLowerCase().includes('admin')) {
-                            rawRoleLower = 'admin';
-                        } else if (email.toLowerCase().includes('doctor')) {
-                            rawRoleLower = 'doctor';
-                        } else if (email.toLowerCase().includes('family')) {
-                            rawRoleLower = 'family';
-                        } else {
-                            rawRoleLower = 'admin'; // Đặt mặc định là Admin để hiển thị UI Admin cho User
-                        }
-                    }
-
-                    // `middleware.ts` yêu cầu cookie `userRole` chứa các giá trị:
-                    // ADMIN, DOCTOR, CAREGIVER, FAMILY
-                    const mappedRole =
-                        rawRoleLower === 'administrator' || rawRoleLower === 'admin'
-                            ? 'ADMIN'
-                            : rawRoleLower === 'doctor'
-                              ? 'DOCTOR'
-                              : rawRoleLower === 'caregiver'
-                                ? 'CAREGIVER'
-                                : rawRoleLower === 'familymember' || rawRoleLower === 'family member' || rawRoleLower === 'family'
-                                  ? 'FAMILY'
-                                  : 'ADMIN'; // Fallback cuối cùng là ADMIN
+                     // Trích xuất Role từ Backend (Enum: ADMINISTRATOR, FAMILYMEMBER, v.v.)
+                     const rawRole = (loginResponse as any).role || (loginResponse as any).Role || "";
+                     let roleStr = typeof rawRole === 'string' ? rawRole : (rawRole?.name || String(rawRole));
+                     roleStr = roleStr.replace(/^ROLE_/i, '');
+                     const roleLower = roleStr.toLowerCase().trim();
+                     console.log("🛠️ Raw Login Response Role:", rawRole);
+                     console.log("🛠️ Parsed roleLower:", roleLower);
+ 
+                     // Ánh xạ sang hằng số Role dùng cho Middleware
+                     const mappedRole =
+                         roleLower === 'administrator' || roleLower === 'admin'
+                             ? 'ADMIN'
+                         : roleLower === 'manager'
+                             ? 'MANAGER'
+                             : roleLower === 'doctor'
+                               ? 'DOCTOR'
+                               : roleLower === 'caregiver'
+                                 ? 'CAREGIVER'
+                                 : roleLower === 'familymember' || roleLower === 'elderlyuser' || roleLower === 'family'
+                                     ? 'FAMILY'
+                                     : 'ADMIN'; // Fallback
+                     console.log("🛠️ Mapped Role for Cookie:", mappedRole);
 
 
                     // Cookies are what `src/middleware.ts` uses to authorize dashboard routes.
@@ -112,11 +104,11 @@ export const useAuthStore = create<AuthState>()(
                 set({ isLoading: true, error: null });
                 try {
                     await authService.register({
-                        fullName: data.name,
-                        email: data.email,
-                        phone: data.phone || '',
+                        fullName: data.name.trim(),
+                        email: data.email.trim(),
+                        phone: (data.phone || '').trim(),
                         password: data.password,
-                        role: data.role as any,
+                        role: 'FAMILYMEMBER', // Ghi cứng để tránh lỗi Enum Administrator
                         gender: data.gender,
                     });
                 } catch (error: unknown) {

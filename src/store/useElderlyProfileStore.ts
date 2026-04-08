@@ -8,7 +8,7 @@ interface ElderlyProfileState {
   isLoading: boolean;
   error: string | null;
 
-  fetchProfiles: () => Promise<void>;
+  fetchProfiles: (accountId?: number) => Promise<void>;
   fetchProfileById: (id: number) => Promise<void>;
   fetchProfileByAccountId: (accountId: number) => Promise<void>;
   createProfile: (accountId: number, data: ElderlyProfileRequest) => Promise<void>;
@@ -23,10 +23,12 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
   isLoading: false,
   error: null,
 
-  fetchProfiles: async () => {
+  fetchProfiles: async (accountId?: number) => {
     set({ isLoading: true, error: null });
     try {
-      const data = await elderlyService.getAll();
+      const data = accountId 
+        ? await elderlyService.getByAccountId(accountId)
+        : await elderlyService.getAll();
       set({ profiles: data });
     } catch (err: any) {
       set({ error: err.message || 'Failed to fetch profiles' });

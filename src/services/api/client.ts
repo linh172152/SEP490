@@ -40,8 +40,10 @@ export class ApiClient {
           config.headers.Authorization = `Bearer ${token}`;
         }
         // 👉 DEBUG: Chụp ảnh dữ liệu thực tế tại đây
-        console.log(`🚀 [DIAGNOSTIC] API POST REQUEST to ${config.url}`);
-        console.log(`📦 PAYLOAD SECURE CHECK:`, JSON.parse(JSON.stringify(config.data)));
+        console.log(`🚀 [DIAGNOSTIC] API ${config.method?.toUpperCase()} REQUEST to ${config.url}`);
+        if (config.data) {
+          console.log(`📦 PAYLOAD SECURE CHECK:`, JSON.parse(JSON.stringify(config.data)));
+        }
         
         return config;
       },
@@ -59,13 +61,16 @@ export class ApiClient {
       (error: AxiosError) => {
         // Log error details
         const isNetworkError = !error.response;
+        const method = error.config?.method?.toUpperCase() || 'UNKNOWN';
+        const url = error.config?.url || 'UNKNOWN URL';
         
-        console.error(`❌ API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, {
+        console.error(`❌ API Error: ${method} ${url}`, {
           type: isNetworkError ? "NETWORK_OR_TIMEOUT_OR_CORS" : "SERVER_RESPONSE_ERROR",
           status: error.response?.status,
           statusText: error.response?.statusText,
           data: error.response?.data,
-          message: error.message
+          message: error.message,
+          error: error // Log the full error object for better debugging
         });
 
         if (isNetworkError) {

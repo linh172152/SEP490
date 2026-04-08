@@ -74,8 +74,10 @@ export default function CaregiverElderlyPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchProfiles();
-  }, [fetchProfiles]);
+    if (caregiver?.id) {
+      fetchProfiles(Number(caregiver.id));
+    }
+  }, [fetchProfiles, caregiver?.id]);
 
   const form = useForm<ElderlyFormValues>({
     resolver: zodResolver(elderlySchema),

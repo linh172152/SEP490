@@ -9,6 +9,10 @@ class ElderlyService {
     return apiClient.get<ElderlyProfileResponse[]>("/api/elderly-profile");
   }
 
+  async getByAccountId(accountId: number): Promise<ElderlyProfileResponse[]> {
+    return apiClient.get<ElderlyProfileResponse[]>(`/api/elderly-profile/account/${accountId}`);
+  }
+
   async getById(id: number): Promise<ElderlyProfileResponse> {
     return apiClient.get<ElderlyProfileResponse>(`/api/elderly-profile/${id}`);
   }

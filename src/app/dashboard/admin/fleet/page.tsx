@@ -315,7 +315,7 @@ export default function AdminFleetPage() {
               </DialogTitle>
               <DialogDescription className="py-4 font-medium text-slate-600">
                 {confirmDialog.type === 'delete' && t('admin.fleet.dialogs.confirm_delete_desc')}
-                {confirmDialog.type === 'ota' && t('admin.fleet.dialogs.confirm_ota_desc', { version: 'v2.5.0', id: confirmDialog.targetId })}
+                {confirmDialog.type === 'ota' && t('admin.fleet.dialogs.confirm_ota_desc', { version: 'v2.5.0', id: confirmDialog.targetId ?? 0 })}
               </DialogDescription>
            </DialogHeader>
            <DialogFooter className="gap-2">

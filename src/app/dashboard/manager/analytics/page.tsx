@@ -1,3 +1,4 @@
+'use client';
 import { useI18nStore } from "@/store/useI18nStore";
 import { BarChart3, Activity } from "lucide-react";
 

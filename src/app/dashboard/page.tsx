@@ -11,7 +11,7 @@ import { caregiverService } from '@/services/api/caregiverService';
 import { reminderService } from '@/services/api/reminderService';
 
 function ApiTestPanel() {
-  const [data, setData] = useState<{ elderly?: any, caregiver?: any, reminders?: any, logs?: any }>({});
+  const [data, setData] = useState<{ elderly?: unknown, caregiver?: unknown, reminders?: unknown, logs?: unknown }>({});
   const [loading, setLoading] = useState(false);
 
   const testApi = async () => {
@@ -23,8 +23,9 @@ function ApiTestPanel() {
       const logs = await reminderService.getAllLogs().catch(() => 'Access Denied / No Logs');
       
       setData({ elderly, caregiver, reminders, logs });
-    } catch (err: any) {
-      setData({ elderly: 'Error', caregiver: err.message, reminders: 'Error', logs: 'Error' });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setData({ elderly: 'Error', caregiver: errorMessage, reminders: 'Error', logs: 'Error' });
     }
     setLoading(false);
   };
@@ -69,7 +70,7 @@ export default function DashboardPage() {
       dashboardComponent = <FamilyDashboard />; // To be renamed to ElderlyDashboard
       break;
     default:
-      dashboardComponent = <div>Role "{currentUser.role}" not recognized</div>;
+      dashboardComponent = <div>Role &quot;{currentUser.role}&quot; not recognized</div>;
   }
 
   return (

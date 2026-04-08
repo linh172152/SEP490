@@ -76,9 +76,7 @@ export function ExerciseLibrary() {
       setIsModalOpen(false);
       fetchScripts();
     } catch (error) {
-      toast.error(t("common.error"), {
-        description: "Failed to create exercise script.",
-      });
+      toast.error("Failed to create exercise script.");
     } finally {
       setIsSubmitting(false);
     }

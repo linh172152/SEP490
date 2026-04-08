@@ -1,6 +1,10 @@
 import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from "axios";
 
 const API_BASE_URL = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_API_BASE_URL || "https://sep490-be-3.onrender.com");
+// Log only on server or in dev mode to avoid cluttering production console too much
+if (typeof window === "undefined") {
+  console.log("🌐 Server Mode: API Base URL set to", API_BASE_URL);
+}
 const BASE_URL = API_BASE_URL.replace(/\/+$/, "");
 // If baseURL already ends with `/api` and endpoint also starts with `/api`,
 // we'll get double path like `/api/api/login`.

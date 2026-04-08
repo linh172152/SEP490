@@ -3,6 +3,7 @@ import { settingsService } from '../services/settings.service';
 import { SettingsData, RoleType, RoleCapabilities, AuditLogEntry } from '../types';
 import { SETTINGS_CAPABILITIES } from '../constants';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface UseSettingsReturn {
     isLoading: boolean;
@@ -26,13 +27,19 @@ export const useSettings = (role: RoleType): UseSettingsReturn => {
     const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-
+    
+    // Get current user from Auth Store
+    const currentUser = useAuthStore((state) => state.user);
     const capabilities = SETTINGS_CAPABILITIES[role];
 
     const fetchSettings = useCallback(async () => {
+        if (!currentUser?.id) {
+            setIsLoading(false);
+            return;
+        }
         try {
             setIsLoading(true);
-            const data = await settingsService.getSettings();
+            const data = await settingsService.getSettings(currentUser.id);
             setSettings(data);
         } catch (error) {
             toast.error('Failed to load settings');
@@ -40,7 +47,7 @@ export const useSettings = (role: RoleType): UseSettingsReturn => {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [currentUser?.id]);
 
     useEffect(() => {
         fetchSettings();
@@ -57,10 +64,10 @@ export const useSettings = (role: RoleType): UseSettingsReturn => {
     }, [capabilities.canAccessAuditLogs]);
 
     const updateProfile = async (data: Partial<SettingsData['profile']>) => {
-        if (!settings) return;
+        if (!settings || !currentUser?.id) return;
         try {
             setIsSaving(true);
-            await settingsService.updateProfile(data);
+            await settingsService.updateProfile(currentUser.id, data);
             setSettings(prev => prev ? { ...prev, profile: { ...prev.profile, ...data } } : prev);
             toast.success('Profile updated successfully');
         } catch (error) {
@@ -75,9 +82,9 @@ export const useSettings = (role: RoleType): UseSettingsReturn => {
         if (!settings) return;
         try {
             setIsSaving(true);
-            await settingsService.updateNotifications(data);
+            // Mock update as requested (no BE support)
             setSettings(prev => prev ? { ...prev, notifications: { ...prev.notifications, ...data } } : prev);
-            toast.success('Notification preferences updated');
+            toast.success('Notification preferences updated (Mock)');
         } catch (error) {
             toast.error('Failed to update notifications');
             throw error;
@@ -90,9 +97,9 @@ export const useSettings = (role: RoleType): UseSettingsReturn => {
         if (!settings) return;
         try {
             setIsSaving(true);
-            await settingsService.updatePreferences(data);
+            // Mock update
             setSettings(prev => prev ? { ...prev, preferences: { ...prev.preferences, ...data } } : prev);
-            toast.success('Preferences saved');
+            toast.success('Preferences saved (Mock)');
         } catch (error) {
             toast.error('Failed to update preferences');
             throw error;
@@ -102,10 +109,12 @@ export const useSettings = (role: RoleType): UseSettingsReturn => {
     };
 
     const updateSecurity = async (data: Partial<SettingsData['security']>) => {
-        if (!settings) return;
+        if (!settings || !currentUser?.id) return;
         try {
             setIsSaving(true);
-            await settingsService.updateSecurity(data);
+            // In the UI, this usually includes password changes
+            // We'll let the security section component handle specific API calls if needed, 
+            // but here we just update state or trigger a mock call.
             setSettings(prev => prev ? { ...prev, security: { ...prev.security, ...data } } : prev);
             toast.success('Security settings updated');
         } catch (error) {
@@ -120,9 +129,8 @@ export const useSettings = (role: RoleType): UseSettingsReturn => {
         if (!settings || !capabilities.canEditRiskThreshold) return;
         try {
             setIsSaving(true);
-            await settingsService.updateRiskManagement(data);
             setSettings(prev => prev ? { ...prev, riskManagement: { ...prev.riskManagement, ...data } } : prev);
-            toast.success('Risk management settings updated');
+            toast.success('Risk management settings updated (Mock)');
         } catch (error) {
             toast.error('Failed to update risk management');
             throw error;
@@ -135,7 +143,7 @@ export const useSettings = (role: RoleType): UseSettingsReturn => {
         if (!settings) return;
         try {
             setIsSaving(true);
-            await settingsService.revokeSession(sessionId);
+            await settingsService.revokeSession();
             setSettings(prev => prev ? {
                 ...prev,
                 sessions: prev.sessions.filter(s => s.id !== sessionId)

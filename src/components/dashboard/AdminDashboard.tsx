@@ -94,11 +94,11 @@ export function AdminDashboard() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">
-             Hệ Thống Quản Trị Trung Tâm
+             {t('admin.dashboard.title')}
           </h2>
           <p className="text-muted-foreground mt-1 flex items-center gap-2">
             <Activity className="h-4 w-4 text-emerald-500 animate-pulse" />
-             Giám sát hạ tầng thời gian thực & Bảo mật cấp độ doanh nghiệp.
+             {t('admin.dashboard.subtitle')}
           </p>
         </div>
       </div>
@@ -107,21 +107,21 @@ export function AdminDashboard() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">Bảo Mật Hệ Thống</CardTitle>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">{t('admin.dashboard.security_title')}</CardTitle>
             <ShieldCheck className="h-5 w-5 text-emerald-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-black text-emerald-900 dark:text-emerald-300">An Toàn</div>
+            <div className="text-3xl font-black text-emerald-900 dark:text-emerald-300">{t('admin.dashboard.security_status')}</div>
             <div className="flex items-center gap-2 mt-2">
                <span className="flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-               <p className="text-xs font-medium text-emerald-700 dark:text-emerald-500">Zero Threats Detected</p>
+               <p className="text-xs font-medium text-emerald-700 dark:text-emerald-500">{t('admin.dashboard.security_desc')}</p>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-blue-800 dark:text-blue-400">Robot OTA Status</CardTitle>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-blue-800 dark:text-blue-400">{t('admin.dashboard.ota_title')}</CardTitle>
             <Cpu className="h-5 w-5 text-blue-600" />
           </CardHeader>
           <CardContent>
@@ -135,18 +135,18 @@ export function AdminDashboard() {
 
         <Card className="border-none shadow-lg bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-violet-800 dark:text-violet-400">Tải Server (API)</CardTitle>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-violet-800 dark:text-violet-400">{t('admin.dashboard.server_load')}</CardTitle>
             <Server className="h-5 w-5 text-violet-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-black text-violet-900 dark:text-violet-300">Thấp</div>
+            <div className="text-3xl font-black text-violet-900 dark:text-violet-300">{t('admin.dashboard.server_load_low')}</div>
             <p className="text-xs font-medium text-violet-700 dark:text-violet-500 mt-2">Latency: 42ms avg</p>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-lg bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-400">Database Storage</CardTitle>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-400">{t('admin.dashboard.storage_title')}</CardTitle>
             <Database className="h-5 w-5 text-amber-600" />
           </CardHeader>
           <CardContent>
@@ -162,9 +162,9 @@ export function AdminDashboard() {
           <CardHeader>
             <CardTitle className="text-lg font-bold flex items-center gap-2">
                <Activity className="h-5 w-5 text-indigo-500" />
-               Tính Ổn Định Hệ Thống (System Uptime)
+               {t('admin.dashboard.uptime_title')}
             </CardTitle>
-            <CardDescription>Tỷ lệ duy trì kết nối Global trong 24h qua.</CardDescription>
+            <CardDescription>{t('admin.dashboard.uptime_desc')}</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -191,8 +191,8 @@ export function AdminDashboard() {
         {/* Fleet Distribution */}
         <Card className="lg:col-span-3 border-none shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg font-bold">Phân Bổ Robot (Fleet)</CardTitle>
-            <CardDescription>Trạng thái kỹ thuật toàn đội hình.</CardDescription>
+            <CardTitle className="text-lg font-bold">{t('admin.dashboard.fleet_distribution')}</CardTitle>
+            <CardDescription>{t('admin.dashboard.fleet_desc')}</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px] flex items-center justify-center relative">
             <ResponsiveContainer width="100%" height="100%">
@@ -235,29 +235,29 @@ export function AdminDashboard() {
             <CardHeader>
                <CardTitle className="flex items-center gap-2 text-white">
                   <Settings className="h-5 w-5 text-indigo-400" />
-                  Hạ Tầng Lõi
+                  {t('admin.dashboard.infrastructure_title')}
                </CardTitle>
-               <CardDescription className="text-slate-400">Trạng thái kết nối nền tảng.</CardDescription>
+               <CardDescription className="text-slate-400">{t('admin.dashboard.infrastructure_desc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/50">
                   <div className="flex items-center gap-3">
                      <Zap className="h-4 w-4 text-amber-400" />
-                     <span className="text-sm font-medium">Performance Mode</span>
+                     <span className="text-sm font-medium">{t('admin.dashboard.performance_mode')}</span>
                   </div>
                   <Badge className="bg-indigo-500 hover:bg-indigo-600 border-none">Turbo</Badge>
                </div>
                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/50">
                   <div className="flex items-center gap-3">
                      <Globe className="h-4 w-4 text-blue-400" />
-                     <span className="text-sm font-medium">Gateway Node</span>
+                     <span className="text-sm font-medium">{t('admin.dashboard.gateway_node')}</span>
                   </div>
                   <Badge variant="outline" className="text-blue-300 border-blue-500/30">Singapore-01</Badge>
                </div>
                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/50">
                   <div className="flex items-center gap-3">
                      <Lock className="h-4 w-4 text-emerald-400" />
-                     <span className="text-sm font-medium">SSL Encryption</span>
+                     <span className="text-sm font-medium">{t('admin.dashboard.ssl_encryption')}</span>
                   </div>
                   <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">TLS 1.3</Badge>
                </div>
@@ -270,7 +270,7 @@ export function AdminDashboard() {
                <div>
                   <CardTitle className="flex items-center gap-2">
                      <History className="h-5 w-5 text-indigo-500" />
-                     Bản Tin Hệ Thống (Audit Logs)
+                     {t('admin.dashboard.audit_logs_title')}
                   </CardTitle>
                </div>
                <Badge variant="secondary" className="font-bold text-[10px] uppercase tracking-wider px-2.5 py-1">Realtime Feed</Badge>

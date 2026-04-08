@@ -70,7 +70,7 @@ export const useAuthStore = create<AuthState>()(
 
                     const user: User = {
                         id: loginResponse.id.toString(),
-                        name: loginResponse.FullName || loginResponse.email,
+                        name: (loginResponse.fullName || loginResponse.FullName) || loginResponse.email,
                         email: loginResponse.email,
                         phone: loginResponse.phone,
                         // Đồng bộ role trong store với cookie `userRole` để redirect không lệch.

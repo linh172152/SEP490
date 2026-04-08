@@ -58,7 +58,7 @@ export default function SystemLogsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>#ID</TableHead>
+                  <TableHead>{t('admin.logs.table.id')}</TableHead>
                   <TableHead>{t('admin.logs.table.timestamp')}</TableHead>
                   <TableHead>{t('admin.logs.table.account') || 'Account'}</TableHead>
                   <TableHead>{t('admin.logs.table.message')}</TableHead>
@@ -70,7 +70,7 @@ export default function SystemLogsPage() {
                   <TableRow key={log.id}>
                     <TableCell className="font-mono text-xs text-muted-foreground">#{log.id}</TableCell>
                     <TableCell>{new Date(log.createdAt).toLocaleString()}</TableCell>
-                    <TableCell className="font-medium">Account #{log.accountId}</TableCell>
+                    <TableCell className="font-medium">{t('admin.logs.table.account_id_prefix')}{log.accountId}</TableCell>
                     <TableCell className="font-medium text-emerald-600">{log.action}</TableCell>
                     <TableCell>{log.targetEntity}</TableCell>
                   </TableRow>

@@ -20,6 +20,7 @@ export interface RegisterDTO {
   password: string;
   role: string;
   gender: string;
+  roomId?: number;
 }
 
 export interface VerifyOtpRequest {
@@ -173,17 +174,22 @@ export interface ExerciseSessionResponse extends ExerciseSessionRequest {
   robotName: string;
 }
 
+export type ExerciseSession = ExerciseSessionResponse;
+
 // Exercise Script Types
 export interface ExerciseScriptRequest {
   name: string;
   description: string;
   durationMinutes: number;
   difficultyLevel: string;
+  uploadScript: string;
 }
 
 export interface ExerciseScriptResponse extends ExerciseScriptRequest {
   id: number;
 }
+
+export type ExerciseScript = ExerciseScriptResponse;
 
 // Elderly Profile Types
 export interface ElderlyProfileRequest {
@@ -214,16 +220,20 @@ export interface CaregiverProfileResponse extends CaregiverProfileRequest {
 // Account Response from BE
 export interface AccountResponse {
   id: number;
-  FullName: string;
+  fullName: string;     // standard camelCase
+  FullName?: string;    // fallback for PascalCase from some BE versions
   gender: string;
+  Gender?: string;
   email: string;
   phone: string;
   token: string;
   status: string;
+  deleted?: boolean;    // optional status flag
   message?: string;
   verified?: string;
   createdAt: string;
   role?: any;
+  roomId?: number;
 }
 
 // Alert Notification Types

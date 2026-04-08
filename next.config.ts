@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'https://sep490-be-3.onrender.com/api/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

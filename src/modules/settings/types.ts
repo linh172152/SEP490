@@ -1,4 +1,4 @@
-export type RoleType = 'doctor' | 'caregiver' | 'admin' | 'family';
+export type RoleType = 'doctor' | 'caregiver' | 'admin' | 'family' | 'manager';
 
 export interface AlertNotificationConfig {
     email: boolean;

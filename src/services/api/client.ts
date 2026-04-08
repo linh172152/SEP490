@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://sep490-be-3.onrender.com";
+const API_BASE_URL = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_API_BASE_URL || "https://sep490-be-3.onrender.com");
 const BASE_URL = API_BASE_URL.replace(/\/+$/, "");
 // If baseURL already ends with `/api` and endpoint also starts with `/api`,
 // we'll get double path like `/api/api/login`.
@@ -29,7 +29,7 @@ export class ApiClient {
       headers: {
         "Content-Type": "application/json",
       },
-      timeout: 10000,
+      timeout: 40000,
     });
 
     // Add request interceptor for authentication
@@ -39,10 +39,6 @@ export class ApiClient {
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
-        // 👉 DEBUG: Chụp ảnh dữ liệu thực tế tại đây
-        console.log(`🚀 [DIAGNOSTIC] API POST REQUEST to ${config.url}`);
-        console.log(`📦 PAYLOAD SECURE CHECK:`, JSON.parse(JSON.stringify(config.data)));
-        
         return config;
       },
       (error) => {

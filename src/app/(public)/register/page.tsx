@@ -31,11 +31,13 @@ import {
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from '@/components/ui/alert-dialog';
 
 const formSchema = z.object({
-  name: z.string().min(2, 'Tên ít nhất 2 ký tự.'),
+  name: z.string().min(2, 'Họ tên ít nhất 2 ký tự.'),
   email: z.string().email('Email không hợp lệ.'),
-  phone: z.string().regex(/^(84|0[3|5|7|8|9])+([0-9]{8})\b/, 'Số điện thoại VN không hợp lệ (10 số, bắt đầu 0[3|5|7|8|9]).'),
+  phone: z.string().regex(/^(84|0[3|5|7|8|9])\d{8}$/, 'Số điện thoại VN không hợp lệ (10 số, bắt đầu 0[3|5|7|8|9] hoặc 84).'),
   password: z.string().min(6, 'Mật khẩu ít nhất 6 ký tự.'),
-  gender: z.enum(['Male', 'Female']),
+  gender: z.union([z.literal('Male'), z.literal('Female'), z.literal('Other')], {
+    message: 'Vui lòng chọn giới tính',
+  }),
 });
 
 export default function RegisterPage() {
@@ -55,7 +57,7 @@ export default function RegisterPage() {
       email: '',
       phone: '',
       password: '',
-      gender: undefined,
+      gender: '' as any,
     },
   });
 
@@ -67,15 +69,16 @@ export default function RegisterPage() {
         email: values.email,
         phone: values.phone,
         password: values.password,
-        role: 'familymember',
+        role: 'FAMILYMEMBER',
         gender: values.gender,
       });
       
       toast.success('Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP.');
       setRegisteredEmail(values.email);
       setShowOtpDialog(true);
-    } catch (error: unknown) {
-      toast.error((error as Error).message || 'Tạo tài khoản thất bại.');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Tạo tài khoản thất bại.';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -176,6 +179,7 @@ export default function RegisterPage() {
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="gender"

@@ -90,7 +90,7 @@ export function SettingsModule({ role }: SettingsModuleProps) {
           {activeTab === 'profile' && 
              <ProfileSection settings={settings} capabilities={capabilities} updateProfile={updateProfile} isSaving={isSaving} />
           }
-          {activeTab === 'notifications' && 
+          {activeTab === 'notifications' && capabilities.canAccessNotifications && 
              <NotificationSection settings={settings} updateNotifications={updateNotifications} isSaving={isSaving} />
           }
           {activeTab === 'preferences' && 
@@ -105,10 +105,10 @@ export function SettingsModule({ role }: SettingsModuleProps) {
           {activeTab === 'role' && 
              <RoleAccessSection capabilities={capabilities} />
           }
-          {activeTab === 'data' && 
+          {activeTab === 'data' && capabilities.canAccessDataExport && 
              <DataExportSection />
           }
-          {activeTab === 'audit' && 
+          {activeTab === 'audit' && capabilities.canAccessAuditLogs && 
              <AuditLogSection capabilities={capabilities} auditLogs={auditLogs} />
           }
         </div>

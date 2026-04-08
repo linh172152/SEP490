@@ -36,10 +36,10 @@ export function RoleAccessSection({ capabilities }: RoleAccessSectionProps) {
   }
 
   const roleDefinitions = [
-    { role: 'Administrator', access: 'Unrestricted', users: 3 },
-    { role: 'Doctor', access: 'Clinical + Read/Write', users: 15 },
-    { role: 'Caregiver', access: 'Standard Operating', users: 42 },
-    { role: 'Family Member', access: 'Read-only (Filtered)', users: 120 },
+    { role: 'ADMINISTRATOR', access: 'Unrestricted', users: 3 },
+    { role: 'DOCTOR', access: 'Clinical + Read/Write', users: 15 },
+    { role: 'CAREGIVER', access: 'Standard Operating', users: 42 },
+    { role: 'FAMILYMEMBER', access: 'Read-only (Filtered)', users: 120 },
   ];
 
   return (

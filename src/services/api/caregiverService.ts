@@ -6,16 +6,16 @@ import {
 
 class CaregiverService {
   async getAll(): Promise<CaregiverProfileResponse[]> {
-    return apiClient.get<CaregiverProfileResponse[]>("/caregiver-profiles");
+    return apiClient.get<CaregiverProfileResponse[]>("/api/caregiver-profiles");
   }
 
   async getById(id: number): Promise<CaregiverProfileResponse> {
-    return apiClient.get<CaregiverProfileResponse>(`/caregiver-profiles/${id}`);
+    return apiClient.get<CaregiverProfileResponse>(`/api/caregiver-profiles/${id}`);
   }
 
   async create(data: CaregiverProfileRequest): Promise<CaregiverProfileResponse> {
     return apiClient.post<CaregiverProfileResponse>(
-      "/caregiver-profiles",
+      "/api/caregiver-profiles",
       data
     );
   }
@@ -25,13 +25,13 @@ class CaregiverService {
     data: CaregiverProfileRequest
   ): Promise<CaregiverProfileResponse> {
     return apiClient.put<CaregiverProfileResponse>(
-      `/caregiver-profiles/${id}`,
+      `/api/caregiver-profiles/${id}`,
       data
     );
   }
 
   async delete(id: number): Promise<void> {
-    return apiClient.delete<void>(`/caregiver-profiles/${id}`);
+    return apiClient.delete<void>(`/api/caregiver-profiles/${id}`);
   }
 }
 

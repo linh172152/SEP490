@@ -34,6 +34,7 @@ function getRolePath(role: string): string {
     // values used in FE middleware cookie
     admin: 'admin',
     manager: 'manager',
+
     caregiver: 'caregiver',
     family: 'family',
     elderly: 'family',

@@ -6,11 +6,11 @@ export interface LoginRequest {
 
 export interface RegisterRequest {
   fullName: string;
-  email?: string;
-  phone?: string;
-  password: string;
-  role: "ElderlyUser" | "Caregiver" | "FamilyMember" | "MANAGER" | "Administrator";
   gender: string;
+  email: string;
+  phone: string;
+  password: string;
+  role: "ELDERLYUSER" | "CAREGIVER" | "FAMILYMEMBER" | "MANAGER" | "ADMINISTRATOR" | string;
 }
 
 export interface RegisterDTO {
@@ -219,13 +219,15 @@ export interface CaregiverProfileResponse extends CaregiverProfileRequest {
 export interface AccountResponse {
   id: number;
   FullName: string;
-  Gender: string;
+  gender: string;
   email: string;
   phone: string;
   token: string;
   status: string;
+  message?: string;
+  verified?: string;
   createdAt: string;
-  role?: string;
+  role?: any;
 }
 
 // Alert Notification Types

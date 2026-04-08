@@ -16,7 +16,10 @@ export function middleware(request: NextRequest) {
 
         // Validate role-based access
         if (path.startsWith('/dashboard/admin') && !role?.includes('ADMIN')) {
-            return NextResponse.redirect(new URL('/unauthorized', request.url));
+            return NextResponse.redirect(new URL(`/unauthorized?reason=admin_required&role=${role}&path=${path}`, request.url));
+        }
+        if (path.startsWith('/dashboard/manager') && !role?.includes('MANAGER') && !role?.includes('ADMIN')) {
+            return NextResponse.redirect(new URL(`/unauthorized?reason=manager_required&role=${role}&path=${path}`, request.url));
         }
         if (path.startsWith('/dashboard/manager') && !role?.includes('MANAGER')) {
             return NextResponse.redirect(new URL('/unauthorized', request.url));

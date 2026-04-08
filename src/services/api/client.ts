@@ -23,12 +23,13 @@ export class ApiClient {
   private client: AxiosInstance;
 
   constructor() {
+    console.log("🌐 API Initialized with Base URL:", API_BASE_URL);
     this.client = axios.create({
       baseURL: API_BASE_URL,
       headers: {
         "Content-Type": "application/json",
       },
-      timeout: 30000,
+      timeout: 10000,
     });
 
     // Add request interceptor for authentication
@@ -38,10 +39,10 @@ export class ApiClient {
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
-        // Debug logging
-        if (config.data) {
-          console.log(`📤 API Request: ${config.method?.toUpperCase()} ${config.url}`, config.data);
-        }
+        // 👉 DEBUG: Chụp ảnh dữ liệu thực tế tại đây
+        console.log(`🚀 [DIAGNOSTIC] API POST REQUEST to ${config.url}`);
+        console.log(`📦 PAYLOAD SECURE CHECK:`, JSON.parse(JSON.stringify(config.data)));
+        
         return config;
       },
       (error) => {
@@ -57,11 +58,19 @@ export class ApiClient {
       },
       (error: AxiosError) => {
         // Log error details
+        const isNetworkError = !error.response;
+        
         console.error(`❌ API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, {
+          type: isNetworkError ? "NETWORK_OR_TIMEOUT_OR_CORS" : "SERVER_RESPONSE_ERROR",
           status: error.response?.status,
           statusText: error.response?.statusText,
           data: error.response?.data,
+          message: error.message
         });
+
+        if (isNetworkError) {
+          console.warn("💡 Gợi ý: Kiểm tra xem Server Render có đang 'ngủ' (Cold Start) không, hoặc kiểm tra cấu hình CORS tại Backend.");
+        }
         
         // Handle specific error cases
         if (error.response?.status === 401) {
@@ -74,7 +83,7 @@ export class ApiClient {
 
   private getAuthToken(): string | null {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("authToken");
+      return localStorage.getItem("accessToken");
     }
     return null;
   }
@@ -82,7 +91,7 @@ export class ApiClient {
   private handleUnauthorized(): void {
     // Clear auth and redirect to login
     if (typeof window !== "undefined") {
-      localStorage.removeItem("authToken");
+      localStorage.removeItem("accessToken");
       window.location.href = "/login";
     }
   }
@@ -91,7 +100,10 @@ export class ApiClient {
     const errorData = error.response?.data;
     let message = "An error occurred";
 
-    if (typeof errorData === "string" && errorData.length > 0) {
+    if (!error.response) {
+      if (error.code === 'ECONNABORTED') message = "Kết nối quá hạn (Timeout). Máy chủ có thể đang bị quá tải.";
+      else message = "Không thể kết nối tới Server (Network Error/CORS). Vui lòng kiểm tra lại mạng hoặc liên hệ team BE.";
+    } else if (typeof errorData === "string" && errorData.length > 0) {
       message = errorData;
     } else if (errorData && typeof errorData === "object" && "message" in (errorData as any)) {
       message = (errorData as any).message;
@@ -156,13 +168,13 @@ export class ApiClient {
 
   setAuthToken(token: string): void {
     if (typeof window !== "undefined") {
-      localStorage.setItem("authToken", token);
+      localStorage.setItem("accessToken", token);
     }
   }
 
   clearAuthToken(): void {
     if (typeof window !== "undefined") {
-      localStorage.removeItem("authToken");
+      localStorage.removeItem("accessToken");
     }
   }
 }

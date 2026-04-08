@@ -52,6 +52,10 @@
     "user_mgt": "Người Thân",
     "reminders": "Lịch Nhắc Nhở",
     "system_logs": "Nhật Ký Hệ Thống",
+    "usage_analytics": "Phân Tích Sử Dụng",
+    "data_security": "Dữ Liệu & Bảo Mật",
+    "software_updates": "Cập Nhật Phần Mềm",
+    "audit_logs": "Nhật Ký Hành Động",
     "settings": "Cài Đặt",
     "logout": "Đăng Xuất"
   },

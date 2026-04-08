@@ -171,7 +171,7 @@ export function ExerciseHistory() {
                         </div>
                         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                           <Clock className="h-2.5 w-2.5 opacity-60" />
-                          {calculateDuration(session.startedAt, session.completedAt)}
+                          {calculateDuration(session.startedAt, session.completedAt ?? "")}
                         </div>
                       </div>
                     </TableCell>

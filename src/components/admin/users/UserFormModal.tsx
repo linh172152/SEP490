@@ -30,7 +30,7 @@ const formSchema = z.object({
   role: z.string().min(1, "Please select a role"),
   gender: z.string().min(1, "Please select gender"),
   status: z.string().optional(),
-  roomId: z.coerce.number().optional()
+  roomId: z.number().optional()
 });
 
 type FormValues = z.infer<typeof formSchema>;

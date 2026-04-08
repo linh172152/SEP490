@@ -37,7 +37,7 @@ import { useI18nStore } from "@/store/useI18nStore";
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   description: z.string().min(5, "Description must be at least 5 characters"),
-  durationMinutes: z.coerce.number().min(1, "Duration must be at least 1 minute"),
+  durationMinutes: z.number().min(1, "Duration must be at least 1 minute"),
   difficultyLevel: z.string().min(1, "Please select a difficulty level"),
   uploadScript: z.string().min(1, "Script content is required"),
 });

@@ -39,8 +39,8 @@ import Link from 'next/link';
 // Schema for the form
 const elderlyFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  age: z.coerce.number().min(1, 'Age is required'),
-  gender: z.union([z.literal('MALE'), z.literal('FEMALE'), z.literal('OTHER')]),
+  age: z.number().min(1, 'Age is required'),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER']),
   condition: z.string().min(1, 'Medical condition is required'),
   address: z.string().min(1, 'Address is required'),
   emergencyContact: z.string().min(1, 'Emergency contact is required'),

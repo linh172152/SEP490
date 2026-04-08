@@ -11,12 +11,12 @@ export const SETTINGS_CAPABILITIES: Record<RoleType, RoleCapabilities> = {
         canAccessDataExport: false,
     },
     doctor: {
-        canEditRiskThreshold: true,
+        canEditRiskThreshold: false,
         canManageCaregivers: true,
         canAccessAuditLogs: false,
         canAccessRoleAccess: false,
         canAccessProfessionalProfile: true,
-        canAccessNotifications: true,
+        canAccessNotifications: false,
         canAccessDataExport: true,
     },
     caregiver: {
@@ -25,7 +25,7 @@ export const SETTINGS_CAPABILITIES: Record<RoleType, RoleCapabilities> = {
         canAccessAuditLogs: false,
         canAccessRoleAccess: false,
         canAccessProfessionalProfile: false,
-        canAccessNotifications: true,
+        canAccessNotifications: false,
         canAccessDataExport: false,
     },
     family: {
@@ -34,7 +34,16 @@ export const SETTINGS_CAPABILITIES: Record<RoleType, RoleCapabilities> = {
         canAccessAuditLogs: false,
         canAccessRoleAccess: false,
         canAccessProfessionalProfile: false,
-        canAccessNotifications: true,
+        canAccessNotifications: false,
         canAccessDataExport: false,
+    },
+    manager: {
+        canEditRiskThreshold: false,
+        canManageCaregivers: true,
+        canAccessAuditLogs: false,
+        canAccessRoleAccess: false,
+        canAccessProfessionalProfile: false,
+        canAccessNotifications: false,
+        canAccessDataExport: true,
     }
 };

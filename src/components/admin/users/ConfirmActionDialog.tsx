@@ -33,18 +33,18 @@ export function ConfirmActionDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{title || "Are you sure?"}</AlertDialogTitle>
+          <AlertDialogTitle>{title || t('dialogs.confirm_title')}</AlertDialogTitle>
           <AlertDialogDescription>
-            {description || "This action cannot be undone."}
+            {description || t('dialogs.confirm_desc')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>{t("sidebar.cancel") || "Cancel"}</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading}>{t("common.cancel")}</AlertDialogCancel>
           <AlertDialogAction onClick={(e) => {
             e.preventDefault();
             onConfirm();
           }} disabled={isLoading}>
-            {isLoading ? "Processing..." : "Confirm"}
+            {isLoading ? t('common.processing') : t('common.confirm')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

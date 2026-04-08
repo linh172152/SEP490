@@ -9,17 +9,17 @@ import {
 class ExerciseService {
   // Exercise Sessions
   async getAllSessions(): Promise<ExerciseSessionResponse[]> {
-    return apiClient.get<ExerciseSessionResponse[]>("/exercise-sessions");
+    return apiClient.get<ExerciseSessionResponse[]>("/api/exercise-sessions");
   }
 
   async getSessionById(id: number): Promise<ExerciseSessionResponse> {
-    return apiClient.get<ExerciseSessionResponse>(`/exercise-sessions/${id}`);
+    return apiClient.get<ExerciseSessionResponse>(`/api/exercise-sessions/${id}`);
   }
 
   async createSession(
     data: ExerciseSessionRequest
   ): Promise<ExerciseSessionResponse> {
-    return apiClient.post<ExerciseSessionResponse>("/exercise-sessions", data);
+    return apiClient.post<ExerciseSessionResponse>("/api/exercise-sessions", data);
   }
 
   async updateSession(
@@ -27,28 +27,28 @@ class ExerciseService {
     data: ExerciseSessionRequest
   ): Promise<ExerciseSessionResponse> {
     return apiClient.put<ExerciseSessionResponse>(
-      `/exercise-sessions/${id}`,
+      `/api/exercise-sessions/${id}`,
       data
     );
   }
 
   async deleteSession(id: number): Promise<void> {
-    return apiClient.delete<void>(`/exercise-sessions/${id}`);
+    return apiClient.delete<void>(`/api/exercise-sessions/${id}`);
   }
 
   // Exercise Scripts
   async getAllScripts(): Promise<ExerciseScriptResponse[]> {
-    return apiClient.get<ExerciseScriptResponse[]>("/exercise-scripts");
+    return apiClient.get<ExerciseScriptResponse[]>("/api/exercise-scripts");
   }
 
   async getScriptById(id: number): Promise<ExerciseScriptResponse> {
-    return apiClient.get<ExerciseScriptResponse>(`/exercise-scripts/${id}`);
+    return apiClient.get<ExerciseScriptResponse>(`/api/exercise-scripts/${id}`);
   }
 
   async createScript(
     data: ExerciseScriptRequest
   ): Promise<ExerciseScriptResponse> {
-    return apiClient.post<ExerciseScriptResponse>("/exercise-scripts", data);
+    return apiClient.post<ExerciseScriptResponse>("/api/exercise-scripts", data);
   }
 
   async updateScript(
@@ -56,13 +56,13 @@ class ExerciseService {
     data: ExerciseScriptRequest
   ): Promise<ExerciseScriptResponse> {
     return apiClient.put<ExerciseScriptResponse>(
-      `/exercise-scripts/${id}`,
+      `/api/exercise-scripts/${id}`,
       data
     );
   }
 
   async deleteScript(id: number): Promise<void> {
-    return apiClient.delete<void>(`/exercise-scripts/${id}`);
+    return apiClient.delete<void>(`/api/exercise-scripts/${id}`);
   }
 }
 

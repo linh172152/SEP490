@@ -1,6 +1,10 @@
 import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://sep490-be-3.onrender.com";
+const API_BASE_URL = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_API_BASE_URL || "https://sep490-be-3.onrender.com");
+// Log only on server or in dev mode to avoid cluttering production console too much
+if (typeof window === "undefined") {
+  console.log("🌐 Server Mode: API Base URL set to", API_BASE_URL);
+}
 const BASE_URL = API_BASE_URL.replace(/\/+$/, "");
 // If baseURL already ends with `/api` and endpoint also starts with `/api`,
 // we'll get double path like `/api/api/login`.
@@ -29,7 +33,7 @@ export class ApiClient {
       headers: {
         "Content-Type": "application/json",
       },
-      timeout: 10000,
+      timeout: 40000,
     });
 
     // Add request interceptor for authentication
@@ -40,11 +44,9 @@ export class ApiClient {
           config.headers.Authorization = `Bearer ${token}`;
         }
         // 👉 DEBUG: Chụp ảnh dữ liệu thực tế tại đây
-        console.log(`🚀 [DIAGNOSTIC] API ${config.method?.toUpperCase()} REQUEST to ${config.url}`);
-        if (config.data) {
-          console.log(`📦 PAYLOAD SECURE CHECK:`, JSON.parse(JSON.stringify(config.data)));
-        }
-        
+        console.log(`🚀 [DIAGNOSTIC] API POST REQUEST to ${config.url}`);
+        console.log(`📦 PAYLOAD SECURE CHECK:`, JSON.parse(JSON.stringify(config.data)));
+
         return config;
       },
       (error) => {
@@ -63,7 +65,7 @@ export class ApiClient {
         const isNetworkError = !error.response;
         const method = error.config?.method?.toUpperCase() || 'UNKNOWN';
         const url = error.config?.url || 'UNKNOWN URL';
-        
+
         console.error(`❌ API Error: ${method} ${url}`, {
           type: isNetworkError ? "NETWORK_OR_TIMEOUT_OR_CORS" : "SERVER_RESPONSE_ERROR",
           status: error.response?.status,
@@ -76,7 +78,7 @@ export class ApiClient {
         if (isNetworkError) {
           console.warn("💡 Gợi ý: Kiểm tra xem Server Render có đang 'ngủ' (Cold Start) không, hoặc kiểm tra cấu hình CORS tại Backend.");
         }
-        
+
         // Handle specific error cases
         if (error.response?.status === 401) {
           this.handleUnauthorized();

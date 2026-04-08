@@ -7,7 +7,7 @@ type Language = 'en' | 'vi';
 interface I18nState {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 const dictionaries: Record<Language, any> = {
@@ -24,7 +24,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
     }
     set({ language: lang });
   },
-  t: (key) => {
+  t: (key, params) => {
     const keys = key.split('.');
     let value = dictionaries[get().language];
     
@@ -40,10 +40,19 @@ export const useI18nStore = create<I18nState>((set, get) => ({
         if (fallbackValue === undefined) break;
         fallbackValue = fallbackValue[k];
       }
-      return (typeof fallbackValue === 'string' ? fallbackValue : key) as string;
+      value = fallbackValue;
     }
     
-    return typeof value === 'string' ? value : key;
+    let result = (typeof value === 'string' ? value : key) as string;
+
+    // Handle parameter replacement
+    if (params && typeof result === 'string') {
+      Object.entries(params).forEach(([k, v]) => {
+        result = result.replace(new RegExp(`{{${k}}}`, 'g'), String(v));
+      });
+    }
+
+    return result;
   },
 }));
 

@@ -33,6 +33,10 @@ class CaregiverService {
   async delete(id: number): Promise<void> {
     return apiClient.delete<void>(`/api/caregiver-profiles/${id}`);
   }
+
+  async getByAccountId(accountId: number): Promise<CaregiverProfileResponse[]> {
+    return apiClient.get<CaregiverProfileResponse[]>(`/api/caregiver-profiles/account/${accountId}`);
+  }
 }
 
 export const caregiverService = new CaregiverService();

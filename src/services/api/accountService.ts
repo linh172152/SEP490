@@ -31,7 +31,8 @@ export const accountService = {
       email: data.email,
       phone: data.phone,
       password: data.password,
-      role: data.role
+      role: data.role,
+      roomId: data.roomId
     };
     return apiClient.post<AccountResponse>("/api/admin/create-account", payload);
   },
@@ -44,7 +45,8 @@ export const accountService = {
       phone: data.phone,
       password: data.password,
       role: data.role,
-      deleted: data.deleted // NEW: Boolean flag from BE
+      deleted: data.deleted, // NEW: Boolean flag from BE
+      roomId: data.roomId
     };
 
     // Only send fields that are not undefined

@@ -10,6 +10,7 @@ interface ReminderState {
   createReminder: (data: ReminderRequest) => Promise<ReminderResponse>;
   updateReminder: (id: number, data: ReminderRequest) => Promise<ReminderResponse>;
   deleteReminder: (id: number) => Promise<void>;
+  fetchReminderById: (id: number) => Promise<ReminderResponse>;
   clearError: () => void;
 }
 
@@ -68,6 +69,18 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
       }));
     } catch (error: any) {
       set({ error: error.message || 'Failed to delete reminder', isLoading: false });
+      throw error;
+    }
+  },
+
+  fetchReminderById: async (id: number) => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await reminderService.getById(id);
+      set({ isLoading: false });
+      return response;
+    } catch (error: any) {
+      set({ error: error.message || 'Failed to fetch reminder detail', isLoading: false });
       throw error;
     }
   },

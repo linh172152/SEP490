@@ -1,7 +1,56 @@
 {
+  "common": {
+    "save": "Lưu Thay Đổi",
+    "cancel": "Hủy",
+    "confirm": "Xác Nhận",
+    "delete": "Xóa",
+    "edit": "Chỉnh Sửa",
+    "actions": "Thao Tác",
+    "status": "Trạng Thái",
+    "loading": "Đang tải dữ liệu...",
+    "no_data": "Không tìm thấy dữ liệu.",
+    "active": "Đang Hoạt Động",
+    "inactive": "Ngưng Hoạt Động",
+    "deleted": "Đã Xóa (Soft)",
+    "processing": "Đang xử lý...",
+    "search": "Tìm kiếm...",
+    "confirm_delete": "Bạn có chắc chắn muốn xóa không?",
+    "update_success": "Cập nhật thành công!",
+    "create_success": "Tạo mới thành công!",
+    "delete_success": "Xóa thành công!",
+    "error": "Đã có lỗi xảy ra. Vui lòng thử lại.",
+    "showing": "Hiển thị",
+    "of": "trong số",
+    "results": "kết quả",
+    "prev": "Trước",
+    "next": "Tiếp theo",
+    "id": "Mã định danh",
+    "roles": {
+      "ADMINISTRATOR": "Quản trị viên",
+      "ADMIN": "Quản trị viên",
+      "MANAGER": "Quản lý",
+      "CAREGIVER": "Nhân viên chăm sóc",
+      "FAMILYMEMBER": "Người thân"
+    }
+  },
   "settings": {
     "workspace_title": "Không Gian Cài Đặt",
     "workspace_desc": "Quản lý tùy chọn hệ thống, sở thích cá nhân và hệ thống bảo mật dựa theo quyền hạn của bạn.",
+    "profile": {
+      "title": "Tổng Quan Hồ Sơ",
+      "desc": "Quản lý thông tin cá nhân và chi tiết liên lạc của bạn.",
+      "card_title": "Thông Tin Cá Nhân",
+      "card_desc": "Cập nhật ảnh đại diện và các chi tiết cơ bản",
+      "first_name": "Tên",
+      "last_name": "Họ và tên lót",
+      "email": "Địa chỉ Email",
+      "phone": "Số điện thoại",
+      "professional_id": "Mã định danh chuyên môn / Giấy phép",
+      "department": "Khoa / Phòng ban",
+      "role_medical": "Chuyên gia Y tế",
+      "role_care": "Đội ngũ chăm sóc",
+      "save_success": "Cập nhật hồ sơ thành công"
+    },
     "audit_logs": "Nhật Ký Hoạt Động",
     "data_export": "Xuất Dữ Liệu Nhật Ký",
     "sidebar": {
@@ -46,20 +95,115 @@
     }
   },
   "sidebar": {
-    "overview": "Tổng Quan",
-    "robot_fleet": "Đội Hình Robot",
-    "service_plans": "Gói Dịch Vụ",
-    "user_mgt": "Người Thân",
-    "reminders": "Lịch Nhắc Nhở",
-    "system_logs": "Nhật Ký Hệ Thống",
-    "usage_analytics": "Phân Tích Sử Dụng",
-    "data_security": "Dữ Liệu & Bảo Mật",
-    "software_updates": "Cập Nhật Phần Mềm",
-    "audit_logs": "Nhật Ký Hành Động",
-    "settings": "Cài Đặt",
-    "logout": "Đăng Xuất"
+    "overview": "Tổng quan",
+    "staff_mgt": "Quản lý nhân viên",
+    "robot_mgt": "Quản lý Robot",
+    "robot_fleet": "Đội hình Robot",
+    "service_plans": "Gói dịch vụ",
+    "user_mgt": "Quản lý người dùng",
+    "reminders": "Lịch nhắc nhở",
+    "system_logs": "Nhật ký hệ thống",
+    "usage_analytics": "Phân tích sử dụng",
+    "ops_insights": "Phân tích vận hành",
+    "data_security": "Dữ liệu & Bảo mật",
+    "audit_logs": "Nhật ký hành động",
+    "settings": "Cài đặt",
+    "logout": "Đăng xuất"
   },
   "admin": {
+    "dashboard": {
+      "title": "Hệ Thống Quản Trị Trung Tâm",
+      "subtitle": "Giám sát hạ tầng thời gian thực & Bảo mật cấp độ doanh nghiệp.",
+      "security_title": "Bảo Mật Hệ Thống",
+      "security_status": "An Toàn",
+      "security_desc": "Không có mối đe dọa",
+      "ota_title": "Trạng Thái Robot OTA",
+      "server_load": "Tải Server (API)",
+      "server_load_low": "Thấp",
+      "storage_title": "Lưu Trữ Cơ Sở Dữ Liệu",
+      "uptime_title": "Tính Ổn Định Hệ Thống",
+      "uptime_desc": "Tỷ lệ duy trì kết nối Global trong 24h qua.",
+      "fleet_distribution": "Phân Bổ Robot (Fleet)",
+      "fleet_desc": "Trạng thái kỹ thuật toàn đội hình.",
+      "infrastructure_title": "Hạ Tầng Lõi",
+      "infrastructure_desc": "Trạng thái kết nối nền tảng.",
+      "audit_logs_title": "Bản Tin Hệ Thống (Audit Logs)",
+      "performance_mode": "Chế Độ Hiệu Suất",
+      "gateway_node": "Nút Cổng Vào",
+      "ssl_encryption": "Mã Hóa SSL"
+    },
+    "fleet": {
+      "title": "Quản Trị Đội Tàu Robot (Fleet)",
+      "subtitle": "Quản lý thông số kỹ thuật, Firmware và quyền can thiệp phần cứng toàn cục.",
+      "global_controls": "Bảng Điều Khiển Toàn Cục",
+      "camera_toggle": "Camera (Video Call)",
+      "ai_toggle": "Xử Lý AI",
+      "voice_toggle": "Giao Diện Giọng Nói",
+      "tech_inventory": "Danh Sách Kỹ Thuật (Inventory)",
+      "tech_desc": "Dữ liệu định danh và trạng thái phần cứng của toàn bộ Robot.",
+      "audit_logs": "Nhật Ký Kỹ Thuật (Admin)",
+      "no_audit_logs": "Chưa có hành động mới",
+      "important_note": "Lưu Ý Quan Trọng",
+      "important_note_desc": "Các hành động thay đổi trạng thái phần cứng và Firmware sẽ ảnh hưởng trực tiếp đến trải nghiệm thực tế của người cao tuổi.",
+      "manager_note": "Việc gán phòng được quản lý bởi Role Manager.",
+      "table": {
+        "robot_serial": "Robot & Serial",
+        "config": "Cấu Hình",
+        "location": "Room (Vị Trí)",
+        "status": "Trạng Thái"
+      },
+      "ota": {
+        "loading": "Đang đẩy Firmware qua OTA...",
+        "success": "Cập nhật thành công!",
+        "error": "Cập nhật thất bại",
+        "log_action": "Cập nhật OTA",
+        "log_details": "Cập nhật {{version}} cho Robot #{{id}}"
+      },
+      "dialogs": {
+        "confirm_delete": "Xác nhận xóa Robot?",
+        "confirm_delete_desc": "Hành động này sẽ gỡ bỏ Robot ra khỏi hệ thống. Bạn không thể hoàn tác thao tác này.",
+        "confirm_ota": "Xác nhận cập nhật Firmware mới?",
+        "confirm_ota_desc": "Hệ thống sẽ đẩy bản cập nhật {{version}} qua mạng. Robot #{{id}} sẽ khởi động lại.",
+        "toggle_warning": "Cảnh báo thay đổi toàn cục!",
+        "toggle_warning_desc": "Việc {{action}} tính năng {{feature}} sẽ áp dụng ngay lập tức cho toàn bộ các Robot đang hoạt động.",
+        "register_title": "Đăng Ký Robot Mới",
+        "edit_title": "Cập Nhật Thông Số Kỹ Thuật",
+        "register_desc": "Nhập các thông số định danh thiết bị. Mọi thay đổi sẽ được lưu vào hệ thống Audit Log.",
+        "assignment_hint": "Lưu ý kỹ thuật: Robot phải được gán cho một người cao tuổi ngay khi đăng ký để đảm bảo tính nhất quán của hệ quy trình.",
+        "assign_to_elderly": "Gán cho Người cao tuổi",
+        "select_elderly": "Chọn một người cao tuổi từ hệ thống...",
+        "robot_name": "Tên Robot",
+        "serial": "Mã Serial (S/N)",
+        "model": "Model",
+        "firmware": "Firmware",
+        "btn_register": "Đăng ký ngay",
+        "btn_save": "Lưu thay đổi",
+        "placeholder_name": "Ví dụ: CareBot Alpha"
+      },
+      "toasts": {
+        "register_success": "Đã đăng ký robot!",
+        "update_success": "Đã cập nhật!",
+        "delete_success": "Đã xóa Robot!",
+        "delete_error": "Lỗi khi xóa Robot",
+        "connect_error": "Không thể kết nối danh sách Robot"
+      },
+      "room_with_count": "{{name}} ({{count}} người)",
+      "unassigned": "Chưa gán",
+      "actions": {
+        "register": "Đăng ký Robot",
+        "edit": "Sửa thông số",
+        "delete": "Xóa Robot",
+        "toggle": "Thay đổi tính năng",
+        "ota": "Cập nhật OTA",
+        "details": {
+          "register": "Thêm mới Robot {{name}} ({{sn}})",
+          "edit": "Cập nhật thông tin kỹ thuật Robot #{{id}}",
+          "delete": "Gỡ bỏ Robot #{{id}} khỏi hệ thống kỹ thuật",
+          "toggle": "{{action}} tính năng {{feature}}",
+          "ota": "Cập nhật v{{version}} cho Robot #{{id}}"
+        }
+      }
+    },
     "overview": {
       "title": "Tổng Quan Hệ Thống",
       "welcome": "Chào Quản Trị Viên! Đây là những gì đang diễn ra hôm nay.",
@@ -124,15 +268,34 @@
         "inactive": "Ngừng nhận",
         "no_data": "Chưa có gói dịch vụ nào được cấu hình.",
         "confirm_delete": "Bạn có chắc chắn muốn xóa gói dịch vụ này không?"
+      },
+      "modal": {
+        "create_title": "Tạo Gói Dịch Vụ Mới",
+        "edit_title": "Chỉnh Sửa Gói Dịch Vụ",
+        "fields": {
+          "name": "Tên gói dịch vụ",
+          "description": "Mô tả chi tiết",
+          "level": "Cấp độ (VD: Cơ bản, Pro)",
+          "price": "Giá cơ bản ($)",
+          "status_active": "Kích hoạt gói dịch vụ"
+        }
+      },
+      "toasts": {
+        "create_success": "Đã tạo gói dịch vụ thành công",
+        "update_success": "Đã cập nhật gói dịch vụ thành công",
+        "delete_success": "Đã gỡ bỏ gói dịch vụ khỏi hệ thống",
+        "error_generic": "Đồng bộ với Backend thất bại"
       }
     },
     "logs": {
       "title": "Nhật Ký Hệ Thống",
       "desc": "Theo dõi sự kiện hệ thống, dấu vết kiểm toán và thông tin giao tiếp robot-máy chủ.",
       "table": {
+        "id": "#ID",
         "timestamp": "Thời gian",
         "level": "Mức độ",
         "account": "Người thực hiện",
+        "account_id_prefix": "Tài khoản #",
         "source": "Nguồn",
         "message": "Chi tiết hoạt động",
         "details": "Mô tả",
@@ -157,7 +320,8 @@
     },
     "users": {
       "title": "Quản Lý Tài Khoản",
-      "desc": "Quản trị danh sách tài khoản Quản trị, Bác sĩ và Người chăm sóc.",
+      "subtitle": "Quản trị danh sách tài khoản Quản trị, Quản lý và Nhân viên chăm sóc.",
+      "search_placeholder": "Tìm kiếm theo email hoặc tên...",
       "create_btn": "Tạo Tài Khoản",
       "table": {
         "name": "Họ và Tên",
@@ -167,6 +331,17 @@
         "last_login": "Đăng nhập cuối",
         "actions": "Thao tác",
         "no_data": "Không tìm thấy tài khoản nào khớp với tiêu chí."
+      },
+      "status": {
+        "active": "Đang hoạt động",
+        "deleted": "Đã xóa"
+      },
+      "toasts": {
+        "fetch_error": "Không thể tải danh sách tài khoản từ Backend",
+        "update_success": "Cập nhật tài khoản thành công",
+        "create_success": "Tạo tài khoản thành công",
+        "delete_success": "Đã xóa mềm tài khoản",
+        "error_generic": "Thao tác thất bại. Backend có thể chưa hỗ trợ tính năng này."
       }
     }
   },
@@ -216,6 +391,146 @@
         "active": "Đang bật",
         "inactive": "Đã tắt"
       }
+    }
+  },
+  "manager": {
+    "dashboard": {
+      "title": "Quản Lý Vận Hành",
+      "subtitle": "Theo dõi hiệu suất Robot, dịch vụ và phân tích hành vi người dùng.",
+      "robot_group": "Nhóm Robot",
+      "active_robots": "Robot Hoạt Động",
+      "active_subscriptions": "Gói Đang Sử Dụng",
+      "maintenance_required": "Cần Bảo Trì",
+      "usage_trends": "Xu Hướng Sử Dụng Robot",
+      "usage_desc": "Thống kê số lượt tương tác và thời gian hoạt động của Robot theo tuần.",
+      "interaction_efficiency": "Hiệu Quả Tương Tác",
+      "interaction_desc": "Phân tích mức độ gắn kết của người dùng với CareBot.",
+      "completion_rate": "Tỷ lệ hoàn thành nhiệm vụ",
+      "voice_feedback": "Phản hồi giọng nói chuẩn",
+      "charging_success": "Tự động sạc thành công",
+      "allocated_fleet": "Đội Robot Phân Bổ",
+      "allocated_fleet_desc": "Danh sách Robot đang được Manager quản lý.",
+      "available_packages": "Gói Dịch Vụ Khả Dụng",
+      "available_packages_desc": "Các cấu hình dịch vụ Manager đang điều phối."
+    },
+    "analytics": {
+      "title": "Phân Tích Sử Dụng",
+      "subtitle": "Mô-đun đang trong quá trình phát triển hệ thống.",
+      "placeholder_desc": "Dữ liệu tương tác và hiệu suất Robot sẽ được hiển thị tại đây sau khi tích hợp API Analytics."
+    },
+    "staff": {
+      "title": "Quản lý nhân viên",
+      "subtitle": "Quản lý danh sách nhân viên chăm sóc và phân công Room trực thuộc.",
+      "add_btn": "Thêm Caregiver mới",
+      "list_title": "Danh sách nhân viên",
+      "unassigned_room": "Chưa gán Room",
+      "room_note": "* Mỗi Caregiver chỉ phụ trách 1 Room.",
+      "room_prefix": "Room",
+      "table": {
+        "name": "Họ và Tên",
+        "email_phone": "Email / SĐT",
+        "room": "Room phụ trách",
+        "status": "Trạng thái",
+        "actions": "Thao tác"
+      },
+      "toasts": {
+        "fetch_error": "Không thể tải danh sách nhân viên từ Backend",
+        "update_success": "Cập nhật thông tin nhân viên thành công",
+        "create_success": "Tạo tài khoản nhân viên thành công",
+        "delete_success": "Đã xóa mềm tài khoản nhân viên",
+        "permission_denied": "Truy cập bị từ chối. Vui lòng liên hệ Admin.",
+        "error_generic": "Thao tác thất bại."
+      }
+    },
+    "robots": {
+      "subtitle": "Giám sát hoạt động của Robot.",
+      "admin_note": "(Quản trị kỹ thuật bởi Admin)",
+      "no_data_desc": "Hiện tại chưa có robot nào được đăng ký trong hệ thống."
+    }
+  },
+  "user_modal": {
+    "edit_title": "Chỉnh Sửa Tài Khoản",
+    "create_title": "Tạo Tài Khoản Mới",
+    "full_name": "Họ và Tên",
+    "email": "Địa chỉ Email",
+    "phone": "Số Điện Thoại",
+    "password": "Mật Khẩu",
+    "new_password": "Mật Khẩu Mới (Tùy chọn)",
+    "role": "Vai Trò",
+    "gender": "Giới Tính",
+    "status": "Trạng Thái",
+    "room_assignment": "Room Phụ Trách",
+    "room_placeholder": "Chọn Room",
+    "room_note": "* Mỗi Caregiver chỉ phụ trách 1 Room.",
+    "cancel": "Hủy",
+    "save": "Lưu Thay Đổi",
+    "saving": "Đang lưu...",
+    "placeholders": {
+      "name": "VD: Nguyễn Văn A",
+      "email": "example@domain.com",
+      "phone": "Nhập số điện thoại",
+      "password": "••••••",
+      "role": "Chọn vai trò",
+      "gender": "Chọn giới tính"
+    },
+    "gender_options": {
+      "male": "Nam",
+      "female": "Nữ",
+      "other": "Khác"
+    }
+  },
+  "dialogs": {
+    "confirm_title": "Bạn có chắc chắn không?",
+    "confirm_desc": "Hành động này không thể hoàn tác.",
+    "soft_delete_title": "Xác nhận xóa tài khoản",
+    "soft_delete_desc": "Bạn có chắc chắn muốn xóa {{name}}? Tài khoản này sẽ bị đánh dấu là đã xóa và không thể đăng nhập.",
+    "delete_confirm": "Xóa (Soft)",
+    "confirm_btn": "Xác nhận",
+    "cancel_btn": "Bỏ qua"
+  },
+  "wellness": {
+    "title": "Trung tâm Luyện tập",
+    "sidebar_label": "Luyện tập & Thể chất",
+    "subtitle": "Quản lý thư viện bài tập thể chất và theo dõi tiến trình của người cao tuổi.",
+    "library_tab": "Thư viện bài tập",
+    "history_tab": "Lịch sử hoạt động",
+    "scripts": {
+      "title": "Danh sách bài tập",
+      "add_btn": "Tạo kịch bản mới",
+      "search_placeholder": "Tìm kiếm bài tập...",
+      "table": {
+        "name": "Tên bài tập",
+        "duration": "Thời lượng",
+        "difficulty": "Độ khó",
+        "actions": "Thao tác"
+      },
+      "modal": {
+        "create_title": "Thêm bài tập mới",
+        "edit_title": "Cập nhật kịch bản",
+        "name_label": "Tên bài tập",
+        "duration_label": "Thời lượng (phút)",
+        "difficulty_label": "Mức độ khó",
+        "script_label": "Kịch bản/Mã lệnh điều khiển",
+        "script_placeholder": "Nhập mã lệnh hoặc nội dung hướng dẫn cho Robot tại đây...",
+        "desc_label": "Mô tả bài tập"
+      }
+    },
+    "history": {
+      "title": "Nhật ký luyện tập",
+      "search_placeholder": "Tìm theo tên người cao tuổi hoặc bài tập...",
+      "table": {
+        "elderly": "Người cao tuổi",
+        "exercise": "Bài tập",
+        "robot": "Robot hỗ trợ",
+        "time": "Thời gian",
+        "duration": "Thời lượng tập",
+        "feedback": "Phản hồi/Ghi chú"
+      }
+    },
+    "difficulty": {
+      "easy": "Dễ",
+      "medium": "Trung bình",
+      "hard": "Khó"
     }
   }
 }

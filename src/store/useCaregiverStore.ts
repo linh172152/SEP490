@@ -21,10 +21,9 @@ export const useCaregiverStore = create<CaregiverState>((set) => ({
   fetchProfileByAccountId: async (accountId: number) => {
     set({ isLoading: true, error: null });
     try {
-      const allProfiles = await caregiverService.getAll();
-      const profile = allProfiles.find(p => p.accountId === accountId);
-      if (profile) {
-        set({ currentProfile: profile });
+      const profile = await caregiverService.getByAccountId(accountId);
+      if (profile && profile.length > 0) {
+        set({ currentProfile: profile[0] });
       } else {
         set({ currentProfile: null });
       }

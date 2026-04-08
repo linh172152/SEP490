@@ -50,7 +50,7 @@ export default function RobotsManagePage() {
             <Bot className="h-8 w-8 text-indigo-600" /> {t('admin.robots.title')}
           </h2>
           <p className="text-sm text-muted-foreground mt-1 font-medium italic">
-             Giám sát hoạt động của Robot. <span className="text-indigo-600">(Quản trị kỹ thuật bởi Admin)</span>
+             {t('manager.robots.subtitle')} <span className="text-indigo-600">{t('manager.robots.admin_note')}</span>
           </p>
         </div>
       </div>
@@ -66,7 +66,7 @@ export default function RobotsManagePage() {
           </div>
           <h4 className="text-lg font-bold text-slate-800">{t('admin.overview.table.no_data_robots')}</h4>
           <p className="text-muted-foreground max-w-sm text-sm mt-1">
-             {t('admin.robots.no_data_desc') || 'There are no robots registered in the system yet.'}
+             {t('manager.robots.no_data_desc')}
           </p>
         </div>
       ) : (

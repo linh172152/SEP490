@@ -95,10 +95,10 @@ export function ManagerDashboard() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-             Quản Lý Vận Hành
+             {t('manager.dashboard.title')}
           </h2>
           <p className="text-muted-foreground mt-1">
-             Theo dõi hiệu suất Robot, dịch vụ và phân tích hành vi người dùng.
+             {t('manager.dashboard.subtitle')}
           </p>
         </div>
       </div>
@@ -107,7 +107,7 @@ export function ManagerDashboard() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-none shadow-sm bg-indigo-50/50 dark:bg-indigo-900/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Nhóm Robot</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('manager.dashboard.robot_group')}</CardTitle>
             <Bot className="h-4 w-4 text-indigo-600" />
           </CardHeader>
           <CardContent>
@@ -117,7 +117,7 @@ export function ManagerDashboard() {
         </Card>
         <Card className="border-none shadow-sm bg-emerald-50/50 dark:bg-emerald-900/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Robot Hoạt Động</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('manager.dashboard.active_robots')}</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
@@ -127,7 +127,7 @@ export function ManagerDashboard() {
         </Card>
         <Card className="border-none shadow-sm bg-blue-50/50 dark:bg-blue-900/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Gói Đang Sử Dụng</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('manager.dashboard.active_subscriptions')}</CardTitle>
             <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
@@ -137,7 +137,7 @@ export function ManagerDashboard() {
         </Card>
         <Card className="border-none shadow-sm bg-amber-50/50 dark:bg-amber-900/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Cần Bảo Trì</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('manager.dashboard.maintenance_required')}</CardTitle>
             <AlertCircle className="h-4 w-4 text-amber-600" />
           </CardHeader>
           <CardContent>
@@ -155,10 +155,10 @@ export function ManagerDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
                <TrendingUp className="h-5 w-5 text-indigo-500" />
-               Xu Hướng Sử Dụng Robot
+               {t('manager.dashboard.usage_trends')}
             </CardTitle>
             <CardDescription>
-               Thống kê số lượt tương tác và thời gian hoạt động của Robot theo tuần.
+               {t('manager.dashboard.usage_desc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
@@ -187,17 +187,17 @@ export function ManagerDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
                <Activity className="h-5 w-5 text-pink-500" />
-               Hiệu Quả Tương Tác
+               {t('manager.dashboard.interaction_efficiency')}
             </CardTitle>
             <CardDescription>
-               Phân tích mức độ gắn kết của người dùng với CareBot.
+               {t('manager.dashboard.interaction_desc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col justify-around h-[300px]">
              <div className="space-y-4">
                <div>
                   <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="font-medium text-muted-foreground">Tỷ lệ hoàn thành nhiệm vụ</span>
+                    <span className="font-medium text-muted-foreground">{t('manager.dashboard.completion_rate')}</span>
                     <span className="font-bold">92%</span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-2">
@@ -206,7 +206,7 @@ export function ManagerDashboard() {
                </div>
                <div>
                   <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="font-medium text-muted-foreground">Phản hồi giọng nói chuẩn</span>
+                    <span className="font-medium text-muted-foreground">{t('manager.dashboard.voice_feedback')}</span>
                     <span className="font-bold">85%</span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-2">
@@ -215,7 +215,7 @@ export function ManagerDashboard() {
                </div>
                <div>
                   <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="font-medium text-muted-foreground">Tự động sạc thành công</span>
+                    <span className="font-medium text-muted-foreground">{t('manager.dashboard.charging_success')}</span>
                     <span className="font-bold">98%</span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-2">
@@ -231,8 +231,8 @@ export function ManagerDashboard() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Đội Robot Phân Bổ</CardTitle>
-            <CardDescription>Danh sách Robot đang được Manager quản lý.</CardDescription>
+            <CardTitle>{t('manager.dashboard.allocated_fleet')}</CardTitle>
+            <CardDescription>{t('manager.dashboard.allocated_fleet_desc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? <div className="p-4 flex justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div> : (
@@ -264,8 +264,8 @@ export function ManagerDashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Gói Dịch Vụ Khả Dụng</CardTitle>
-            <CardDescription>Các cấu hình dịch vụ Manager đang điều phối.</CardDescription>
+            <CardTitle>{t('manager.dashboard.available_packages')}</CardTitle>
+            <CardDescription>{t('manager.dashboard.available_packages_desc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? <div className="p-4 flex justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div> : (

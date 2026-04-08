@@ -7,13 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Loader2, Package, Trash2, Edit2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Plus, Loader2, Package, Trash2, Edit2 } from 'lucide-react';
 import { useI18nStore } from '@/store/useI18nStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-toastify';
-import { ServicePackageModal } from './ServicePackageModal';
+// Dùng chung Modal từ thư mục manager
+import { ServicePackageModal } from '../../manager/service-packages/ServicePackageModal';
 
-export default function ServicePackagesManagePage() {
+export default function ServicePackagesAdminPage() {
   const { t } = useI18nStore();
   const user = useAuthStore((state) => state.user);
   const [packages, setPackages] = useState<ServicePackageResponse[]>([]);

@@ -1,104 +1,85 @@
-import { SettingsData, AuditLogEntry, ActiveSession } from '../types';
+import { accountService } from '@/services/api/accountService';
+import { SettingsData, AuditLogEntry } from '../types';
 
-// Mock Data
-const MOCK_SESSIONS: ActiveSession[] = [
-    { id: 'sess-1', deviceName: 'MacBook Pro - Chrome', ipAddress: '192.168.1.100', lastActivity: new Date().toISOString(), isCurrent: true },
-    { id: 'sess-2', deviceName: 'iPhone 15 Pro - Safari', ipAddress: '172.20.10.2', lastActivity: new Date(Date.now() - 86400000).toISOString(), isCurrent: false },
-];
+export class SettingsService {
+    async getSettings(userId: string | number): Promise<SettingsData> {
+        const id = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+        const account = await accountService.getAccountById(id);
 
-const MOCK_AUDIT_LOGS: AuditLogEntry[] = [
-    { id: 'log-1', timestamp: new Date().toISOString(), userId: 'user-1', userName: 'Admin User', action: 'Update Risk Thresholds', module: 'Settings - Risk', ipAddress: '192.168.1.100', status: 'success' },
-    { id: 'log-2', timestamp: new Date(Date.now() - 3600000).toISOString(), userId: 'user-2', userName: 'Doctor Smith', action: 'Export Patient Data', module: 'Settings - Export', ipAddress: '10.0.0.50', status: 'success' },
-    { id: 'log-3', timestamp: new Date(Date.now() - 86400000).toISOString(), userId: 'user-3', userName: 'Caregiver Jane', action: 'Failed Login Attempt', module: 'Auth', ipAddress: '192.168.1.105', status: 'failure' },
-];
+        // Split fullName into first and last name for the UI
+        const names = (account.fullName || account.FullName || "").split(' ');
+        const firstName = names[0] || "";
+        const lastName = names.slice(1).join(' ') || "";
 
-const INITIAL_SETTINGS: SettingsData = {
-    profile: {
-        avatar: 'https://api.dicebear.com/7.x/notionists/svg?seed=John',
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-        phone: '+1 (555) 000-0000',
-        professionalId: 'MD-12345',
-        department: 'Geriatrics'
-    },
-    notifications: {
-        criticalRisk: { email: true, sms: true, push: true },
-        moodAnomaly: { email: true, sms: false, push: true },
-        medicationNonCompliance: { email: true, sms: true, push: false },
-        systemAlerts: { email: true, sms: false, push: false },
-    },
-    preferences: {
-        theme: 'light',
-        language: 'en',
-        timezone: 'UTC',
-        dataRefreshInterval: '5m',
-        tableDensity: 'comfortable',
-    },
-    security: {
-        mfaEnabled: true,
-    },
-    riskManagement: {
-        criticalThreshold: 85,
-        alertSensitivity: 'high',
-        autoNotifyCaregiver: true,
-    },
-    sessions: [...MOCK_SESSIONS]
-};
-
-// Simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-class SettingsService {
-    private settings: SettingsData = { ...INITIAL_SETTINGS };
-    private auditLogs: AuditLogEntry[] = [...MOCK_AUDIT_LOGS];
-
-    async getSettings(): Promise<SettingsData> {
-        await delay(600);
-        return JSON.parse(JSON.stringify(this.settings));
+        return {
+            profile: {
+                // Use Dicebear for avatars since BE doesn't store them yet
+                avatar: `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(account.fullName || account.email)}`,
+                firstName,
+                lastName,
+                email: account.email,
+                phone: account.phone || "",
+                professionalId: "", // Mocked as not in BE
+                department: ""      // Mocked as not in BE
+            },
+            notifications: {
+                criticalRisk: { email: true, sms: false, push: true },
+                moodAnomaly: { email: true, sms: false, push: true },
+                medicationNonCompliance: { email: true, sms: false, push: true },
+                systemAlerts: { email: true, sms: false, push: true },
+            },
+            preferences: {
+                theme: 'light',
+                language: 'vi',
+                timezone: 'Asia/Ho_Chi_Minh',
+                dataRefreshInterval: '5m',
+                tableDensity: 'comfortable',
+            },
+            security: {
+                mfaEnabled: false,
+            },
+            riskManagement: {
+                criticalThreshold: 80,
+                alertSensitivity: 'medium',
+                autoNotifyCaregiver: true,
+            },
+            sessions: []
+        };
     }
 
-    async updateProfile(data: Partial<SettingsData['profile']>): Promise<void> {
-        await delay(800);
-        this.settings.profile = { ...this.settings.profile, ...data };
+    async updateProfile(userId: string | number, data: Partial<SettingsData['profile']>): Promise<void> {
+        const id = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+
+        // Combine names back for Backend
+        const fullName = [data.firstName, data.lastName].filter(Boolean).join(' ');
+
+        const updatePayload: any = {};
+        if (fullName) updatePayload.name = fullName;
+        if (data.phone) updatePayload.phone = data.phone;
+        // Email usually not updatable via this endpoint in backend
+
+        await accountService.updateAccount(id, updatePayload);
     }
 
-    async updateNotifications(data: Partial<SettingsData['notifications']>): Promise<void> {
-        await delay(600);
-        this.settings.notifications = { ...this.settings.notifications, ...data };
-    }
-
-    async updatePreferences(data: Partial<SettingsData['preferences']>): Promise<void> {
-        await delay(500);
-        this.settings.preferences = { ...this.settings.preferences, ...data };
-    }
-
-    async updateSecurity(data: Partial<SettingsData['security']>): Promise<void> {
-        await delay(800);
-        this.settings.security = { ...this.settings.security, ...data };
-    }
-
-    async updateRiskManagement(data: Partial<SettingsData['riskManagement']>): Promise<void> {
-        await delay(700);
-        this.settings.riskManagement = { ...this.settings.riskManagement, ...data };
+    async changePassword(userId: string | number, newPass: string): Promise<boolean> {
+        const id = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+        try {
+            await accountService.updateAccount(id, { password: newPass });
+            return true;
+        } catch (error) {
+            console.error("Failed to change password:", error);
+            return false;
+        }
     }
 
     async getAuditLogs(): Promise<AuditLogEntry[]> {
-        await delay(1000);
-        return [...this.auditLogs];
+        // Placeholder as backend doesn't have a public audit log API for users yet
+        return [];
     }
 
-    async revokeSession(sessionId: string): Promise<void> {
-        await delay(500);
-        this.settings.sessions = this.settings.sessions.filter(s => s.id !== sessionId);
-    }
-
-    async changePassword(current: string, newPass: string): Promise<boolean> {
-        await delay(1200);
-        // Mock validation
-        return current !== newPass && newPass.length >= 8;
+    async revokeSession(): Promise<void> {
+        // Placeholder
     }
 }
 
-// Export singleton instance
 export const settingsService = new SettingsService();

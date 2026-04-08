@@ -18,7 +18,10 @@ import {
   Search,
   Bell,
   Edit,
-  RefreshCcw
+  RefreshCcw,
+  Info,
+  Check,
+  X
 } from 'lucide-react';
 import { 
   Card, 
@@ -64,6 +67,8 @@ export default function CaregiverRemindersPage() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingReminder, setEditingReminder] = useState<ReminderResponse | null>(null);
+  const [viewingReminder, setViewingReminder] = useState<ReminderResponse | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   
@@ -127,36 +132,61 @@ export default function CaregiverRemindersPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.caregiverId === 0 && currentProfile?.id) {
-      formData.caregiverId = currentProfile.id;
-    }
+    // Ensure we have the caregiver profile ID
+    const realCaregiverId = currentProfile?.id;
 
-    if (formData.caregiverId === 0) {
-      toast.error("Caregiver profile not found. Please contact support.");
+    if (!realCaregiverId) {
+      toast.error("Caregiver profile not found. Please sync your profile first.");
       return;
     }
 
+    const payload: ReminderRequest = {
+      ...formData,
+      caregiverId: realCaregiverId
+    };
+
     try {
       if (editingReminder) {
-        await updateReminder(editingReminder.id, formData);
-        toast.success(t('common.update_success', 'Updated successfully!'));
+        await updateReminder(editingReminder.id, payload);
+        toast.success(t('common.update_success'));
       } else {
-        await createReminder(formData);
-        toast.success(t('common.create_success', 'Created successfully!'));
+        await createReminder(payload);
+        toast.success(t('common.create_success'));
       }
       setIsModalOpen(false);
     } catch (error) {
-      toast.error(t('common.error', 'Something went wrong.'));
+      toast.error(t('common.error'));
     }
   };
 
+  const handleToggleActive = async (reminder: ReminderResponse) => {
+    const realCaregiverId = currentProfile?.id;
+    if (!realCaregiverId) return;
+
+    try {
+      await updateReminder(reminder.id, {
+        ...reminder,
+        caregiverId: realCaregiverId,
+        active: !reminder.active
+      });
+      toast.success(t('common.update_success'));
+    } catch (error) {
+      toast.error(t('common.error'));
+    }
+  };
+
+  const handleViewDetail = (reminder: ReminderResponse) => {
+    setViewingReminder(reminder);
+    setIsDetailModalOpen(true);
+  };
+
   const handleDelete = async (id: number) => {
-    if (window.confirm(t('common.confirm_delete', 'Are you sure?'))) {
+    if (window.confirm(t('common.confirm_delete'))) {
       try {
         await deleteReminder(id);
-        toast.success(t('common.delete_success', 'Deleted successfully!'));
+        toast.success(t('common.delete_success'));
       } catch (error) {
-        toast.error(t('common.error', 'Error while deleting.'));
+        toast.error(t('common.error'));
       }
     }
   };
@@ -188,7 +218,7 @@ export default function CaregiverRemindersPage() {
             {t('caregiver.reminders.title')}
           </h1>
           <p className="text-muted-foreground mt-1">
-            {t('caregiver.reminders.subtitle', 'Manage and track elderly daily tasks and medications.')}
+            {t('caregiver.reminders.subtitle')}
           </p>
         </div>
         <Button 
@@ -288,12 +318,21 @@ export default function CaregiverRemindersPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant={reminder.active ? "default" : "secondary"} className={`rounded-full px-3.5 py-1 font-bold tracking-wide ${reminder.active ? 'bg-emerald-500 hover:bg-emerald-600 shadow-sm shadow-emerald-100' : ''}`}>
-                          {reminder.active ? t('caregiver.reminders.status.active') : t('caregiver.reminders.status.inactive')}
-                        </Badge>
+                        <Button 
+                          variant="ghost" 
+                          className="p-0 hover:bg-transparent" 
+                          onClick={() => handleToggleActive(reminder)}
+                        >
+                          <Badge variant={reminder.active ? "default" : "secondary"} className={`rounded-full px-3.5 py-1 font-bold tracking-wide cursor-pointer transition-all active:scale-90 ${reminder.active ? 'bg-emerald-500 hover:bg-emerald-600 shadow-sm shadow-emerald-100' : ''}`}>
+                            {reminder.active ? t('caregiver.reminders.status.active') : t('caregiver.reminders.status.inactive')}
+                          </Badge>
+                        </Button>
                       </TableCell>
                       <TableCell className="text-right pr-8">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                          <Button variant="ghost" size="icon" onClick={() => handleViewDetail(reminder)} className="h-9 w-9 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950 rounded-xl transition-all">
+                            <Info className="h-4 w-4" />
+                          </Button>
                           <Button variant="ghost" size="icon" onClick={() => handleOpenModal(reminder)} className="h-9 w-9 text-sky-600 hover:text-sky-700 hover:bg-sky-50 dark:hover:bg-sky-950 rounded-xl transition-all">
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -315,8 +354,8 @@ export default function CaregiverRemindersPage() {
                           </div>
                         </div>
                         <div className="text-center max-w-xs px-6">
-                          <p className="font-semibold text-slate-900 dark:text-slate-100 mb-1">{t('caregiver.reminders.empty_title', 'No Tasks Found')}</p>
-                          <p className="text-sm opacity-70 leading-relaxed">{t('caregiver.reminders.empty_desc', 'Your schedule is currently clear. Start by adding a new reminder for your elderly care circle.')}</p>
+                          <p className="font-semibold text-slate-900 dark:text-slate-100 mb-1">{t('caregiver.reminders.empty_title')}</p>
+                          <p className="text-sm opacity-70 leading-relaxed">{t('caregiver.reminders.empty_desc')}</p>
                         </div>
                       </div>
                     </TableCell>
@@ -335,19 +374,19 @@ export default function CaregiverRemindersPage() {
             <DialogHeader className="p-8 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
               <DialogTitle className="flex items-center gap-3 text-2xl font-bold bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent">
                 {editingReminder ? (
-                  <><Edit className="h-6 w-6 text-sky-600" /> {t('caregiver.reminders.modal.edit_title', 'Edit Reminder')}</>
+                  <><Edit className="h-6 w-6 text-sky-600" /> {t('caregiver.reminders.modal.edit_title')}</>
                 ) : (
-                  <><Plus className="h-6 w-6 text-sky-600" /> {t('caregiver.reminders.modal.create_title', 'Add New Task')}</>
+                  <><Plus className="h-6 w-6 text-sky-600" /> {t('caregiver.reminders.modal.create_title')}</>
                 )}
               </DialogTitle>
               <DialogDescription className="text-slate-500 mt-2">
-                {t('caregiver.reminders.modal.desc', 'Configure timing and details. The CareBot robot will notify the elderly at the exact scheduled time.')}
+                {t('caregiver.reminders.modal.desc')}
               </DialogDescription>
             </DialogHeader>
 
             <div className="grid gap-6 p-8 bg-white dark:bg-slate-950">
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('caregiver.reminders.modal.title_label', 'Task Title')}</Label>
+                <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('caregiver.reminders.modal.title_label')}</Label>
                 <Input
                   id="title"
                   placeholder="e.g. Evening Blood Pressure Meds"
@@ -360,7 +399,7 @@ export default function CaregiverRemindersPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="type" className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('caregiver.reminders.modal.type_label', 'Category')}</Label>
+                  <Label htmlFor="type" className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('caregiver.reminders.modal.type_label')}</Label>
                   <Select 
                     value={formData.reminderType} 
                     onValueChange={(val) => setFormData({...formData, reminderType: val as any})}
@@ -377,7 +416,7 @@ export default function CaregiverRemindersPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="elderly" className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('caregiver.reminders.modal.elderly_label', 'Assign To')}</Label>
+                  <Label htmlFor="elderly" className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('caregiver.reminders.modal.elderly_label')}</Label>
                   <Select 
                     value={formData.elderlyId.toString()} 
                     onValueChange={(val) => setFormData({...formData, elderlyId: Number(val)})}
@@ -396,7 +435,7 @@ export default function CaregiverRemindersPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="time" className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('caregiver.reminders.modal.time_label', 'Scheduled Time')}</Label>
+                  <Label htmlFor="time" className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('caregiver.reminders.modal.time_label')}</Label>
                   <Input
                     id="time"
                     type="datetime-local"
@@ -407,7 +446,7 @@ export default function CaregiverRemindersPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="pattern" className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('caregiver.reminders.modal.pattern_label', 'Recurrence')}</Label>
+                  <Label htmlFor="pattern" className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('caregiver.reminders.modal.pattern_label')}</Label>
                   <Select 
                     value={formData.repeatPattern} 
                     onValueChange={(val) => setFormData({...formData, repeatPattern: val as any})}
@@ -434,7 +473,7 @@ export default function CaregiverRemindersPage() {
                   className="h-5 w-5 rounded-lg border-slate-300 text-sky-600 focus:ring-sky-500 transition-all cursor-pointer"
                 />
                 <Label htmlFor="active" className="text-sm font-semibold text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-                  {t('caregiver.reminders.modal.active_label', 'Enable this notification instantly')}
+                  {t('caregiver.reminders.modal.active_label')}
                 </Label>
               </div>
             </div>
@@ -447,7 +486,7 @@ export default function CaregiverRemindersPage() {
                 disabled={isLoading}
                 className="h-11 px-6 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                {t('common.cancel', 'Cancel')}
+                {t('common.cancel')}
               </Button>
               <Button 
                 type="submit" 
@@ -455,10 +494,94 @@ export default function CaregiverRemindersPage() {
                 disabled={isLoading}
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {editingReminder ? t('common.update', 'Update') : t('common.save', 'Finalize & Save')}
+                {editingReminder ? t('common.update') : t('common.save')}
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+      {/* Detail Modal */}
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="sm:max-w-[450px] border-none shadow-2xl rounded-2xl overflow-hidden p-0">
+          <DialogHeader className="p-8 bg-indigo-50/50 dark:bg-indigo-900/20 border-b border-indigo-100 dark:border-indigo-800/30">
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-2xl ${viewingReminder ? getTypeBadgeColor(viewingReminder.reminderType) : ''}`}>
+                <Bell className="h-6 w-6" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                  {viewingReminder?.title}
+                </DialogTitle>
+                <DialogDescription className="text-slate-500">
+                  {viewingReminder ? t(`caregiver.reminders.types.${viewingReminder.reminderType}`) : ''}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="p-8 space-y-6">
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('caregiver.reminders.table.elderly')}</span>
+                <p className="font-semibold text-slate-700 dark:text-slate-300">{viewingReminder?.elderlyName}</p>
+              </div>
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('caregiver.reminders.table.time')}</span>
+                <p className="font-semibold text-slate-700 dark:text-slate-300">
+                  {viewingReminder && format(new Date(viewingReminder.scheduleTime), 'HH:mm | dd/MM/yyyy')}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('caregiver.reminders.table.pattern')}</span>
+                <div className="flex items-center font-semibold text-slate-700 dark:text-slate-300">
+                  {viewingReminder && getPatternIcon(viewingReminder.repeatPattern)}
+                  <span className="capitalize">{viewingReminder ? t(`caregiver.reminders.patterns.${viewingReminder.repeatPattern}`) : ''}</span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('caregiver.reminders.table.status')}</span>
+                <div className="flex items-center gap-2">
+                  {viewingReminder?.active ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-slate-400" />
+                  )}
+                  <span className={`font-semibold ${viewingReminder?.active ? 'text-emerald-600' : 'text-slate-500'}`}>
+                    {viewingReminder?.active ? t('caregiver.reminders.status.active') : t('caregiver.reminders.status.inactive')}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <RefreshCcw className="h-3.5 w-3.5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-tight">Robot Broadcast</h4>
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                      This reminder is synchronized with the CareBot fleet. The robot in the assigned room will perform a voice broadcast at the scheduled intervals.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDetailModalOpen(false)}
+              className="w-full h-11 rounded-xl font-bold"
+            >
+              Close Details
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -11,7 +11,7 @@ import { accountService } from "@/services/api/accountService";
 import { AccountResponse, RegisterDTO } from "@/services/api/types";
 import { UserFormModal } from "@/components/admin/users/UserFormModal";
 import { ConfirmActionDialog } from "@/components/admin/users/ConfirmActionDialog";
-import { toast } from "sonner";
+import { toast } from "react-toastify";
 import {
   DropdownMenu,
   DropdownMenuContent,

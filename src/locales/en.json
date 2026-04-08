@@ -169,5 +169,53 @@
             "no_data": "No accounts found matches your criteria."
         }
     }
+  },
+  "caregiver": {
+    "reminders": {
+      "title": "Reminder Management",
+      "subtitle": "Manage and track daily tasks and medication schedules.",
+      "desc": "Monitor and set reminders for medication, exercise, and meals for the elderly.",
+      "create": "Create Reminder",
+      "search": "Search by title or elderly name...",
+      "empty_title": "No Reminders Found",
+      "empty_desc": "Your schedule is currently clear. Start by adding a new reminder for your elderly care circle.",
+      "table": {
+        "title": "Title",
+        "type": "Type",
+        "elderly": "Elderly",
+        "time": "Time",
+        "pattern": "Pattern",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "modal": {
+        "create_title": "Add New Task",
+        "edit_title": "Edit Reminder",
+        "desc": "Configure timing and details. The CareBot robot will notify the elderly at the exact scheduled time.",
+        "title_label": "Task Title",
+        "type_label": "Category",
+        "elderly_label": "Assign To",
+        "time_label": "Scheduled Time",
+        "pattern_label": "Recurrence",
+        "active_label": "Enable this notification instantly"
+      },
+      "types": {
+        "medication": "Medication",
+        "exercise": "Exercise",
+        "meal": "Meal",
+        "appointment": "Appointment",
+        "other": "Other"
+      },
+      "patterns": {
+        "once": "Once",
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "monthly": "Monthly"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      }
+    }
   }
 }

@@ -42,17 +42,17 @@ export const useFamilyStore = create<FamilyState>()(
 
         set({ isLoading: true, error: null });
         try {
+          // Fetch only data relevant to this account
           const [elderly, reminders, packages] = await Promise.all([
-            elderlyService.getAll(),
-            reminderService.getAll(),
+            elderlyService.getByAccountId(accountId),
+            reminderService.getAll(), // Currently fallback to all, will filter locally
             userPackageService.getAll(),
           ]);
 
-          const myElderly = elderly.filter(e => e.accountId === accountId);
-          const elderlyIds = new Set(myElderly.map(e => e.id));
+          const elderlyIds = new Set(elderly.map(e => e.id));
           
           set({ 
-            elderlyList: myElderly,
+            elderlyList: elderly,
             reminders: reminders.filter(r => elderlyIds.has(r.elderlyId)), 
             userPackages: packages.filter(p => p.accountId === accountId),
             isLoading: false 
@@ -67,17 +67,13 @@ export const useFamilyStore = create<FamilyState>()(
 
       generateDemoData: (accountId) => {
         const mockElderly: ElderlyProfileResponse[] = [
-          { id: 101, accountId, name: 'Nguyễn Văn A', dateOfBirth: '1945-05-15', healthNotes: 'Cao huyết áp', preferredLanguage: 'vi', speakingSpeed: 'normal', deleted: false },
-          { id: 102, accountId, name: 'Trần Thị B', dateOfBirth: '1950-10-20', healthNotes: 'Tiểu đường type 2', preferredLanguage: 'vi', speakingSpeed: 'slow', deleted: false },
-          { id: 103, accountId, name: 'Lê Văn C', dateOfBirth: '1948-03-12', healthNotes: 'Đau khớp mãn tính', preferredLanguage: 'vi', speakingSpeed: 'normal', deleted: false },
+          { id: 101, accountId, name: 'Nguyễn Văn A', dateOfBirth: '1945-05-15', healthNotes: 'Cao huyết áp', preferredLanguage: 'Vietnamese', speakingSpeed: 'normal', deleted: false },
+          { id: 102, accountId, name: 'Trần Thị B', dateOfBirth: '1950-10-20', healthNotes: 'Tiểu đường type 2', preferredLanguage: 'Vietnamese', speakingSpeed: 'slow', deleted: false },
         ];
 
         const mockReminders: ReminderResponse[] = [
-          { id: 1, elderlyId: 101, caregiverId: 11, title: 'Uống thuốc huyết áp', reminderType: 'MEDICINE', scheduleTime: new Date(new Date().setHours(8, 0, 0, 0)).toISOString(), repeatPattern: 'DAILY', active: true, elderlyName: 'Nguyễn Văn A', caregiverName: 'Caregiver 1' },
-          { id: 2, elderlyId: 101, caregiverId: 11, title: 'Tập thể dục buổi sáng', reminderType: 'EXERCISE', scheduleTime: new Date(new Date().setHours(9, 30, 0, 0)).toISOString(), repeatPattern: 'DAILY', active: true, elderlyName: 'Nguyễn Văn A', caregiverName: 'Caregiver 1' },
-          { id: 3, elderlyId: 102, caregiverId: 11, title: 'Kiểm tra đường huyết', reminderType: 'MEDICINE', scheduleTime: new Date(new Date().setHours(7, 30, 0, 0)).toISOString(), repeatPattern: 'DAILY', active: true, elderlyName: 'Trần Thị B', caregiverName: 'Caregiver 1' },
-          { id: 4, elderlyId: 103, caregiverId: 11, title: 'Đi dạo công viên', reminderType: 'EXERCISE', scheduleTime: new Date(new Date().setHours(16, 0, 0, 0)).toISOString(), repeatPattern: 'MON,WED,FRI', active: true, elderlyName: 'Lê Văn C', caregiverName: 'Caregiver 1' },
-          { id: 5, elderlyId: 102, caregiverId: 11, title: 'Uống thuốc bổ', reminderType: 'MEDICINE', scheduleTime: new Date(new Date().setHours(20, 0, 0, 0)).toISOString(), repeatPattern: 'DAILY', active: true, elderlyName: 'Trần Thị B', caregiverName: 'Caregiver 1' },
+          { id: 1, elderlyId: 101, caregiverId: 11, title: 'Uống thuốc huyết áp', reminderType: 'medication', scheduleTime: new Date(new Date().setHours(8, 0, 0, 0)).toISOString(), repeatPattern: 'daily', active: true, elderlyName: 'Nguyễn Văn A', caregiverName: 'Caregiver 1' },
+          { id: 3, elderlyId: 102, caregiverId: 11, title: 'Kiểm tra đường huyết', reminderType: 'medication', scheduleTime: new Date(new Date().setHours(7, 30, 0, 0)).toISOString(), repeatPattern: 'daily', active: true, elderlyName: 'Trần Thị B', caregiverName: 'Caregiver 1' },
         ];
 
         const mockPackages: UserPackageResponse[] = [

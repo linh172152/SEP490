@@ -39,7 +39,7 @@ import {
 import { robotService } from '@/services/api/robotService';
 import { RobotResponse } from '@/services/api/types';
 import { useI18nStore } from '@/store/useI18nStore';
-import { toast } from 'sonner';
+import { toast } from 'react-toastify';
 import {
   Dialog,
   DialogContent,
@@ -128,11 +128,13 @@ export default function AdminFleetPage() {
     toast.promise(
       robotService.updateFirmware(robotId, "v2.5.0"),
       {
-        loading: 'Đang đẩy Firmware qua OTA...',
-        success: () => {
-          mockAuditLog("OTA Update", `Cập nhật v2.5.0 cho Robot #${robotId}`);
-          fetchRobots();
-          return "Cập nhật thành công!";
+        pending: 'Đang đẩy Firmware qua OTA...',
+        success: {
+          render() {
+            mockAuditLog("OTA Update", `Cập nhật v2.5.0 cho Robot #${robotId}`);
+            fetchRobots();
+            return "Cập nhật thành công!";
+          }
         },
         error: "Cập nhật thất bại"
       }
@@ -144,10 +146,12 @@ export default function AdminFleetPage() {
     toast.promise(
       robotService.toggleHardwareFeature(feature, value),
       {
-        loading: `Đang ${value ? 'bật' : 'tắt'} ${feature.toUpperCase()} toàn cục...`,
-        success: () => {
-          mockAuditLog("Global Toggle", `${value ? 'Bật' : 'Tắt'} tính năng ${feature}`);
-          return `Đã cập nhật tính năng ${feature}`;
+        pending: `Đang ${value ? 'bật' : 'tắt'} ${feature.toUpperCase()} toàn cục...`,
+        success: {
+          render() {
+            mockAuditLog("Global Toggle", `${value ? 'Bật' : 'Tắt'} tính năng ${feature}`);
+            return `Đã cập nhật tính năng ${feature}`;
+          }
         },
         error: "Thao tác thất bại"
       }

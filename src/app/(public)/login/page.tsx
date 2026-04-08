@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { toast } from 'sonner';
+import { toast } from 'react-toastify';
 import Link from 'next/link';
 
 import { useAuthStore } from '@/store/useAuthStore';
@@ -89,12 +89,7 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
               : undefined;
 
         if (message?.toLowerCase().includes('verify otp')) {
-            toast.error('Tài khoản chưa được kích hoạt. Đang chuyển hướng đến trang xác thực...', {
-                action: {
-                    label: 'Xác thực ngay',
-                    onClick: () => router.push(`/verify-otp?email=${values.email}`)
-                }
-            });
+            toast.error('Tài khoản chưa được kích hoạt. Đang chuyển hướng đến trang xác thực...');
             setTimeout(() => {
                 router.push(`/verify-otp?email=${values.email}`);
             }, 2500);

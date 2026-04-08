@@ -156,18 +156,66 @@
       }
     },
     "users": {
-        "title": "Quản Lý Tài Khoản",
-        "desc": "Quản trị danh sách tài khoản Quản trị, Bác sĩ và Người chăm sóc.",
-        "create_btn": "Tạo Tài Khoản",
-        "table": {
-            "name": "Họ và Tên",
-            "email": "Địa chỉ Email",
-            "role": "Vai trò",
-            "status": "Trạng thái",
-            "last_login": "Đăng nhập cuối",
-            "actions": "Thao tác",
-            "no_data": "Không tìm thấy tài khoản nào khớp với tiêu chí."
-        }
+      "title": "Quản Lý Tài Khoản",
+      "desc": "Quản trị danh sách tài khoản Quản trị, Bác sĩ và Người chăm sóc.",
+      "create_btn": "Tạo Tài Khoản",
+      "table": {
+        "name": "Họ và Tên",
+        "email": "Địa chỉ Email",
+        "role": "Vai trò",
+        "status": "Trạng thái",
+        "last_login": "Đăng nhập cuối",
+        "actions": "Thao tác",
+        "no_data": "Không tìm thấy tài khoản nào khớp với tiêu chí."
+      }
+    }
+  },
+  "caregiver": {
+    "reminders": {
+      "title": "Quản Lý Lịch Nhắc Nhở",
+      "subtitle": "Quản lý và theo dõi các công việc hàng ngày và lịch uống thuốc.",
+      "desc": "Theo dõi và thiết lập lịch nhắc nhở uống thuốc, tập luyện cho người cao tuổi.",
+      "create": "Tạo Nhắc Nhở",
+      "search": "Tìm kiếm tiêu đề hoặc tên người...",
+      "empty_title": "Không tìm thấy lời nhắc",
+      "empty_desc": "Lịch trình hiện tại đang trống. Hãy bắt đầu bằng cách thêm một lời nhắc mới.",
+      "table": {
+        "title": "Tiêu đề",
+        "type": "Loại",
+        "elderly": "Người cao tuổi",
+        "time": "Thời gian",
+        "pattern": "Lặp lại",
+        "status": "Trạng thái",
+        "actions": "Thao tác"
+      },
+      "modal": {
+        "create_title": "Thêm Nhắc Nhở Mới",
+        "edit_title": "Sửa Nhắc Nhở",
+        "desc": "Thiết lập thời gian và chi tiết. Robot CareBot sẽ thông báo cho người cao tuổi vào đúng thời điểm đã chọn.",
+        "title_label": "Tiêu đề công việc",
+        "type_label": "Phân loại",
+        "elderly_label": "Gán cho",
+        "time_label": "Thời gian nhắc",
+        "pattern_label": "Tần suất",
+        "active_label": "Kích hoạt thông báo này ngay lập tức"
+      },
+      "types": {
+        "medication": "Uống thuốc",
+        "exercise": "Tập luyện",
+        "meal": "Ăn uống",
+        "appointment": "Hẹn gặp",
+        "other": "Khác"
+      },
+      "patterns": {
+        "once": "Một lần",
+        "daily": "Hàng ngày",
+        "weekly": "Hàng tuần",
+        "monthly": "Hàng tháng"
+      },
+      "status": {
+        "active": "Đang bật",
+        "inactive": "Đã tắt"
+      }
     }
   }
 }

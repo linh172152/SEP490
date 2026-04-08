@@ -52,10 +52,9 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
   fetchProfileByAccountId: async (accountId: number) => {
     set({ isLoading: true, error: null });
     try {
-      const allProfiles = await elderlyService.getAll();
-      const profile = allProfiles.find(p => p.accountId === accountId);
-      if (profile) {
-        set({ currentProfile: profile });
+      const profile = await elderlyService.getByAccountId(accountId);
+      if (profile && profile.length > 0) {
+        set({ currentProfile: profile[0] });
       } else {
         set({ currentProfile: null });
       }

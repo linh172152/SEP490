@@ -46,7 +46,7 @@ import Link from 'next/link';
 import { useElderlyProfileStore } from '@/store/useElderlyProfileStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
+import { toast } from 'react-toastify';
 
 const elderlySchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),

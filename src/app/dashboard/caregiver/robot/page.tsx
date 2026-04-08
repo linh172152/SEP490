@@ -25,7 +25,7 @@ import {
 import { mockRobots } from '@/services/mock';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { toast } from 'react-toastify';
 
 export default function CaregiverRobotPage() {
   const [robots, setRobots] = useState(mockRobots);
@@ -202,21 +202,21 @@ export default function CaregiverRobotPage() {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start hover:bg-sky-50 hover:text-sky-600 dark:hover:bg-sky-950/50 transition-colors h-11"
-                    onClick={() => toast.success(`Mock instruction sent`, { description: `Starting Check-in routine on ${robot.id}` })}
+                    onClick={() => toast.success(`Instruction sent: Starting Check-in routine on ${robot.id}`)}
                   >
                     <CheckCircle2 className="mr-2 h-4 w-4" /> Start Check-in
                   </Button>
                   <Button 
                     variant="outline" 
                     className="w-full justify-start hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-950/50 transition-colors h-11"
-                    onClick={() => toast.success(`Mock instruction sent`, { description: `Playing scheduled reminder on ${robot.id}` })}
+                    onClick={() => toast.success(`Instruction sent: Playing scheduled reminder on ${robot.id}`)}
                   >
                     <Activity className="mr-2 h-4 w-4" /> Play Reminder
                   </Button>
                   <Button 
                     variant="outline" 
                     className="w-full justify-start hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/50 transition-colors h-11"
-                    onClick={() => toast.success(`Mock instruction sent`, { description: `Moving ${robot.id} to Living Room` })}
+                    onClick={() => toast.success(`Instruction sent: Moving ${robot.id} to Living Room`)}
                   >
                     <div className="mr-2 h-4 w-4 flex items-center justify-center border-2 border-current rounded-full">
                        <ArrowRight className="h-2 w-2" />
@@ -226,7 +226,7 @@ export default function CaregiverRobotPage() {
                   <Button 
                     variant="destructive" 
                     className="w-full justify-start hover:bg-red-700 transition-colors h-11"
-                    onClick={() => toast.error(`Emergency Override Sent`, { description: `Initiated emergency call via ${robot.id}` })}
+                    onClick={() => toast.error(`Emergency Override Sent: Initiated emergency call via ${robot.id}`)}
                   >
                     <AlertCircle className="mr-2 h-4 w-4" /> Emergency Call
                   </Button>

@@ -25,7 +25,7 @@ import {
   ChevronRight,
   AlertCircle
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from 'react-toastify';
 
 const MOCK_PACKAGES = [
   { id: 1, name: 'Basic Care', price: 29, duration: '30 days', description: 'Essential monitoring for one elderly family member.', features: ['1 Elderly Profile', 'Daily Medication Reminders', 'Basic Health Reports', 'Standard Support'] },

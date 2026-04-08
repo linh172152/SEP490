@@ -15,6 +15,12 @@ class ReminderService {
     return apiClient.get<ReminderResponse>(`/api/reminders/${id}`);
   }
 
+  async getByAccountId(accountId: number): Promise<ReminderResponse[]> {
+    return apiClient.get<ReminderResponse[]>(
+      `/api/reminders/account/${accountId}`
+    );
+  }
+
   async create(data: ReminderRequest): Promise<ReminderResponse> {
     return apiClient.post<ReminderResponse>("/api/reminders", data);
   }

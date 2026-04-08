@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { settingsService } from '../services/settings.service';
 import { SettingsData, RoleType, RoleCapabilities, AuditLogEntry } from '../types';
 import { SETTINGS_CAPABILITIES } from '../constants';
-import { toast } from 'sonner';
+import { toast } from 'react-toastify';
 
 interface UseSettingsReturn {
     isLoading: boolean;

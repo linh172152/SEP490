@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { KeyRound } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from "react-toastify";
 import { settingsService } from '../services/settings.service';
 import { useI18nStore } from '@/store/useI18nStore';
 

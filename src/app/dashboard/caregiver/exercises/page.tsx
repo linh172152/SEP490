@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Search, Clock, Activity } from 'lucide-react';
+import { Search, Activity } from 'lucide-react';
 import { exerciseService } from '@/services/api/exerciseService';
 import { ExerciseScript } from '@/services/api/types';
 import { Button } from '@/components/ui/button';

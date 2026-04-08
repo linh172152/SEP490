@@ -43,9 +43,14 @@ export class ApiClient {
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
+        const method = config.method?.toUpperCase() || 'UNKNOWN';
         // 👉 DEBUG: Chụp ảnh dữ liệu thực tế tại đây
-        console.log(`🚀 [DIAGNOSTIC] API POST REQUEST to ${config.url}`);
-        console.log(`📦 PAYLOAD SECURE CHECK:`, JSON.parse(JSON.stringify(config.data)));
+        console.log(`🚀 [DIAGNOSTIC] API ${method} REQUEST to ${config.url}`);
+        if (config.data !== undefined) {
+          console.log(`📦 PAYLOAD SECURE CHECK:`, JSON.parse(JSON.stringify(config.data)));
+        } else {
+          console.log(`📦 PAYLOAD SECURE CHECK: no payload`);
+        }
 
         return config;
       },

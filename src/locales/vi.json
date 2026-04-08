@@ -37,10 +37,10 @@
     "workspace_title": "Không Gian Cài Đặt",
     "workspace_desc": "Quản lý tùy chọn hệ thống, sở thích cá nhân và hệ thống bảo mật dựa theo quyền hạn của bạn.",
     "profile": {
-      "title": "Tổng Quan Hồ Sơ",
-      "desc": "Quản lý thông tin cá nhân và chi tiết liên lạc của bạn.",
-      "card_title": "Thông Tin Cá Nhân",
-      "card_desc": "Cập nhật ảnh đại diện và các chi tiết cơ bản",
+      "title": "Hồ Sơ Caregiver",
+      "desc": "Sử dụng API caregiver để tải thông tin hồ sơ theo tài khoản.",
+      "card_title": "Thông Tin Nhân Viên Caregiver",
+      "card_desc": "Đồng bộ trường hồ sơ caregiver với dữ liệu backend",
       "first_name": "Tên",
       "last_name": "Họ và tên lót",
       "email": "Địa chỉ Email",
@@ -108,6 +108,7 @@
     "data_security": "Dữ liệu & Bảo mật",
     "audit_logs": "Nhật ký hành động",
     "settings": "Cài đặt",
+    "exercises": "Thư viện bài tập",
     "logout": "Đăng xuất"
   },
   "admin": {
@@ -376,6 +377,7 @@
       },
       "types": {
         "medication": "Uống thuốc",
+        "hydration": "Uống nước",
         "exercise": "Tập luyện",
         "meal": "Ăn uống",
         "appointment": "Hẹn gặp",
@@ -385,7 +387,8 @@
         "once": "Một lần",
         "daily": "Hàng ngày",
         "weekly": "Hàng tuần",
-        "monthly": "Hàng tháng"
+        "monthly": "Hàng tháng",
+        "every_2_hours": "Mỗi 2 giờ"
       },
       "status": {
         "active": "Đang bật",

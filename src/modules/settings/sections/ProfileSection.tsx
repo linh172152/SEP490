@@ -51,8 +51,8 @@ interface ProfileSectionProps {
 export function ProfileSection({ settings, capabilities, updateProfile, isSaving }: ProfileSectionProps) {
   const { user } = useAuthStore();
   const { t } = useI18nStore();
-  const { 
-    currentProfile: caregiverProfile, 
+  const {
+    currentProfile: caregiverProfile,
     fetchProfileByAccountId: fetchCaregiverProfile,
     updateProfile: updateCaregiverApi,
     createProfile: createCaregiverApi,
@@ -71,6 +71,9 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
   const isCaregiver = user?.role === 'CAREGIVER';
   const isFamily = user?.role === 'FAMILYMEMBER';
   const isProfessional = capabilities.canAccessProfessionalProfile;
+
+  const loadedCaregiverName = caregiverProfile?.name || `${settings.profile.firstName || ''} ${settings.profile.lastName || ''}`.trim();
+  const loadedCaregiverEmail = caregiverProfile?.accountEmail || settings.profile.email || user?.email || '';
 
   useEffect(() => {
     if (user?.id) {
@@ -101,9 +104,15 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
 
   useEffect(() => {
     if (caregiverProfile) {
+      const [firstName = '', ...lastNameParts] = caregiverProfile.name?.split(' ') || [''];
+      const lastName = lastNameParts.join(' ');
+      form.setValue('firstName', firstName);
+      form.setValue('lastName', lastName);
+      form.setValue('email', caregiverProfile.accountEmail || settings.profile.email || user?.email || '');
       form.setValue('relationship', caregiverProfile.relationship || '');
       form.setValue('notificationPreference', caregiverProfile.notificationPreference || 'EMAIL');
     }
+
     if (elderlyProfile) {
       form.setValue('elderlyName', elderlyProfile.name || '');
       form.setValue('dateOfBirth', elderlyProfile.dateOfBirth ? elderlyProfile.dateOfBirth.split('T')[0] : '');
@@ -111,7 +120,7 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
       form.setValue('preferredLanguage', elderlyProfile.preferredLanguage || 'Vietnamese');
       form.setValue('speakingSpeed', elderlyProfile.speakingSpeed || 'normal');
     }
-  }, [caregiverProfile, elderlyProfile, form]);
+  }, [caregiverProfile, elderlyProfile, form, settings.profile.email, user?.email]);
 
   async function onSubmit(data: ProfileFormValues) {
     try {
@@ -214,8 +223,8 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
                   </button>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <h4 className="font-bold text-xl text-slate-900 dark:text-slate-100">{settings.profile.firstName} {settings.profile.lastName}</h4>
-                  <p className="text-sm text-slate-500 font-medium">{settings.profile.email}</p>
+                  <h4 className="font-bold text-xl text-slate-900 dark:text-slate-100">{loadedCaregiverName || 'Unknown Caregiver'}</h4>
+                  <p className="text-sm text-slate-500 font-medium">{loadedCaregiverEmail}</p>
                   <div className="flex gap-2 mt-2">
                     <Badge variant="outline" className="bg-sky-50 text-sky-700 border-sky-200 uppercase tracking-widest text-[10px] font-black px-3 py-1">
                       {user?.role}

@@ -19,9 +19,7 @@ import {
   Bell,
   Edit,
   RefreshCcw,
-  Info,
-  Check,
-  X
+  Info
 } from 'lucide-react';
 import { 
   Card, 
@@ -154,7 +152,7 @@ export default function CaregiverRemindersPage() {
         toast.success(t('common.create_success'));
       }
       setIsModalOpen(false);
-    } catch (error) {
+    } catch {
       toast.error(t('common.error'));
     }
   };
@@ -170,7 +168,7 @@ export default function CaregiverRemindersPage() {
         active: !reminder.active
       });
       toast.success(t('common.update_success'));
-    } catch (error) {
+    } catch {
       toast.error(t('common.error'));
     }
   };
@@ -185,7 +183,7 @@ export default function CaregiverRemindersPage() {
       try {
         await deleteReminder(id);
         toast.success(t('common.delete_success'));
-      } catch (error) {
+      } catch {
         toast.error(t('common.error'));
       }
     }
@@ -197,6 +195,7 @@ export default function CaregiverRemindersPage() {
       case 'exercise': return 'bg-sky-500/10 text-sky-500 border-sky-500/20';
       case 'meal': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
       case 'appointment': return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
+      case 'hydration': return 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20';
       default: return 'bg-slate-500/10 text-slate-500 border-slate-500/20';
     }
   };
@@ -205,6 +204,8 @@ export default function CaregiverRemindersPage() {
     switch (pattern) {
       case 'daily': return <RefreshCcw className="h-4 w-4 mr-1.5" />;
       case 'weekly': return <Calendar className="h-4 w-4 mr-1.5" />;
+      case 'monthly': return <Calendar className="h-4 w-4 mr-1.5" />;
+      case 'every_2_hours': return <Clock className="h-4 w-4 mr-1.5" />;
       case 'once': return <Clock className="h-4 w-4 mr-1.5" />;
       default: return null;
     }
@@ -250,6 +251,7 @@ export default function CaregiverRemindersPage() {
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="medication">Medication</SelectItem>
+                  <SelectItem value="hydration">Hydration</SelectItem>
                   <SelectItem value="exercise">Exercise</SelectItem>
                   <SelectItem value="meal">Meal</SelectItem>
                   <SelectItem value="appointment">Appointment</SelectItem>
@@ -402,13 +404,14 @@ export default function CaregiverRemindersPage() {
                   <Label htmlFor="type" className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('caregiver.reminders.modal.type_label')}</Label>
                   <Select 
                     value={formData.reminderType} 
-                    onValueChange={(val) => setFormData({...formData, reminderType: val as any})}
+                    onValueChange={(val: string) => setFormData({...formData, reminderType: val})}
                   >
                     <SelectTrigger className="h-11 bg-slate-50 dark:bg-slate-900 border-none rounded-xl focus:ring-sky-500">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="medication">{t('caregiver.reminders.types.medication')}</SelectItem>
+                      <SelectItem value="hydration">{t('caregiver.reminders.types.hydration')}</SelectItem>
                       <SelectItem value="exercise">{t('caregiver.reminders.types.exercise')}</SelectItem>
                       <SelectItem value="meal">{t('caregiver.reminders.types.meal')}</SelectItem>
                       <SelectItem value="appointment">{t('caregiver.reminders.types.appointment')}</SelectItem>
@@ -449,7 +452,7 @@ export default function CaregiverRemindersPage() {
                   <Label htmlFor="pattern" className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('caregiver.reminders.modal.pattern_label')}</Label>
                   <Select 
                     value={formData.repeatPattern} 
-                    onValueChange={(val) => setFormData({...formData, repeatPattern: val as any})}
+                    onValueChange={(val: string) => setFormData({...formData, repeatPattern: val})}
                   >
                     <SelectTrigger className="h-11 bg-slate-50 dark:bg-slate-900 border-none rounded-xl focus:ring-sky-500">
                       <SelectValue placeholder="Select frequency" />
@@ -459,6 +462,7 @@ export default function CaregiverRemindersPage() {
                       <SelectItem value="daily">{t('caregiver.reminders.patterns.daily')}</SelectItem>
                       <SelectItem value="weekly">{t('caregiver.reminders.patterns.weekly')}</SelectItem>
                       <SelectItem value="monthly">{t('caregiver.reminders.patterns.monthly')}</SelectItem>
+                      <SelectItem value="every_2_hours">{t('caregiver.reminders.patterns.every_2_hours')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

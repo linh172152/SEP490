@@ -61,6 +61,7 @@ const navItems: NavItem[] = [
   { i18nKey: 'sidebar.overview', href: '/dashboard/caregiver', icon: LayoutDashboard, roles: ['CAREGIVER'] },
   { i18nKey: 'sidebar.user_mgt', href: '/dashboard/caregiver/elderly', icon: Users, roles: ['CAREGIVER'] },
   { i18nKey: 'sidebar.reminders', href: '/dashboard/caregiver/reminders', icon: Bell, roles: ['CAREGIVER'] },
+  { i18nKey: 'sidebar.exercises', href: '/dashboard/caregiver/exercises', icon: Activity, roles: ['CAREGIVER'] },
   { i18nKey: 'sidebar.robot_fleet', href: '/dashboard/caregiver/robot', icon: Bot, roles: ['CAREGIVER'] },
   { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['CAREGIVER'] },
 

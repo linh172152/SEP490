@@ -202,6 +202,7 @@ export interface ElderlyProfileRequest {
 export interface ElderlyProfileResponse extends ElderlyProfileRequest {
   id: number;
   accountId: number;
+  fullName?: string;
   deleted: boolean;
 }
 

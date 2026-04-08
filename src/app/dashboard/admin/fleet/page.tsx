@@ -388,7 +388,7 @@ export default function AdminFleetPage() {
                   <option value="" disabled>{t('admin.fleet.dialogs.select_elderly') || "Select Elderly User..."}</option>
                   {elderlies.map(elderly => (
                     <option key={elderly.id} value={elderly.id}>
-                      {elderly.name || `User ID: ${elderly.accountId}`} (ID: {elderly.id})
+                      {elderly.fullName || `User ID: ${elderly.accountId}`} (ID: {elderly.id})
                     </option>
                   ))}
                 </select>

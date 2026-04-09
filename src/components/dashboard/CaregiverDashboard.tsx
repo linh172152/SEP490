@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -12,19 +12,15 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
-  Activity, 
   AlertTriangle, 
-  HeartPulse, 
-  Clock,
-  Battery,
   Wifi,
   Bot,
   CheckCircle2,
   Users,
   Search,
-  ArrowUpRight
+  ArrowUpRight,
+  ClipboardList
 } from 'lucide-react';
-import { mockMoodHistory, mockRobots } from '@/services/mock';
 import { 
   LineChart, 
   Line, 
@@ -35,9 +31,19 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useElderlyStore } from '@/store/useElderlyStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import Link from 'next/link';
+import { elderlyService } from '@/services/api/elderlyService';
+import { alertService } from '@/services/api/alertService';
+import { robotService } from '@/services/api/robotService';
+import { reminderService } from '@/services/api/reminderService';
+import { 
+  ElderlyProfileResponse, 
+  AlertNotificationResponse, 
+  RobotResponse, 
+  ReminderResponse 
+} from '@/services/api/types';
+import { toast } from 'react-toastify';
 
 const container = {
   hidden: { opacity: 0 },
@@ -56,27 +62,61 @@ const item = {
 
 export function CaregiverDashboard() {
   const { user: caregiver } = useAuthStore();
-  const elderlyStore = useElderlyStore();
-  const getElderlyByCaregiver = elderlyStore.getElderlyByCaregiver;
-  const getActiveAlertsByCaregiver = elderlyStore.getActiveAlertsByCaregiver;
-  const resolveAlert = elderlyStore.resolveAlert;
-  
-  const elderlyList = useMemo(() => 
-    caregiver ? getElderlyByCaregiver(caregiver.id) : [], 
-  [caregiver, getElderlyByCaregiver]);
+  const [elderlyList, setElderlyList] = useState<ElderlyProfileResponse[]>([]);
+  const [activeAlerts, setActiveAlerts] = useState<AlertNotificationResponse[]>([]);
+  const [robots, setRobots] = useState<RobotResponse[]>([]);
+  const [reminders, setReminders] = useState<ReminderResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const activeAlerts = useMemo(() => 
-    caregiver ? getActiveAlertsByCaregiver(caregiver.id) : [],
-  [caregiver, getActiveAlertsByCaregiver, elderlyStore.alerts]);
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [elderlyData, alertsData, robotsData, remindersData] = await Promise.all([
+        elderlyService.getAll(),
+        alertService.getAll(),
+        robotService.getAll(),
+        reminderService.getAll()
+      ]);
 
-  const activeRobot = mockRobots[0]; // For demo, use first robot
+      setElderlyList(Array.isArray(elderlyData) ? elderlyData : []);
+      setActiveAlerts(Array.isArray(alertsData) ? alertsData.filter(a => !a.resolved) : []);
+      setRobots(Array.isArray(robotsData) ? robotsData : []);
+      setReminders(Array.isArray(remindersData) ? remindersData : []);
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+      toast.error("Failed to load dashboard data. Showing local state.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // KPI Calculations
-  const avgMood = elderlyList.length > 0 
-    ? Math.round(elderlyList.reduce((acc, e) => acc + e.healthStatus.moodScore, 0) / elderlyList.length)
-    : 0;
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  // Format data for chart (7-day mock trend)
+  const handleResolveAlert = async (id: number) => {
+    try {
+      await alertService.markAsResolved(id);
+      setActiveAlerts(prev => prev.filter(a => a.id !== id));
+      toast.success("Alert resolved");
+    } catch (error) {
+      toast.error("Failed to resolve alert");
+    }
+  };
+
+  const calculateAge = (dob: string) => {
+    if (!dob) return "N/A";
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  // Mock trend for chart (Still using mock as API doesn't provide history yet)
   const chartData = [
     { name: 'Mon', score: 65 },
     { name: 'Tue', score: 62 },
@@ -87,18 +127,21 @@ export function CaregiverDashboard() {
     { name: 'Sun', score: 78 },
   ];
 
-  const getAlertCountForElderly = (id: string) => {
-    return activeAlerts.filter(a => a.elderlyId === id).length;
+  const getSeverityStyles = (message: string) => {
+    const msg = message.toLowerCase();
+    if (msg.includes('critical') || msg.includes('emergency') || msg.includes('fall')) return 'bg-rose-500';
+    if (msg.includes('high') || msg.includes('spike')) return 'bg-orange-500';
+    if (msg.includes('medium') || msg.includes('abnormal')) return 'bg-amber-500';
+    return 'bg-sky-500';
   };
 
-  const getSeverityStyles = (severity: string) => {
-    switch (severity) {
-      case 'critical': return 'bg-rose-500';
-      case 'high': return 'bg-orange-500';
-      case 'medium': return 'bg-amber-500';
-      default: return 'bg-sky-500';
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <motion.div 
@@ -136,14 +179,14 @@ export function CaregiverDashboard() {
         </motion.div>
         
         <motion.div variants={item}>
-          <Card className={`border-none shadow-sm transition-all ${activeAlerts.length > 0 ? 'bg-gradient-to-br from-white to-rose-50/50 animate-pulse ring-1 ring-rose-200' : 'bg-gradient-to-br from-white to-slate-50'}`}>
+          <Card className={`border-none shadow-sm transition-all ${activeAlerts.length > 0 ? 'bg-gradient-to-br from-white to-rose-50/50 ring-1 ring-rose-200' : 'bg-gradient-to-br from-white to-slate-50'}`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Critical Alerts</CardTitle>
-              <AlertTriangle className={`h-4 w-4 ${activeAlerts.length > 0 ? 'text-rose-500' : 'text-slate-400'}`} />
+              <AlertTriangle className={`h-4 w-4 ${activeAlerts.length > 0 ? 'text-rose-500 animate-pulse' : 'text-slate-400'}`} />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{activeAlerts.filter(a => a.severity === 'critical').length}</div>
-              <p className="text-xs text-muted-foreground pt-1">Immediate action required</p>
+              <div className="text-2xl font-bold">{activeAlerts.length}</div>
+              <p className="text-xs text-muted-foreground pt-1">Action required</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -151,12 +194,12 @@ export function CaregiverDashboard() {
         <motion.div variants={item}>
           <Card className="border-none shadow-sm bg-gradient-to-br from-white to-teal-50/50 dark:from-slate-950 dark:to-slate-900/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">System Integrity</CardTitle>
-              <Battery className={`h-4 w-4 ${activeRobot.battery < 20 ? 'text-rose-500' : 'text-teal-500'}`} />
+              <CardTitle className="text-sm font-medium">Active Robots</CardTitle>
+              <Bot className={`h-4 w-4 text-teal-500`} />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{activeRobot.battery}%</div>
-              <p className="text-xs text-muted-foreground pt-1">Robot fleet status</p>
+              <div className="text-2xl font-bold">{robots.filter(r => r.status.toUpperCase() !== 'OFFLINE').length}</div>
+              <p className="text-xs text-muted-foreground pt-1">Fleet online</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -164,12 +207,12 @@ export function CaregiverDashboard() {
         <motion.div variants={item}>
           <Card className="border-none shadow-sm bg-gradient-to-br from-white to-amber-50/50 dark:from-slate-950 dark:to-slate-900/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Stability Index</CardTitle>
-              <HeartPulse className="h-4 w-4 text-amber-500" />
+              <CardTitle className="text-sm font-medium">Active Reminders</CardTitle>
+              <ClipboardList className="h-4 w-4 text-amber-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{avgMood}/100</div>
-              <p className="text-xs text-muted-foreground pt-1">Avg emotional score</p>
+              <div className="text-2xl font-bold">{reminders.filter(r => r.active).length}</div>
+              <p className="text-xs text-muted-foreground pt-1">Scheduled tasks</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -182,7 +225,7 @@ export function CaregiverDashboard() {
             <CardHeader>
               <CardTitle className="text-lg">Health Trend Overview</CardTitle>
               <CardDescription>
-                Emotional and physical stability tracking (simulated)
+                System stability tracking (simulated)
               </CardDescription>
             </CardHeader>
             <CardContent className="h-[300px] pl-2">
@@ -206,29 +249,28 @@ export function CaregiverDashboard() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Bot className="h-5 w-5 text-sky-500" />
-                  Robot Monitoring
+                  Fleet Status
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Wifi className="h-4 w-4 text-emerald-500" />
-                    Connectivity
-                  </div>
-                  <Badge className="bg-emerald-50 text-emerald-700 border-none">Active</Badge>
-                </div>
-                <div className="pt-2">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span>Battery</span>
-                    <span className="font-semibold">{activeRobot.battery}%</span>
-                  </div>
-                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full bg-emerald-500`} 
-                      style={{ width: `${activeRobot.battery}%` }}
-                    />
-                  </div>
-                </div>
+                {robots.length > 0 ? (
+                  robots.slice(0, 2).map(robot => (
+                    <div key={robot.id} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Wifi className={`h-4 w-4 ${robot.status.toUpperCase() === 'OFFLINE' ? 'text-slate-400' : 'text-emerald-500'}`} />
+                          {robot.robotName}
+                        </div>
+                        <Badge className={`${robot.status.toUpperCase() === 'OFFLINE' ? 'bg-slate-100 text-slate-700' : 'bg-emerald-50 text-emerald-700'} border-none`}>
+                          {robot.status}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground">Version: {robot.firmwareVersion}</div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-muted-foreground italic">No robots found.</div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -253,12 +295,14 @@ export function CaregiverDashboard() {
                         exit={{ opacity: 0, x: 20 }}
                         className="flex items-start gap-3 rounded-xl border p-3 bg-white dark:bg-slate-950 hover:bg-slate-50 transition-colors"
                       >
-                        <div className={`mt-1 h-2 w-2 rounded-full ${getSeverityStyles(alert.severity)} ${alert.severity === 'critical' ? 'animate-pulse ring-2 ring-rose-200' : ''}`} />
+                        <div className={`mt-1 h-2 w-2 rounded-full ${getSeverityStyles(alert.message)}`} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold truncate">{alert.message}</p>
-                          <p className="text-xs text-muted-foreground">{new Date(alert.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {alert.elderlyName} • {new Date(alert.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
                         </div>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-600" onClick={() => resolveAlert(alert.id)}>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-600" onClick={() => handleResolveAlert(alert.id)}>
                           <CheckCircle2 className="h-5 w-5" />
                         </Button>
                       </motion.div>
@@ -291,38 +335,23 @@ export function CaregiverDashboard() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {elderlyList.map(member => (
               <Card key={member.id} className="group overflow-hidden border-none shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col">
-                <div className={`h-1.5 w-full ${
-                  member.riskLevel === 'CRITICAL' ? 'bg-rose-500 text-white font-bold' : 
-                  member.riskLevel === 'HIGH' ? 'bg-rose-400' : 
-                  member.riskLevel === 'MEDIUM' ? 'bg-amber-400' : 'bg-teal-500'
-                }`} />
+                <div className={`h-1.5 w-full bg-teal-500`} />
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
                     <div>
                       <CardTitle className="text-lg flex items-center gap-2 group-hover:text-sky-600 transition-colors">
                         {member.name}
-                        <Badge variant="ghost" className="px-1 text-muted-foreground">{member.age}</Badge>
+                        <Badge variant="ghost" className="px-1 text-muted-foreground">Age: {calculateAge(member.dateOfBirth)}</Badge>
                       </CardTitle>
-                      <CardDescription className="line-clamp-1">{member.condition}</CardDescription>
+                      <CardDescription className="line-clamp-1">{member.healthNotes || 'No health notes available'}</CardDescription>
                     </div>
-                    {getAlertCountForElderly(member.id) > 0 && (
-                      <Badge variant="destructive" className="animate-pulse">
-                        {getAlertCountForElderly(member.id)} ALERTS
-                      </Badge>
-                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3 flex-grow">
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 gap-2">
                     <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 flex flex-col gap-1">
-                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Heart Rate</span>
-                      <span className="text-sm font-bold">{member.healthStatus.heartRate} BPM</span>
-                    </div>
-                    <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 flex flex-col gap-1">
-                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Emotional Score</span>
-                      <span className={`text-sm font-bold ${member.healthStatus.moodScore < 60 ? 'text-rose-500' : 'text-teal-600'}`}>
-                        {member.healthStatus.moodScore}%
-                      </span>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Language</span>
+                      <span className="text-sm font-semibold">{member.preferredLanguage}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -344,7 +373,7 @@ export function CaregiverDashboard() {
             </div>
             <h4 className="text-lg font-bold text-slate-800">No Assigned Members</h4>
             <p className="text-muted-foreground max-w-xs text-sm mt-1">
-              Currently there are no elderly members assigned to your care terminal. New assignments will appear here.
+              Currently there are no elderly members assigned to your care terminal.
             </p>
           </div>
         )}

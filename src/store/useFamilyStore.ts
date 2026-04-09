@@ -38,26 +38,30 @@ export const useFamilyStore = create<FamilyState>()(
       clearError: () => set({ error: null }),
 
       fetchDashboardData: async (accountId) => {
-        if (get().isUsingMock) return;
+        if (get().isUsingMock) {
+          return;
+        }
 
-        set({ isLoading: true, error: null });
+        set({ isLoading: true, error: null, elderlyList: [], reminders: [], userPackages: [] });
         try {
           // Fetch only data relevant to this account
           const [elderly, reminders, packages] = await Promise.all([
             elderlyService.getByAccountId(accountId),
-            reminderService.getAll(), // Currently fallback to all, will filter locally
+            reminderService.getAll(),
             userPackageService.getAll(),
           ]);
 
           const elderlyIds = new Set(elderly.map(e => e.id));
+          const filteredReminders = reminders.filter(r => elderlyIds.has(r.elderlyId));
+          const filteredPackages = packages.filter(p => p.accountId === accountId);
           
           set({ 
             elderlyList: elderly,
-            reminders: reminders.filter(r => elderlyIds.has(r.elderlyId)), 
-            userPackages: packages.filter(p => p.accountId === accountId),
+            reminders: filteredReminders, 
+            userPackages: filteredPackages,
             isLoading: false 
           });
-        } catch (error: any) {
+        } catch {
           set({ 
             error: 'Cannot load data from API. Try using Demo Data.', 
             isLoading: false 
@@ -112,7 +116,7 @@ export const useFamilyStore = create<FamilyState>()(
           });
           const packages = await userPackageService.getAll();
           set({ userPackages: packages.filter(p => p.accountId === accountId), isLoading: false });
-        } catch (error: any) {
+        } catch (error) {
           set({ error: 'Failed to purchase package', isLoading: false });
           throw error;
         }
@@ -123,9 +127,9 @@ export const useFamilyStore = create<FamilyState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ 
         isUsingMock: state.isUsingMock,
-        elderlyList: state.isUsingMock ? state.elderlyList : [],
-        reminders: state.isUsingMock ? state.reminders : [],
-        userPackages: state.isUsingMock ? state.userPackages : [],
+        elderlyList: state.elderlyList,
+        reminders: state.reminders,
+        userPackages: state.userPackages,
       }),
     }
   )

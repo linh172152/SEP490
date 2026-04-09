@@ -71,10 +71,16 @@ export function FamilyDashboard() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = async () => {
+    if (!familyMember?.id) {
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
+      const accountId = Number(familyMember.id);
       const [elderlyData, remindersData, alertsData, robotsData] = await Promise.all([
-        elderlyService.getAll(),
+        elderlyService.getByAccountId(accountId),
         reminderService.getAll(),
         alertService.getAll(),
         robotService.getAll(),

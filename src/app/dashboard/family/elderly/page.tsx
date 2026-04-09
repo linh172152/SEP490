@@ -1,18 +1,17 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useFamilyStore } from '@/store/useFamilyStore';
+import { useElderlyProfileStore } from '@/store/useElderlyProfileStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { 
   Card, 
   CardContent, 
   CardHeader, 
-  CardTitle, 
-  CardDescription,
+  CardTitle,
   CardFooter 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Plus, 
   Search, 
@@ -23,7 +22,6 @@ import {
   HeartPulse,
   Activity,
   Calendar,
-  AlertTriangle,
   Users
 } from 'lucide-react';
 import Link from 'next/link';
@@ -37,14 +35,13 @@ import {
 
 export default function ElderlyListPage() {
   const { user } = useAuthStore();
-  const { elderlyList, fetchDashboardData, isLoading, generateDemoData, isUsingMock } = useFamilyStore();
+  const { profiles, fetchProfiles } = useElderlyProfileStore();
 
   useEffect(() => {
     if (user?.id) {
-      fetchDashboardData(Number(user.id));
+      fetchProfiles(Number(user.id));
     }
-  }, [user?.id, fetchDashboardData]);
-
+  }, [user?.id, fetchProfiles]);
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -69,27 +66,27 @@ export default function ElderlyListPage() {
             <Filter className="mr-2 h-4 w-4" /> Filters
           </Button>
           <div className="text-sm text-muted-foreground">
-             Total: <span className="font-bold text-foreground">{elderlyList.length}</span> members
+             Total: <span className="font-bold text-foreground">{profiles.length}</span> members
           </div>
         </div>
       </div>
 
-      {elderlyList.length > 0 ? (
+      {profiles.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {elderlyList.map((elderly) => (
+          {profiles.map((elderly) => (
             <Card key={elderly.id} className="group border-none shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden bg-white dark:bg-slate-900">
               <div className="h-1.5 w-full bg-sky-500" />
               <CardHeader className="flex flex-row items-start justify-between pb-4">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-14 w-14 border-2 border-sky-100 ring-2 ring-white group-hover:scale-105 transition-transform">
                     <AvatarFallback className="bg-sky-50 text-sky-600 font-bold text-lg">
-                      {elderly.name.charAt(0)}
+                      {(elderly.name || 'User').charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle className="text-xl font-bold">{elderly.name}</CardTitle>
+                    <CardTitle className="text-xl font-bold">{elderly.name || 'Unknown'}</CardTitle>
                     <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
-                       <Calendar className="h-3 w-3" /> Born: {new Date(elderly.dateOfBirth).toLocaleDateString()}
+                       <Calendar className="h-3 w-3" /> Born: {elderly.dateOfBirth ? new Date(elderly.dateOfBirth).toLocaleDateString() : 'N/A'}
                     </p>
                   </div>
                 </div>
@@ -130,7 +127,7 @@ export default function ElderlyListPage() {
                       Risk Level: <span className="font-bold text-emerald-600 uppercase">Low</span>
                    </div>
                    <div className="text-muted-foreground">
-                      Language: <span className="font-bold uppercase text-foreground">{elderly.preferredLanguage}</span>
+                      Language: <span className="font-bold uppercase text-foreground">{elderly.preferredLanguage || 'Not specified'}</span>
                    </div>
                 </div>
               </CardContent>
@@ -160,15 +157,6 @@ export default function ElderlyListPage() {
                    Add First Member
                 </Link>
              </Button>
-             {!isUsingMock && (
-                <Button 
-                   onClick={() => user?.id && generateDemoData(Number(user.id))}
-                   variant="outline" 
-                   className="min-w-[150px] h-12"
-                >
-                   Try Demo Data
-                </Button>
-             )}
           </div>
         </div>
       )}

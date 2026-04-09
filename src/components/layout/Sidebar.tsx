@@ -12,21 +12,21 @@ import {
   Bot, 
   Settings, 
   LogOut,
-  Video,
   Package,
   UserCog,
   Activity,
   ShieldCheck,
   Cpu,
   History,
-  Bell
+  Bell,
+  type LucideIcon
 } from 'lucide-react';
 import { Role } from '@/types';
 
 interface NavItem {
   i18nKey: string;
   href: string;
-  icon: any;
+  icon: LucideIcon;
   roles: Role[];
 }
 
@@ -51,11 +51,12 @@ const navItems: NavItem[] = [
   { i18nKey: 'sidebar.settings', href: '/dashboard/manager/settings', icon: Settings, roles: ['MANAGER'] },
 
   // Family / Elderly Routes (from tu2)
-  { i18nKey: 'sidebar.overview', href: '/dashboard/family', icon: LayoutDashboard, roles: ['ELDERLY'] },
-  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/family/elderly', icon: Users, roles: ['ELDERLY'] },
-  { i18nKey: 'sidebar.reminders', href: '/dashboard/family/reminders', icon: Bell, roles: ['ELDERLY'] },
-  { i18nKey: 'sidebar.service_plans', href: '/dashboard/family/packages', icon: Package, roles: ['ELDERLY'] },
-  { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['ELDERLY'] },
+  { i18nKey: 'sidebar.overview', href: '/dashboard/family', icon: LayoutDashboard, roles: ['ELDERLY', 'FAMILYMEMBER'] },
+  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/family/elderly', icon: Users, roles: ['ELDERLY', 'FAMILYMEMBER'] },
+  { i18nKey: 'sidebar.reminders', href: '/dashboard/family/reminders', icon: Bell, roles: ['ELDERLY', 'FAMILYMEMBER'] },
+  { i18nKey: 'sidebar.exercises', href: '/dashboard/family/exercises', icon: Activity, roles: ['ELDERLY', 'FAMILYMEMBER'] },
+  { i18nKey: 'sidebar.service_plans', href: '/dashboard/family/packages', icon: Package, roles: ['ELDERLY', 'FAMILYMEMBER'] },
+  { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['ELDERLY', 'FAMILYMEMBER'] },
 
   // Caregiver Routes
   { i18nKey: 'sidebar.overview', href: '/dashboard/caregiver', icon: LayoutDashboard, roles: ['CAREGIVER'] },

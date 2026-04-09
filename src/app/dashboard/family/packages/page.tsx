@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFamilyStore } from '@/store/useFamilyStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { servicePackageService } from '@/services/api/servicePackageService';
+import { ServicePackageResponse } from '@/services/api/types';
 import { 
   Card, 
   CardContent, 
@@ -22,21 +24,32 @@ import {
   Zap, 
   Crown,
   Info,
-  ChevronRight,
   AlertCircle
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-const MOCK_PACKAGES = [
-  { id: 1, name: 'Basic Care', price: 29, duration: '30 days', description: 'Essential monitoring for one elderly family member.', features: ['1 Elderly Profile', 'Daily Medication Reminders', 'Basic Health Reports', 'Standard Support'] },
-  { id: 2, name: 'Standard Care', price: 59, duration: '60 days', description: 'Comprehensive support for up to 3 members.', features: ['Up to 3 Elderly Profiles', 'All Reminders (Exercise + Meds)', 'Weekly Health Analytics', 'Priority Support', 'Robot Assistance Basic'] },
-  { id: 3, name: 'Premium Care', price: 99, duration: '90 days', description: 'Advanced healthcare ecosystem for your entire family.', features: ['Unlimited Elderly Profiles', 'Real-time Vital Monitoring', 'AI Health Predictions', '24/7 Concierge Support', 'Advanced Robot Integration'] },
-];
-
 export default function PackagesPage() {
   const { user } = useAuthStore();
-  const { userPackages, purchasePackage, isLoading, isUsingMock } = useFamilyStore();
+  const { userPackages, purchasePackage } = useFamilyStore();
+  const [packages, setPackages] = useState<ServicePackageResponse[]>([]);
+  const [packagesLoading, setPackagesLoading] = useState(false);
   const [purchasingId, setPurchasingId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const loadPackages = async () => {
+      setPackagesLoading(true);
+      try {
+        const data = await servicePackageService.getAll();
+        setPackages(data);
+      } catch {
+        toast.error('Lỗi khi tải danh sách gói dịch vụ');
+      } finally {
+        setPackagesLoading(false);
+      }
+    };
+
+    loadPackages();
+  }, []);
 
   const activePackage = userPackages.length > 0 ? userPackages[0] : null;
 
@@ -47,7 +60,7 @@ export default function PackagesPage() {
     try {
       await purchasePackage(Number(user.id), packageId);
       toast.success('Gói dịch vụ đã được kích hoạt thành công!');
-    } catch (error) {
+    } catch {
       toast.error('Lỗi khi mua gói dịch vụ. Vui lòng thử lại.');
     } finally {
       setPurchasingId(null);
@@ -74,7 +87,7 @@ export default function PackagesPage() {
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                  <div className="space-y-1">
                     <CardTitle className="text-2xl">
-                       {MOCK_PACKAGES.find(p => p.id === activePackage.servicePackageId)?.name || 'Active Subscription'}
+                       {packages.find(p => p.id === activePackage.servicePackageId)?.name || 'Active Subscription'}
                     </CardTitle>
                     <CardDescription className="text-emerald-50 font-medium">
                        Membership Level {activePackage.servicePackageId}
@@ -134,82 +147,95 @@ export default function PackagesPage() {
            <h3 className="text-xl font-bold flex items-center gap-2">
               <Zap className="h-6 w-6 text-amber-500" /> Upgrade Your Plan
            </h3>
-           {isUsingMock && (
-             <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                MOCK MODE ACTIVE
-             </Badge>
-           )}
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          {MOCK_PACKAGES.map((pkg) => {
-            const isCurrent = activePackage?.servicePackageId === pkg.id;
-            const Icon = pkg.id === 1 ? Zap : pkg.id === 2 ? Crown : ShieldCheck;
+        {packagesLoading ? (
+          <div className="flex h-[300px] w-full items-center justify-center">
+            <Clock className="h-8 w-8 animate-spin text-sky-500" />
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-5">
+            {packages.map((pkg) => {
+              const isCurrent = activePackage?.servicePackageId === pkg.id;
+              const levelColor = {
+                TRIAL: 'bg-slate-50 text-slate-500 group-hover:bg-slate-500 group-hover:text-white',
+                basic: 'bg-blue-50 text-blue-500 group-hover:bg-blue-500 group-hover:text-white',
+                standard: 'bg-sky-50 text-sky-500 group-hover:bg-sky-500 group-hover:text-white',
+                advanced: 'bg-purple-50 text-purple-500 group-hover:bg-purple-500 group-hover:text-white',
+                premium: 'bg-amber-50 text-amber-500 group-hover:bg-amber-500 group-hover:text-white'
+              }[pkg.level.toLowerCase()] || 'bg-sky-50 text-sky-500 group-hover:bg-sky-500 group-hover:text-white';
 
-            return (
-              <Card key={pkg.id} className={`group relative border-2 transition-all duration-300 rounded-3xl overflow-hidden flex flex-col ${
-                isCurrent 
-                  ? 'border-emerald-500 shadow-xl scale-[1.02]' 
-                  : 'border-slate-100 hover:border-sky-500 hover:shadow-2xl hover:-translate-y-2'
-              }`}>
-                {isCurrent && (
-                  <div className="absolute top-0 right-0 p-2 bg-emerald-500 text-white rounded-bl-2xl font-bold flex items-center gap-1 text-[10px] z-10">
-                    <Check className="h-3 w-3" /> CURRENT PLAN
-                  </div>
-                )}
-                
-                <CardHeader className="pb-4">
-                  <div className={`h-12 w-12 rounded-2xl flex items-center justify-center mb-4 transition-colors ${
-                    isCurrent ? 'bg-emerald-50 text-emerald-500' : 'bg-sky-50 text-sky-500 group-hover:bg-sky-500 group-hover:text-white'
-                  }`}>
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <CardTitle className="text-2xl font-black tracking-tight">{pkg.name}</CardTitle>
-                  <CardDescription className="font-semibold text-sky-600 text-lg">
-                    ${pkg.price} <span className="text-xs text-muted-foreground font-normal"> / {pkg.duration}</span>
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-6 flex-grow">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {pkg.description}
-                  </p>
+              const icon = pkg.level.toLowerCase() === 'trial' ? Package : 
+                          pkg.level.toLowerCase() === 'basic' ? Zap :
+                          pkg.level.toLowerCase() === 'premium' ? Crown : ShieldCheck;
+              const Icon = icon;
+
+              return (
+                <Card key={pkg.id} className={`group relative border-2 transition-all duration-300 rounded-3xl overflow-hidden flex flex-col ${
+                  isCurrent 
+                    ? 'border-emerald-500 shadow-xl scale-[1.02] col-span-1 md:col-span-1' 
+                    : 'border-slate-100 hover:border-sky-500 hover:shadow-2xl hover:-translate-y-2'
+                }`}>
+                  {isCurrent && (
+                    <div className="absolute top-0 right-0 p-2 bg-emerald-500 text-white rounded-bl-2xl font-bold flex items-center gap-1 text-[10px] z-10">
+                      <Check className="h-3 w-3" /> CURRENT
+                    </div>
+                  )}
                   
-                  <ul className="space-y-3">
-                    {pkg.features.map((feat, idx) => (
-                      <li key={idx} className="flex items-start gap-3 text-sm font-medium">
-                        <div className="h-5 w-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                           <Check className="h-3 w-3" strokeWidth={3} />
+                  <CardHeader className="pb-4">
+                    <div className={`h-12 w-12 rounded-2xl flex items-center justify-center mb-4 transition-colors ${
+                      isCurrent ? 'bg-emerald-50 text-emerald-500' : levelColor
+                    }`}>
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <CardTitle className="text-xl font-black tracking-tight line-clamp-2">{pkg.name}</CardTitle>
+                    <CardDescription className="font-semibold text-sky-600 text-lg">
+                      {pkg.price === 0 ? (
+                        <span className="text-base">Free Trial</span>
+                      ) : (
+                        <span>{(pkg.price / 1000).toLocaleString('vi-VN')}K VND</span>
+                      )}
+                    </CardDescription>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-4 flex-grow">
+                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                      {pkg.description}
+                    </p>
+                    
+                    <div className="space-y-2">
+                      <Badge variant={pkg.active ? 'default' : 'secondary'} className="text-[10px]">
+                        {pkg.active ? 'Available' : 'Inactive'}
+                      </Badge>
+                      <p className="text-xs text-muted-foreground font-medium capitalize">
+                        Level: {pkg.level}
+                      </p>
+                    </div>
+                  </CardContent>
+                  
+                  <CardFooter className="pt-2">
+                    <Button 
+                      variant={isCurrent ? 'outline' : 'default'}
+                      className={`w-full h-10 rounded-2xl font-bold shadow-lg transition-all text-sm ${
+                        isCurrent 
+                          ? 'border-emerald-200 text-emerald-700 bg-emerald-50 scale-95 opacity-50 cursor-default' 
+                          : 'bg-primary hover:bg-primary/90 shadow-sky-100 hover:shadow-sky-200'
+                      }`}
+                      disabled={isCurrent || (purchasingId !== null) || !pkg.active}
+                      onClick={() => handlePurchase(pkg.id)}
+                    >
+                      {purchasingId === pkg.id ? (
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 animate-spin" /> Processing...
                         </div>
-                        {feat}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-                
-                <CardFooter className="pt-2">
-                  <Button 
-                    variant={isCurrent ? 'outline' : 'default'}
-                    className={`w-full h-12 rounded-2xl font-bold shadow-lg transition-all ${
-                      isCurrent 
-                        ? 'border-emerald-200 text-emerald-700 bg-emerald-50 scale-95 opacity-50 cursor-default' 
-                        : 'bg-primary hover:bg-primary/90 shadow-sky-100 hover:shadow-sky-200'
-                    }`}
-                    disabled={isCurrent || (purchasingId !== null)}
-                    onClick={() => handlePurchase(pkg.id)}
-                  >
-                    {purchasingId === pkg.id ? (
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 animate-spin" /> Processing...
-                      </div>
-                    ) : isCurrent ? 'Already Active' : 'Upgrade Now'}
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardFooter>
-              </Card>
-            );
-          })}
-        </div>
+                      ) : isCurrent ? 'Current' : pkg.price === 0 ? 'Select Trial' : 'Upgrade'}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section className="bg-sky-50 dark:bg-sky-900/10 p-8 rounded-3xl border border-sky-100 dark:border-sky-900/30 flex flex-col md:flex-row items-center gap-6">

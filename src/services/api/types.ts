@@ -271,3 +271,21 @@ export interface InteractionLogResponse extends InteractionLogRequest {
   robotName: string;
   createdAt: string;
 }
+
+// Room Types
+export interface RoomRequest {
+  name: string;
+  description?: string;
+  capacity: number;
+  floor?: string;
+}
+
+export interface RoomResponse extends RoomRequest {
+  id: number;
+  elderlyCount: number;
+  caregiverId?: number;
+  caregiverName?: string;
+}
+
+export type Room = RoomResponse;
+

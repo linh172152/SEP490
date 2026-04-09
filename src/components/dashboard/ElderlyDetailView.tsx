@@ -1,42 +1,34 @@
 'use client';
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { 
   Card, 
   CardContent, 
   CardDescription, 
   CardHeader, 
-  CardTitle,
-  CardFooter 
+  CardTitle
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   HeartPulse, 
-  Activity, 
-  AlertTriangle, 
-  Bot, 
-  Battery, 
-  Wifi, 
-  Clock, 
-  ArrowLeft,
+  Activity,
   ChevronRight,
+  ArrowLeft,
   Stethoscope,
   ShieldCheck,
-  CheckCircle2,
   Calendar,
-  Zap,
   TrendingUp,
-  BrainCircuit,
-  MessageSquare,
+  Bot,
+  Clock,
   Volume2
 } from 'lucide-react';
 import { 
   LineChart, 
   Line, 
   XAxis, 
-  YAxis, 
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
@@ -49,10 +41,9 @@ import {
   PolarRadiusAxis
 } from 'recharts';
 import { useElderlyProfileStore } from '@/store/useElderlyProfileStore';
-import { useAuthStore } from '@/store/useAuthStore';
-import { motion } from 'framer-motion';
+import { reminderService } from '@/services/api/reminderService';
+import { ReminderResponse } from '@/services/api/types';
 import Link from 'next/link';
-import { useState } from 'react';
 import { differenceInYears } from 'date-fns';
 
 interface ElderlyDetailViewProps {
@@ -62,9 +53,9 @@ interface ElderlyDetailViewProps {
 
 export function ElderlyDetailView({ elderlyId, role }: ElderlyDetailViewProps) {
   const { currentProfile: elderly, fetchProfileById, isLoading } = useElderlyProfileStore();
-  const { user } = useAuthStore();
   
-  const [newNote, setNewNote] = useState('');
+  const [reminders, setReminders] = useState<ReminderResponse[]>([]);
+  const [remindersLoading, setRemindersLoading] = useState(false);
 
   useEffect(() => {
     if (elderlyId) {
@@ -72,15 +63,34 @@ export function ElderlyDetailView({ elderlyId, role }: ElderlyDetailViewProps) {
     }
   }, [elderlyId, fetchProfileById]);
 
+  useEffect(() => {
+    if (!elderly) return;
+
+    const loadReminders = async () => {
+      setRemindersLoading(true);
+      try {
+        const data = await reminderService.getByElderlyId(elderly.id);
+        setReminders(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setRemindersLoading(false);
+      }
+    };
+
+    loadReminders();
+  }, [elderly]);
+
   // Deterministic mock data for health trends (F7 Mock Requirements)
   const healthData = useMemo(() => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     return days.map((day, i) => {
       const hash = elderly?.name.length || i;
+      const jitter = ((hash + i) * 3) % 5;
       return {
         name: day,
-        mood: 60 + Math.sin((i + hash) * 0.5) * 20 + Math.random() * 5,
-        heartRate: 72 + Math.cos((i + hash) * 0.5) * 10 + Math.random() * 5,
+        mood: 60 + Math.sin((i + hash) * 0.5) * 20 + jitter,
+        heartRate: 72 + Math.cos((i + hash) * 0.5) * 10 + jitter,
         cognitive: 70 + Math.sin((i + hash) * 0.8) * 15,
         score: 50 + Math.cos(i) * 30
       };
@@ -111,7 +121,7 @@ export function ElderlyDetailView({ elderlyId, role }: ElderlyDetailViewProps) {
         </div>
         <h2 className="text-2xl font-bold">Profile Not Found</h2>
         <p className="text-muted-foreground mt-2 max-w-sm">
-          We couldn't locate the elderly profile you're looking for.
+          We couldn&apos;t locate the elderly profile you&apos;re looking for.
         </p>
         <Button variant="outline" className="mt-6" asChild>
           <Link href={`/dashboard/${role.toLowerCase()}`}>
@@ -127,7 +137,6 @@ export function ElderlyDetailView({ elderlyId, role }: ElderlyDetailViewProps) {
 
   return (
     <div className="space-y-6 pb-20">
-      {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link href={`/dashboard/${role.toLowerCase()}`} className="hover:text-primary transition-colors">Dashboard</Link>
         <ChevronRight className="h-4 w-4" />
@@ -211,102 +220,182 @@ export function ElderlyDetailView({ elderlyId, role }: ElderlyDetailViewProps) {
 
         {/* Right Column */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-none shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-xl font-bold flex items-center gap-2">
-                <Activity className="h-5 w-5 text-sky-500" />
-                Health Summary
-              </CardTitle>
-              <CardDescription>Documented medical conditions and notes</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 flex flex-col gap-3">
-                <div className="flex items-center gap-2 text-xs font-bold text-sky-600 uppercase tracking-widest">
-                  <Stethoscope className="h-4 w-4" /> Medical History & Notes
-                </div>
-                <p className="text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
-                  {elderly.healthNotes || "No specific health notes recorded yet."}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <Tabs defaultValue="profile" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="reminders">Reminders</TabsTrigger>
+              <TabsTrigger value="room">Room</TabsTrigger>
+            </TabsList>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card className="border-none shadow-sm overflow-hidden">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold">Mood Trends</CardTitle>
-                  <Activity className="h-4 w-4 text-sky-500" />
-                </div>
-              </CardHeader>
-              <CardContent className="h-[200px] pt-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={healthData}>
-                    <defs>
-                      <linearGradient id="colorMood" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                    <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
-                    <Tooltip />
-                    <Area type="monotone" dataKey="mood" stroke="#0ea5e9" strokeWidth={3} fillOpacity={1} fill="url(#colorMood)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+            <TabsContent value="profile" className="space-y-6 mt-6">
+              <Card className="border-none shadow-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-xl font-bold flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-sky-500" />
+                    Health Summary
+                  </CardTitle>
+                  <CardDescription>Documented medical conditions and notes</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 flex flex-col gap-3">
+                    <div className="flex items-center gap-2 text-xs font-bold text-sky-600 uppercase tracking-widest">
+                      <Stethoscope className="h-4 w-4" /> Medical History & Notes
+                    </div>
+                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                      {elderly.healthNotes || "No specific health notes recorded yet."}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
 
-            <Card className="border-none shadow-sm overflow-hidden">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold">Cardiac Metrics</CardTitle>
-                  <HeartPulse className="h-4 w-4 text-rose-500" />
-                </div>
-              </CardHeader>
-              <CardContent className="h-[200px] pt-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={healthData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                    <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="heartRate" stroke="#f43f5e" strokeWidth={3} dot={{ r: 4, fill: '#f43f5e', strokeWidth: 2, stroke: '#fff' }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card className="border-none shadow-sm overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg font-bold">Mood Trends</CardTitle>
+                      <Activity className="h-4 w-4 text-sky-500" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="h-[200px] pt-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={healthData}>
+                        <defs>
+                          <linearGradient id="colorMood" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.1}/>
+                            <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                        <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
+                        <Tooltip />
+                        <Area type="monotone" dataKey="mood" stroke="#0ea5e9" strokeWidth={3} fillOpacity={1} fill="url(#colorMood)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
 
-          <Card className="border-none shadow-sm">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl font-bold">Communication Stats</CardTitle>
-                  <CardDescription>Daily interaction metrics with CareBot</CardDescription>
-                </div>
+                <Card className="border-none shadow-sm overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg font-bold">Cardiac Metrics</CardTitle>
+                      <HeartPulse className="h-4 w-4 text-rose-500" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="h-[200px] pt-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={healthData}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                        <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="heartRate" stroke="#f43f5e" strokeWidth={3} dot={{ r: 4, fill: '#f43f5e', strokeWidth: 2, stroke: '#fff' }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 rounded-xl bg-sky-50/50 dark:bg-sky-900/10 border border-sky-100 flex flex-col gap-1">
-                   <div className="text-[10px] font-bold text-sky-600 uppercase tracking-tighter">Avg Res Time</div>
-                   <div className="text-xl font-black text-slate-800 dark:text-slate-100">1.2s</div>
-                </div>
-                <div className="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 flex flex-col gap-1">
-                   <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-tighter">Bot Accuracy</div>
-                   <div className="text-xl font-black text-slate-800 dark:text-slate-100">98%</div>
-                </div>
-                <div className="p-4 rounded-xl bg-violet-50/50 dark:bg-violet-900/10 border border-violet-100 flex flex-col gap-1">
-                   <div className="text-[10px] font-bold text-violet-600 uppercase tracking-tighter">Daily Words</div>
-                   <div className="text-xl font-black text-slate-800 dark:text-slate-100">1,402</div>
-                </div>
-                <div className="p-4 rounded-xl bg-orange-50/50 dark:bg-orange-900/10 border border-orange-100 flex flex-col gap-1">
-                   <div className="text-[10px] font-bold text-orange-600 uppercase tracking-tighter">Interaction</div>
-                   <div className="text-xl font-black text-slate-800 dark:text-slate-100">High</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+
+              <Card className="border-none shadow-sm">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-xl font-bold">Communication Stats</CardTitle>
+                      <CardDescription>Daily interaction metrics with CareBot</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-4 rounded-xl bg-sky-50/50 dark:bg-sky-900/10 border border-sky-100 flex flex-col gap-1">
+                       <div className="text-[10px] font-bold text-sky-600 uppercase tracking-tighter">Avg Res Time</div>
+                       <div className="text-xl font-black text-slate-800 dark:text-slate-100">1.2s</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 flex flex-col gap-1">
+                       <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-tighter">Bot Accuracy</div>
+                       <div className="text-xl font-black text-slate-800 dark:text-slate-100">98%</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-violet-50/50 dark:bg-violet-900/10 border border-violet-100 flex flex-col gap-1">
+                       <div className="text-[10px] font-bold text-violet-600 uppercase tracking-tighter">Daily Words</div>
+                       <div className="text-xl font-black text-slate-800 dark:text-slate-100">1,402</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-orange-50/50 dark:bg-orange-900/10 border border-orange-100 flex flex-col gap-1">
+                       <div className="text-[10px] font-bold text-orange-600 uppercase tracking-tighter">Interaction</div>
+                       <div className="text-xl font-black text-slate-800 dark:text-slate-100">High</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="reminders" className="space-y-6 mt-6">
+              <Card className="border-none shadow-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-xl font-bold flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-sky-500" />
+                    Reminders
+                  </CardTitle>
+                  <CardDescription>Scheduled reminders and notifications for {elderly.name}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {remindersLoading ? (
+                    <div className="flex h-[200px] w-full items-center justify-center">
+                      <Activity className="h-8 w-8 animate-spin text-sky-500" />
+                    </div>
+                  ) : reminders.length > 0 ? (
+                    <div className="space-y-4">
+                      {reminders.map((reminder) => (
+                        <div key={reminder.id} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-sky-100 dark:bg-sky-900 flex items-center justify-center">
+                              <Clock className="h-5 w-5 text-sky-600" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-800 dark:text-slate-100">{reminder.title}</p>
+                              <p className="text-sm text-slate-600 dark:text-slate-400">{reminder.description}</p>
+                              <p className="text-xs text-slate-500 mt-1">
+                                {new Date(reminder.scheduledTime).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant={reminder.isActive ? "default" : "secondary"}>
+                            {reminder.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-8 text-center">
+                      <Clock className="h-12 w-12 text-slate-400 mb-4" />
+                      <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-400">No Reminders</h3>
+                      <p className="text-slate-500 dark:text-slate-500 mt-2">
+                        No reminders have been scheduled for {elderly.name} yet.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="room" className="space-y-6 mt-6">
+              <Card className="border-none shadow-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-xl font-bold flex items-center gap-2">
+                    <Bot className="h-5 w-5 text-sky-500" />
+                    Room Information
+                  </CardTitle>
+                  <CardDescription>Room details and CareBot status for {elderly.name}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col items-center justify-center p-8 text-center">
+                    <Bot className="h-12 w-12 text-slate-400 mb-4" />
+                    <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-400">Room Information</h3>
+                    <p className="text-slate-500 dark:text-slate-500 mt-2">
+                      Room assignment information will be displayed here when available.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

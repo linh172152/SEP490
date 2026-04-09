@@ -21,6 +21,10 @@ class ReminderService {
     );
   }
 
+  async getByElderlyId(elderlyId: number): Promise<ReminderResponse[]> {
+    return apiClient.get<ReminderResponse[]>(`/api/reminders/elderly/${elderlyId}`);
+  }
+
   async create(data: ReminderRequest): Promise<ReminderResponse> {
     return apiClient.post<ReminderResponse>("/api/reminders", data);
   }

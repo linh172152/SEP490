@@ -17,3 +17,4 @@ export { interactionLogService } from "./interactionLogService";
 export { servicePackageService } from "./servicePackageService";
 export { userPackageService } from "./userPackageService";
 export { systemLogService } from "./systemLogService";
+export { roomService } from "./roomService";

@@ -22,8 +22,6 @@ import {
   AlertTriangle, 
   CheckCircle2, 
   Clock, 
-  User, 
-  Filter,
   Check,
   Search,
   BellRing
@@ -32,18 +30,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { useElderlyStore } from '@/store/useElderlyStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { AlertSeverity } from '@/types';
 
 export default function CaregiverAlertsPage() {
   const { user: caregiver } = useAuthStore();
-  const { elderlyList, getElderlyByCaregiver, alerts, resolveAlert, addAlert } = useElderlyStore();
+  const { getElderlyByCaregiver, alerts, resolveAlert, addAlert } = useElderlyStore();
   const [severityFilter, setSeverityFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('active'); // Default to active alerts
   const [search, setSearch] = useState('');
 
   const assignedElderly = useMemo(() => 
     caregiver ? getElderlyByCaregiver(caregiver.id) : [],
-  [caregiver, getElderlyByCaregiver, elderlyList]);
+  [caregiver, getElderlyByCaregiver]);
 
   const allAlerts = useMemo(() => {
     if (!caregiver) return [];

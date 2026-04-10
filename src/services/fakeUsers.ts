@@ -14,13 +14,6 @@ export const fakeUsers: FakeUser[] = [
         role: 'ADMIN',
     },
     {
-        id: 'user-doctor-001',
-        name: 'Dr. Sarah Jenkins',
-        email: 'doctor@carebot.com',
-        password: 'password123',
-        role: 'DOCTOR',
-    },
-    {
         id: 'user-caregiver-001',
         name: 'Maria Rodriguez',
         email: 'caregiver@carebot.com',

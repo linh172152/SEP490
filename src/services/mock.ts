@@ -1,7 +1,6 @@
 import { Patient, RobotStatus, Alert, User, MoodLog, ClinicalNote, ActivityEntry } from '@/types';
 
 export const mockUsers: User[] = [
-    { id: 'user-doctor-001', name: 'Dr. Sarah Jenkins', role: 'DOCTOR', email: 'doctor@carebot.com' },
     { id: 'user-caregiver-001', name: 'Maria Rodriguez', role: 'CAREGIVER', email: 'caregiver@carebot.com' },
     { id: 'user-admin-001', name: 'Alex Admin', role: 'ADMIN', email: 'admin@carebot.com' },
     { id: 'user-family-001', name: 'John Smith', role: 'FAMILY', email: 'family@example.com' },
@@ -117,14 +116,14 @@ export const mockClinicalNotes: ClinicalNote[] = [
     {
         id: 'n1',
         elderlyId: 'p2',
-        doctorId: '1',
-        content: 'Patient showing increased signs of agitation in the evenings. Recommend adjusting evening robot escort frequency.',
+        managerId: 'user-admin-001',
+        content: 'Elderly showing increased signs of agitation in the evenings. Recommend adjusting evening robot escort frequency.',
         createdAt: new Date(Date.now() - 86400000).toISOString()
     },
     {
         id: 'n2',
         elderlyId: 'p2',
-        doctorId: '1',
+        managerId: 'user-admin-001',
         content: 'Cognitive assessment shows slight decline in short-term memory recall. Initiating memory games via CareBot.',
         createdAt: new Date(Date.now() - 43200000).toISOString()
     }

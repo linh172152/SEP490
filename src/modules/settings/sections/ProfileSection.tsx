@@ -19,10 +19,10 @@ import { useCaregiverStore } from '@/store/useCaregiverStore';
 import { useElderlyProfileStore } from '@/store/useElderlyProfileStore';
 import { useI18nStore } from '@/store/useI18nStore';
 import { Badge } from '@/components/ui/badge';
+import { cn, getAvatarColor, getInitials } from '@/lib/utils';
 
 const profileSchema = z.object({
-  firstName: z.string().min(1, 'Required'),
-  lastName: z.string().min(1, 'Required'),
+  fullName: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   phone: z.string().min(10, 'Phone number must be at least 10 digits'),
   // Caregiver fields
@@ -72,7 +72,7 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
   const isFamily = user?.role === 'FAMILYMEMBER';
   const isProfessional = capabilities.canAccessProfessionalProfile;
 
-  const loadedCaregiverName = caregiverProfile?.name || `${settings.profile.firstName || ''} ${settings.profile.lastName || ''}`.trim();
+  const loadedCaregiverName = caregiverProfile?.name || settings.profile.fullName || '';
   const loadedCaregiverEmail = caregiverProfile?.accountEmail || settings.profile.email || user?.email || '';
 
   useEffect(() => {
@@ -86,8 +86,7 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema) as any,
     defaultValues: {
-      firstName: settings.profile.firstName || '',
-      lastName: settings.profile.lastName || '',
+      fullName: settings.profile.fullName || '',
       email: settings.profile.email || '',
       phone: settings.profile.phone || '',
       relationship: '',
@@ -104,10 +103,7 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
 
   useEffect(() => {
     if (caregiverProfile) {
-      const [firstName = '', ...lastNameParts] = caregiverProfile.name?.split(' ') || [''];
-      const lastName = lastNameParts.join(' ');
-      form.setValue('firstName', firstName);
-      form.setValue('lastName', lastName);
+      form.setValue('fullName', caregiverProfile.name || '');
       form.setValue('email', caregiverProfile.accountEmail || settings.profile.email || user?.email || '');
       form.setValue('relationship', caregiverProfile.relationship || '');
       form.setValue('notificationPreference', caregiverProfile.notificationPreference || 'EMAIL');
@@ -126,8 +122,7 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
     try {
       // 1. Update general settings (mock)
       await updateProfile({ 
-        firstName: data.firstName,
-        lastName: data.lastName,
+        fullName: data.fullName,
         phone: data.phone,
         avatar: avatarPreview,
         professionalId: data.professionalId,
@@ -140,7 +135,7 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
       if (isCaregiver && accountId) {
         const cgPayload = {
           accountId,
-          name: `${data.firstName} ${data.lastName}`,
+          name: data.fullName,
           relationship: data.relationship || '',
           notificationPreference: data.notificationPreference || 'EMAIL',
         };
@@ -175,25 +170,15 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
     }
   }
 
-  const handleAvatarMockUpload = () => {
-    const mockSeeds = ['Felix', 'Aneka', 'James', 'Sophie'];
-    const randomSeed = mockSeeds[Math.floor(Math.random() * mockSeeds.length)];
-    const randomAvatar = `https://api.dicebear.com/7.x/notionists/svg?seed=${randomSeed}`;
-    setAvatarPreview(randomAvatar);
-    toast.success('Avatar updated (Mock)');
-  };
-
   const isGlobalLoading = isSaving || isCaregiverLoading || isElderlyLoading;
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-      <div className="flex flex-col gap-1">
-        <h3 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent">
-          {t('settings.profile.title')}
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col gap-1 pb-2 border-b border-border/40">
+        <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 italic">
+            {t('settings.profile.title')}
         </h3>
-        <p className="text-sm text-muted-foreground">{t('settings.profile.desc')}</p>
       </div>
-
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           {/* Section 1: Personal Account */}
@@ -203,27 +188,21 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
                 <UserCircle className="h-5 w-5" />
                 <CardTitle className="text-lg">{t('settings.profile.card_title')}</CardTitle>
               </div>
-              <CardDescription>{t('settings.profile.card_desc')}</CardDescription>
             </CardHeader>
             <CardContent className="pt-8 space-y-8">
               <div className="flex items-center gap-6">
-                <div className="relative group">
+                <div className="relative">
                   <Avatar className="h-24 w-24 border-4 border-white ring-4 ring-slate-100 dark:ring-slate-800 shadow-xl overflow-hidden">
-                    <AvatarImage src={avatarPreview} alt="User avatar" />
-                    <AvatarFallback className="text-2xl bg-sky-50 text-sky-600 font-bold uppercase transition-transform group-hover:scale-110">
-                      {settings.profile.firstName?.[0]}{settings.profile.lastName?.[0]}
+                    <AvatarFallback className={cn(
+                      "text-2xl text-white font-black uppercase transition-all duration-500",
+                      getAvatarColor(loadedCaregiverName)
+                    )}>
+                      {getInitials(loadedCaregiverName)}
                     </AvatarFallback>
                   </Avatar>
-                  <button 
-                    type="button"
-                    onClick={handleAvatarMockUpload}
-                    className="absolute bottom-0 right-0 p-2.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-2xl opacity-0 group-hover:opacity-100 transition-all hover:scale-110 active:scale-95 shadow-lg border-2 border-white"
-                  >
-                    <Camera className="h-4 w-4" />
-                  </button>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <h4 className="font-bold text-xl text-slate-900 dark:text-slate-100">{loadedCaregiverName || 'Unknown Caregiver'}</h4>
+                  <h4 className="font-bold text-xl text-slate-900 dark:text-slate-100">{loadedCaregiverName || t('common.user_account') || 'User Account'}</h4>
                   <p className="text-sm text-slate-500 font-medium">{loadedCaregiverEmail}</p>
                   <div className="flex gap-2 mt-2">
                     <Badge variant="outline" className="bg-sky-50 text-sky-700 border-sky-200 uppercase tracking-widest text-[10px] font-black px-3 py-1">
@@ -233,32 +212,17 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 <FormField
                   control={form.control}
-                  name="firstName"
+                  name="fullName"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                        {t('settings.profile.first_name')}
+                        {t('settings.profile.full_name')}
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="John" {...field} className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500" />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                        {t('settings.profile.last_name')}
-                      </FormLabel>
-                      <FormControl>
-                        <Input placeholder="Doe" {...field} className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500" />
+                        <Input placeholder="John Doe" {...field} className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500" />
                       </FormControl>
                       <FormMessage className="text-[10px]" />
                     </FormItem>
@@ -355,7 +319,7 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
                     name="relationship"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Relationship to Recipient</FormLabel>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('settings.profile.relationship')}</FormLabel>
                         <FormControl>
                           <Input placeholder="e.g. Son, Daughter, Professional Nurse" {...field} className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500" />
                         </FormControl>
@@ -368,7 +332,7 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
                     name="notificationPreference"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Notification Channel</FormLabel>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('settings.profile.notification_channel')}</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                           <FormControl>
                             <SelectTrigger className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500">
@@ -397,9 +361,9 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
               <CardHeader className="border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-2 text-sky-600">
                   <HeartPulse className="h-5 w-5" />
-                  <CardTitle className="text-lg">Care Recipient Details</CardTitle>
+                  <CardTitle className="text-lg">{t('settings.profile.recipient_title')}</CardTitle>
                 </div>
-                <CardDescription>Configure the health profile and voice preferences for the elderly member.</CardDescription>
+                <CardDescription>{t('settings.profile.recipient_desc')}</CardDescription>
               </CardHeader>
               <CardContent className="pt-8 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -408,7 +372,7 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
                     name="elderlyName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Elderly Full Name</FormLabel>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('settings.profile.elderly_name')}</FormLabel>
                         <FormControl>
                           <Input placeholder="Full name from citizen ID" {...field} className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500" />
                         </FormControl>
@@ -421,7 +385,7 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
                     name="dateOfBirth"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Date of Birth</FormLabel>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('manager.patients.table.dob')}</FormLabel>
                         <FormControl>
                           <Input 
                             type="date" 
@@ -441,7 +405,7 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
                     name="preferredLanguage"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Preferred Language</FormLabel>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('user_modal.placeholders.lang')}</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value || 'Vietnamese'}>
                           <FormControl>
                             <SelectTrigger className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500">
@@ -462,7 +426,7 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
                     name="speakingSpeed"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">CareBot Voice Speed</FormLabel>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('user_modal.placeholders.speaking_speed')}</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value || 'normal'}>
                           <FormControl>
                             <SelectTrigger className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500">
@@ -486,7 +450,7 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
                   name="healthNotes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Health Notes & Conditions</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('settings.profile.health_notes')}</FormLabel>
                       <FormControl>
                         <Textarea 
                           placeholder="e.g. Mild memory loss, hypertension, requires meal reminders..." 

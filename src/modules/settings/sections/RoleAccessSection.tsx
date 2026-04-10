@@ -16,7 +16,6 @@ export function RoleAccessSection({ capabilities }: RoleAccessSectionProps) {
   
   // Mock feature toggle states for demo
   const [features, setFeatures] = useState({
-     doctorBetaAccess: false,
      caregiverExportData: true,
      familyMobileApp: true
   });
@@ -37,7 +36,6 @@ export function RoleAccessSection({ capabilities }: RoleAccessSectionProps) {
 
   const roleDefinitions = [
     { role: 'ADMINISTRATOR', access: 'Unrestricted', users: 3 },
-    { role: 'DOCTOR', access: 'Clinical + Read/Write', users: 15 },
     { role: 'CAREGIVER', access: 'Standard Operating', users: 42 },
     { role: 'FAMILYMEMBER', access: 'Read-only (Filtered)', users: 120 },
   ];
@@ -90,10 +88,6 @@ export function RoleAccessSection({ capabilities }: RoleAccessSectionProps) {
              </CardHeader>
              <CardContent className="space-y-6">
                  <div className="flex items-center justify-between">
-                     <span className="text-sm font-medium">New AI Insights UI (Doctors)</span>
-                     <Switch checked={features.doctorBetaAccess} onCheckedChange={(v) => setFeatures({...features, doctorBetaAccess: v})} />
-                 </div>
-                 <div className="flex items-center justify-between">
                      <span className="text-sm font-medium">Allow Data Export (Caregivers)</span>
                      <Switch checked={features.caregiverExportData} onCheckedChange={(v) => setFeatures({...features, caregiverExportData: v})} />
                  </div>
@@ -112,24 +106,22 @@ export function RoleAccessSection({ capabilities }: RoleAccessSectionProps) {
           <CardContent className="overflow-x-auto">
               <div className="min-w-[600px] border rounded-lg p-6 bg-slate-50 dark:bg-slate-950 flex flex-col gap-4">
                   <div className="flex justify-between font-bold text-sm text-muted-foreground pb-2 border-b">
-                      <span className="w-1/3">Capability</span>
-                      <span className="w-1/6 text-center">Admin</span>
-                      <span className="w-1/6 text-center">Doctor</span>
-                      <span className="w-1/6 text-center">Caregiver</span>
-                      <span className="w-1/6 text-center">Family</span>
+                      <span className="w-2/5">Capability</span>
+                      <span className="w-1/5 text-center">Admin</span>
+                      <span className="w-1/5 text-center">Caregiver</span>
+                      <span className="w-1/5 text-center">Family</span>
                   </div>
                   {[
-                      { cap: 'View Patient Vitals', a: true, d: true, c: true, f: true },
-                      { cap: 'Modify Medications', a: true, d: true, c: false, f: false },
-                      { cap: 'Access Audit Logs', a: true, d: false, c: false, f: false },
-                      { cap: 'Manage Risk Thresholds', a: true, d: true, c: false, f: false }
+                      { cap: 'View Patient Vitals', a: true, c: true, f: true },
+                      { cap: 'Modify Medications', a: true, c: false, f: false },
+                      { cap: 'Access Audit Logs', a: true, c: false, f: false },
+                      { cap: 'Manage Risk Thresholds', a: true, c: false, f: false }
                   ].map((row, i) => (
                       <div key={i} className="flex justify-between items-center text-sm pb-2 border-b last:border-0 last:pb-0">
-                           <span className="w-1/3 font-medium text-slate-700 dark:text-slate-300">{row.cap}</span>
-                           <span className="w-1/6 flex justify-center">{row.a ? <CheckCircle2 className="h-4 w-4 text-emerald-500"/> : <XCircle className="h-4 w-4 text-rose-300"/>}</span>
-                           <span className="w-1/6 flex justify-center">{row.d ? <CheckCircle2 className="h-4 w-4 text-emerald-500"/> : <XCircle className="h-4 w-4 text-rose-300"/>}</span>
-                           <span className="w-1/6 flex justify-center">{row.c ? <CheckCircle2 className="h-4 w-4 text-emerald-500"/> : <XCircle className="h-4 w-4 text-rose-300"/>}</span>
-                           <span className="w-1/6 flex justify-center">{row.f ? <CheckCircle2 className="h-4 w-4 text-emerald-500"/> : <XCircle className="h-4 w-4 text-rose-300"/>}</span>
+                           <span className="w-2/5 font-medium text-slate-700 dark:text-slate-300">{row.cap}</span>
+                           <span className="w-1/5 flex justify-center">{row.a ? <CheckCircle2 className="h-4 w-4 text-emerald-500"/> : <XCircle className="h-4 w-4 text-rose-300"/>}</span>
+                           <span className="w-1/5 flex justify-center">{row.c ? <CheckCircle2 className="h-4 w-4 text-emerald-500"/> : <XCircle className="h-4 w-4 text-rose-300"/>}</span>
+                           <span className="w-1/5 flex justify-center">{row.f ? <CheckCircle2 className="h-4 w-4 text-emerald-500"/> : <XCircle className="h-4 w-4 text-rose-300"/>}</span>
                       </div>
                   ))}
               </div>

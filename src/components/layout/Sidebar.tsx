@@ -19,7 +19,8 @@ import {
   ShieldCheck,
   Cpu,
   History,
-  Bell
+  Bell,
+  Home
 } from 'lucide-react';
 import { Role } from '@/types';
 
@@ -34,21 +35,20 @@ const navItems: NavItem[] = [
   // Admin Routes (System & Platform Administration)
   { i18nKey: 'sidebar.overview', href: '/dashboard/admin', icon: LayoutDashboard, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.user_mgt', href: '/dashboard/admin/users', icon: Users, roles: ['ADMIN'] },
-  { i18nKey: 'sidebar.service_plans', href: '/dashboard/admin/service-packages', icon: Package, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.data_security', href: '/dashboard/admin/security', icon: ShieldCheck, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.robot_mgt', href: '/dashboard/admin/fleet', icon: Cpu, roles: ['ADMIN'] },
   { i18nKey: 'wellness.sidebar_label', href: '/dashboard/admin/wellness', icon: Smile, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.settings', href: '/dashboard/admin/settings', icon: Settings, roles: ['ADMIN'] },
 
-  // Manager Routes (from main)
+  // Manager Routes (Operational Hub)
   { i18nKey: 'sidebar.overview', href: '/dashboard/manager', icon: LayoutDashboard, roles: ['MANAGER'] },
-  { i18nKey: 'sidebar.staff_mgt', href: '/dashboard/manager/staff', icon: Users, roles: ['MANAGER'] },
+  { i18nKey: 'sidebar.rooms', href: '/dashboard/manager/rooms', icon: Home, roles: ['MANAGER'] },
+  { i18nKey: 'sidebar.staff_mgt', href: '/dashboard/manager/users', icon: Users, roles: ['MANAGER'] },
   { i18nKey: 'sidebar.robot_fleet', href: '/dashboard/manager/robots', icon: Bot, roles: ['MANAGER'] },
-  { i18nKey: 'sidebar.service_plans', href: '/dashboard/manager/service-packages', icon: Package, roles: ['MANAGER'] },
-  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/manager/user-packages', icon: UserCog, roles: ['MANAGER'] },
+  { i18nKey: 'sidebar.subscriptions', href: '/dashboard/manager/subscriptions', icon: Package, roles: ['MANAGER'] },
   { i18nKey: 'wellness.sidebar_label', href: '/dashboard/manager/wellness', icon: Smile, roles: ['MANAGER'] },
-  { i18nKey: 'sidebar.ops_insights', href: '/dashboard/manager/analytics', icon: Activity, roles: ['MANAGER'] },
   { i18nKey: 'sidebar.settings', href: '/dashboard/manager/settings', icon: Settings, roles: ['MANAGER'] },
+
 
   // Family / Elderly Routes (from tu2)
   { i18nKey: 'sidebar.overview', href: '/dashboard/family', icon: LayoutDashboard, roles: ['ELDERLY'] },
@@ -64,9 +64,6 @@ const navItems: NavItem[] = [
   { i18nKey: 'sidebar.exercises', href: '/dashboard/caregiver/exercises', icon: Activity, roles: ['CAREGIVER'] },
   { i18nKey: 'sidebar.robot_fleet', href: '/dashboard/caregiver/robot', icon: Bot, roles: ['CAREGIVER'] },
   { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['CAREGIVER'] },
-
-  // Common routes
-  { i18nKey: 'sidebar.audit_logs', href: '/dashboard/logs', icon: History, roles: ['ADMIN', 'MANAGER'] },
 ];
 
 export function Sidebar() {

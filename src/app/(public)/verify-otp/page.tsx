@@ -27,7 +27,27 @@ const formSchema = z.object({
   otp: z.string().length(6, 'OTP phải có 6 chữ số.'),
 });
 
+function getRolePath(role: string): string {
+  const key = role?.trim().toLowerCase() || 'caregiver';
+  const roleMap: Record<string, string> = {
+    admin: 'admin',
+    manager: 'manager',
+    caregiver: 'caregiver',
+    family: 'family',
+    elderly: 'family',
+    administrator: 'admin',
+    elderlyuser: 'family', 
+    'elderly user': 'family',
+    caregiveruser: 'caregiver',
+    familymember: 'family',
+    'family member': 'family',
+  };
+
+  return roleMap[key] || 'caregiver';
+}
+
 function VerifyOtpContent() {
+  const { t } = useI18nStore();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { verifyOtp } = useAuthStore();
@@ -55,8 +75,18 @@ function VerifyOtpContent() {
     setIsLoading(true);
     try {
       await verifyOtp(values.email, values.otp);
-      toast.success('Xác thực OTP thành công! Bạn có thể đăng nhập ngay bây giờ.');
-      router.push('/login');
+      
+      // Kiểm tra xem store đã có user chưa (nếu BE trả về token)
+      const currentUser = useAuthStore.getState().user;
+      
+      if (currentUser) {
+        toast.success(t('auth.verify_otp.success_msg'));
+        const rolePath = getRolePath(currentUser.role || 'caregiver');
+        router.replace(`/dashboard/${rolePath}`);
+      } else {
+        toast.success(t('auth.verify_otp.success_no_login'));
+        router.push('/login');
+      }
     } catch (error: unknown) {
       const message =
         error instanceof Error
@@ -65,7 +95,7 @@ function VerifyOtpContent() {
             ? String((error as { message?: unknown }).message || '')
             : undefined;
 
-      toast.error(message || 'Xác thực OTP thất bại. Vui lòng kiểm tra lại mã.');
+      toast.error(message || t('auth.verify_otp.error_generic'));
     } finally {
       setIsLoading(false);
     }
@@ -78,10 +108,10 @@ function VerifyOtpContent() {
           <Mail className="h-8 w-8 text-primary" />
         </div>
         <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
-          Verify Your OTP
+          {t('auth.verify_otp.title')}
         </CardTitle>
         <CardDescription>
-          Chúng tôi đã gửi mã OTP đến email của bạn. Vui lòng nhập mã bên dưới để kích hoạt tài khoản.
+          {t('auth.verify_otp.subtitle')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -92,9 +122,9 @@ function VerifyOtpContent() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t('auth.verify_otp.email_label')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="example@gmail.com" type="email" disabled={isLoading || !!emailParam} {...field} />
+                    <Input placeholder={t('auth.verify_otp.email_placeholder')} type="email" disabled={isLoading || !!emailParam} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -105,10 +135,10 @@ function VerifyOtpContent() {
               name="otp"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Mã OTP (6 chữ số)</FormLabel>
+                  <FormLabel>{t('auth.verify_otp.otp_label')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="000000"
+                      placeholder={t('auth.verify_otp.otp_placeholder')}
                       maxLength={6}
                       disabled={isLoading}
                       {...field}
@@ -123,10 +153,10 @@ function VerifyOtpContent() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Verifying...
+                  {t('auth.verify_otp.submitting_btn')}
                 </>
               ) : (
-                'Kích hoạt tài khoản'
+                t('auth.verify_otp.submit_btn')
               )}
             </Button>
           </form>
@@ -134,16 +164,16 @@ function VerifyOtpContent() {
       </CardContent>
       <CardFooter className="flex flex-col space-y-2 text-sm text-center text-muted-foreground bg-muted/20 py-4 border-t">
         <p>
-          Chưa nhận được mã?{' '}
-          <button className="text-primary hover:underline font-medium" type="button" onClick={() => toast.info('Tính năng gửi lại OTP đang được phát triển!')}>
-            Gửi lại OTP
+          {t('auth.verify_otp.resend_prompt')}{' '}
+          <button className="text-primary hover:underline font-medium" type="button" onClick={() => toast.info(t('auth.verify_otp.resend_wip'))}>
+            {t('auth.verify_otp.resend_link')}
           </button>
         </p>
         <div className="pt-2 text-xs">
           <p>
-            Quay lại{' '}
+            {t('auth.verify_otp.back_to')}{' '}
             <Link href="/register" className="text-primary hover:underline font-medium">
-              trang đăng ký
+              {t('auth.verify_otp.register_link')}
             </Link>
           </p>
         </div>

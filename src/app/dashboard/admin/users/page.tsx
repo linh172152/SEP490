@@ -18,7 +18,9 @@ import {
   ChevronRight,
   UserCheck,
   ShieldCheck,
-  Mail
+  Mail,
+  History,
+  Info
 } from "lucide-react";
 import { useI18nStore } from "@/store/useI18nStore";
 import { accountService } from "@/services/api/accountService";
@@ -34,6 +36,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+const STORAGE_KEY = "deleted_accounts_backup";
+
+interface BackupRecord {
+  account: AccountResponse;
+  deletedAt: number;
+}
 
 export default function UsersManagePage() {
   const { t } = useI18nStore();
@@ -46,9 +69,15 @@ export default function UsersManagePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Filter States
+  const [roleFilter, setRoleFilter] = useState("ALL");
+  const [sortOrder, setSortOrder] = useState("NEWEST");
+
   // Modal States
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AccountResponse | null>(null);
+  const [isBackupOpen, setIsBackupOpen] = useState(false);
+  const [backupList, setBackupList] = useState<BackupRecord[]>([]);
 
   // Confirm Dialog States
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -69,15 +98,79 @@ export default function UsersManagePage() {
 
   useEffect(() => {
     fetchUsers();
+    loadBackup();
   }, []);
+
+  // -- Backup Logic --
+  const loadBackup = () => {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const parsed: BackupRecord[] = JSON.parse(raw);
+      const fresh = parsed.filter(r => Date.now() - r.deletedAt < 24 * 60 * 60 * 1000);
+      setBackupList(fresh);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  };
+
+  const saveToBackup = (account: AccountResponse) => {
+    const record: BackupRecord = { account, deletedAt: Date.now() };
+    const updated = [record, ...backupList].slice(0, 50);
+    setBackupList(updated);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  };
+
+  const handleRestoreBackup = async (record: BackupRecord) => {
+    try {
+      await accountService.updateAccount(record.account.id, { deleted: false } as any);
+      toast.success(t("admin.users.toasts.update_success"));
+      const updated = backupList.filter(r => r.account.id !== record.account.id);
+      setBackupList(updated);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      fetchUsers();
+    } catch (error: any) {
+      if (error.status === 403 || error.status === 501 || error.status === 400) {
+        toast.info("Tính năng khôi phục đang được phát triển (Backend chưa hỗ trợ)");
+        const updated = backupList.filter(r => r.account.id !== record.account.id);
+        setBackupList(updated);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      } else {
+        toast.error("Lỗi khi khôi phục tài khoản");
+      }
+    }
+  };
 
   // Filtered and Paginated Logic
   const filteredUsers = useMemo(() => {
-    return users.filter(user => 
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (user.fullName || user.FullName || "").toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [users, searchQuery]);
+    let result = [...users];
+
+    // Search filter
+    if (searchQuery) {
+        result = result.filter(user => 
+            user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (user.fullName || user.FullName || "").toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }
+
+    // Role filter
+    if (roleFilter !== "ALL") {
+        result = result.filter(user => {
+            const r = (user.role?.toUpperCase() || "");
+            return r === roleFilter || r === `ROLE_${roleFilter}`;
+        });
+    }
+
+    // Sort by createdAt
+    result.sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        return sortOrder === "NEWEST" ? dateB - dateA : dateA - dateB;
+    });
+
+    return result;
+  }, [users, searchQuery, roleFilter, sortOrder]);
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   
@@ -88,11 +181,6 @@ export default function UsersManagePage() {
 
   const handleCreateNew = () => {
     setSelectedUser(null);
-    setIsFormOpen(true);
-  };
-
-  const handleEdit = (user: AccountResponse) => {
-    setSelectedUser(user);
     setIsFormOpen(true);
   };
 
@@ -128,6 +216,7 @@ export default function UsersManagePage() {
       setIsSubmitting(true);
       if (confirmAction === "SOFT_DELETE") {
         await accountService.updateAccount(selectedUser.id, { deleted: true });
+        saveToBackup(selectedUser);
         toast.success(t("admin.users.toasts.delete_success"));
       }
       setIsConfirmOpen(false);
@@ -175,13 +264,28 @@ export default function UsersManagePage() {
           </h2>
           <p className="text-muted-foreground mt-1 ml-1">{t("admin.users.subtitle") || "Manage all user accounts in the system"}</p>
         </div>
-        <Button className="h-11 px-6 shadow-lg shadow-primary/20 flex items-center gap-2 font-semibold" onClick={handleCreateNew}>
-          <Plus className="h-5 w-5" /> {t("admin.users.create_btn")}
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            className="h-11 border-dashed gap-2 font-bold" 
+            onClick={() => setIsBackupOpen(true)}
+          >
+            <History className="h-4 w-4" />
+            {t('common.restore_btn')}
+            {backupList.length > 0 && (
+              <Badge className="ml-1 h-5 w-5 p-0 flex items-center justify-center bg-primary text-[10px]">
+                {backupList.length}
+              </Badge>
+            )}
+          </Button>
+          <Button className="h-11 px-6 shadow-lg shadow-primary/20 flex items-center gap-2 font-semibold" onClick={handleCreateNew}>
+            <Plus className="h-5 w-5" /> {t("admin.users.create_btn")}
+          </Button>
+        </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="relative flex-1 w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
             placeholder={t("admin.users.search_placeholder") || "Search by email or name..."} 
@@ -192,6 +296,31 @@ export default function UsersManagePage() {
               setCurrentPage(1);
             }}
           />
+        </div>
+
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <Select value={roleFilter} onValueChange={(v) => { setRoleFilter(v); setCurrentPage(1); }}>
+            <SelectTrigger className="h-11 w-full sm:w-[180px] bg-card border-border/50">
+              <SelectValue placeholder={t("admin.users.filters.role_all")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">{t("admin.users.filters.role_all")}</SelectItem>
+              <SelectItem value="ADMINISTRATOR">{t("common.roles.ADMINISTRATOR")}</SelectItem>
+              <SelectItem value="MANAGER">{t("common.roles.MANAGER")}</SelectItem>
+              <SelectItem value="CAREGIVER">{t("common.roles.CAREGIVER")}</SelectItem>
+              <SelectItem value="FAMILYMEMBER">{t("common.roles.FAMILYMEMBER")}</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={sortOrder} onValueChange={(v) => { setSortOrder(v); setCurrentPage(1); }}>
+            <SelectTrigger className="h-11 w-full sm:w-[180px] bg-card border-border/50">
+              <SelectValue placeholder={t("admin.users.filters.sort_label")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="NEWEST">{t("admin.users.filters.sort_newest")}</SelectItem>
+              <SelectItem value="OLDEST">{t("admin.users.filters.sort_oldest")}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -237,7 +366,6 @@ export default function UsersManagePage() {
                             <p className="font-bold text-slate-900 dark:text-slate-100 italic">
                                 {(user.fullName || user.FullName) || user.email.split("@")[0]}
                             </p>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t("common.id")}: {user.id}</p>
                           </div>
                         </div>
                       </TableCell>
@@ -265,9 +393,6 @@ export default function UsersManagePage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48 p-1">
                             <DropdownMenuLabel className="px-3 py-2 text-xs font-semibold uppercase opacity-50">{t("common.actions")}</DropdownMenuLabel>
-                            <DropdownMenuItem className="rounded-md px-3 py-2 gap-2" onClick={() => handleEdit(user)}>
-                              <Pencil className="h-4 w-4" /> {t("common.edit")}
-                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             {!(user.deleted !== undefined ? user.deleted : (user as any).deleted) && (
                               <DropdownMenuItem 
@@ -337,7 +462,7 @@ export default function UsersManagePage() {
         user={selectedUser} 
         onSubmit={handleFormSubmit}
         isSubmitting={isSubmitting}
-        allowedRoles={["ADMINISTRATOR", "MANAGER", "CAREGIVER", "FAMILYMEMBER"]}
+        allowedRoles={["ADMINISTRATOR", "MANAGER"]}
       />
 
       <ConfirmActionDialog
@@ -352,6 +477,51 @@ export default function UsersManagePage() {
             : undefined
         }
       />
+
+      {/* Backup/Restore List Dialog */}
+      <Dialog open={isBackupOpen} onOpenChange={setIsBackupOpen}>
+         <DialogContent className="sm:max-w-xl rounded-2xl p-0 overflow-hidden border-none shadow-2xl [&>button]:text-white">
+            <div className="bg-slate-900 p-8 text-white">
+               <DialogTitle className="text-2xl font-black flex items-center gap-3">
+                  <History className="h-7 w-7 text-primary" />
+                  {t('common.recent_deletions')}
+               </DialogTitle>
+               <DialogDescription className="text-slate-400 mt-2 font-medium">
+                  Records deleted in the last 24 hours can be recovered here.
+               </DialogDescription>
+            </div>
+            
+            <div className="p-6 max-h-[400px] overflow-y-auto bg-card">
+               {backupList.length === 0 ? (
+                 <div className="py-12 text-center text-muted-foreground italic">
+                    <Info className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                    <p>No recently deleted accounts found.</p>
+                 </div>
+               ) : (
+                 <div className="space-y-3">
+                   {backupList.map((record) => (
+                     <div key={record.account.id} className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100 group transition-all hover:border-primary/20">
+                        <div className="flex flex-col">
+                           <span className="font-bold text-slate-900">{record.account.fullName || record.account.FullName}</span>
+                           <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">
+                              Deleted at: {new Date(record.deletedAt).toLocaleTimeString()}
+                           </span>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="font-bold rounded-lg border-primary/20 text-primary hover:bg-primary hover:text-white"
+                          onClick={() => handleRestoreBackup(record)}
+                        >
+                          Restore
+                        </Button>
+                     </div>
+                   ))}
+                 </div>
+               )}
+            </div>
+         </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -3,14 +3,16 @@
 import React, { useState, useEffect } from "react";
 import { 
   Search, 
-  History, 
-  User as UserIcon, 
+  Terminal, 
+  Cpu, 
   Calendar,
   Clock,
-  MessageSquare,
+  Code,
   ChevronLeft,
   ChevronRight,
-  Activity
+  Activity,
+  ShieldCheck,
+  AlertCircle
 } from "lucide-react";
 import { 
   Table, 
@@ -101,7 +103,7 @@ export function ExerciseHistory() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={t("wellness.history.search_placeholder")}
-            className="pl-10 h-11 bg-card border-border/50 shadow-sm focus-visible:ring-primary/30"
+            className="pl-10 h-11 bg-card border-border/50 shadow-sm focus-visible:ring-indigo-500 rounded-xl"
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -110,9 +112,9 @@ export function ExerciseHistory() {
           />
         </div>
         
-        <div className="flex items-center gap-2 px-4 py-2 bg-primary/5 rounded-xl border border-primary/10">
-          <Activity className="h-4 w-4 text-primary" />
-          <span className="text-sm font-bold text-primary">{sessions.length} {t("wellness.history_tab")}</span>
+        <div className="flex items-center gap-2 px-4 py-2 bg-indigo-500/5 rounded-xl border border-indigo-500/10">
+          <Terminal className="h-4 w-4 text-indigo-600" />
+          <span className="text-sm font-bold text-indigo-700">{sessions.length} {t("wellness.history_tab")}</span>
         </div>
       </div>
 
@@ -121,9 +123,9 @@ export function ExerciseHistory() {
           <Table>
             <TableHeader className="bg-slate-50/50 dark:bg-slate-900/40">
               <TableRow className="hover:bg-transparent border-border/50">
-                <TableHead className="pl-6 py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t("wellness.history.table.elderly")}</TableHead>
+                <TableHead className="pl-6 py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t("wellness.history.table.robot")}</TableHead>
                 <TableHead className="py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t("wellness.history.table.exercise")}</TableHead>
-                <TableHead className="py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t("wellness.history.table.robot")}</TableHead>
+                <TableHead className="py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t("wellness.history.table.elderly")}</TableHead>
                 <TableHead className="py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t("wellness.history.table.time")}</TableHead>
                 <TableHead className="py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t("wellness.history.table.feedback")}</TableHead>
               </TableRow>
@@ -147,19 +149,22 @@ export function ExerciseHistory() {
                   <TableRow key={session.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 border-border/40 transition-colors">
                     <TableCell className="pl-6">
                       <div className="flex items-center gap-2">
-                        <div className="h-7 w-7 rounded-full bg-sky-500/10 flex items-center justify-center">
-                          <UserIcon className="h-3.5 w-3.5 text-sky-600" />
+                        <div className="h-7 w-7 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                          <Cpu className="h-3.5 w-3.5 text-indigo-600" />
                         </div>
-                        <span className="font-bold text-slate-900 dark:text-slate-100">{session.elderlyName}</span>
+                        <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300">#{session.robotName || `BOT-${session.robotId}`}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="font-medium text-slate-700 dark:text-slate-300">{session.exerciseName}</span>
+                      <div className="flex items-center gap-2">
+                         <Code className="h-3 w-3 text-muted-foreground" />
+                         <span className="font-bold text-slate-900 dark:text-slate-100">{session.exerciseName}</span>
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-xs font-mono bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded inline-block text-slate-600 dark:text-slate-400">
-                        {session.robotName}
-                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded opacity-60">
+                        NODE_UUID_{session.elderlyId}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-0.5">
@@ -167,21 +172,15 @@ export function ExerciseHistory() {
                           <Calendar className="h-3 w-3 opacity-60" />
                           {formatSessionDate(session.startedAt)}
                         </div>
-                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                          <Clock className="h-2.5 w-2.5 opacity-60" />
-                          {calculateDuration(session.startedAt, session.completedAt ?? "")}
-                        </div>
                       </div>
                     </TableCell>
-                    <TableCell className="max-w-[200px]">
-                      {session.feedback ? (
-                        <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground italic bg-slate-50 dark:bg-slate-900/20 p-2 rounded-lg">
-                          <MessageSquare className="h-3 w-3 mt-0.5 opacity-50 shrink-0" />
-                          <span className="line-clamp-2">{session.feedback}</span>
-                        </div>
-                      ) : (
-                        <span className="text-[10px] text-muted-foreground opacity-40 italic">-- {t("wellness.history.table.feedback")} --</span>
-                      )}
+                    <TableCell>
+                      <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase px-2 py-1 rounded-md w-fit ${
+                        session.feedback ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'
+                      }`}>
+                        {session.feedback ? <ShieldCheck className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
+                        {session.feedback ? 'Executed OK' : 'No Exit Log'}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

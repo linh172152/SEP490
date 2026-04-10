@@ -6,11 +6,13 @@ import {
   Search, 
   FileEdit, 
   Trash2, 
-  Smile, 
+  Terminal, 
   Clock, 
   ChevronLeft,
   ChevronRight,
-  MoreHorizontal
+  MoreHorizontal,
+  Code,
+  Eye
 } from "lucide-react";
 import { 
   Table, 
@@ -32,15 +34,25 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useI18nStore } from "@/store/useI18nStore";
 import { exerciseService } from "@/services/api/exerciseService";
-import { ExerciseScript, ExerciseScriptRequest } from "@/services/api/types";
+import { ExerciseScript, ExerciseScriptResponse, ExerciseScriptRequest } from "@/services/api/types";
 import { toast } from "react-toastify";
 import { ExerciseModal } from "./ExerciseModal";
+import { filterScriptsByQuota, getQuotaDescription } from "@/utils/privilegeEngine";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { Sparkles, ShieldCheck, Zap } from "lucide-react";
 
-export function ExerciseLibrary() {
+export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
   const { t } = useI18nStore();
   const [scripts, setScripts] = useState<ExerciseScript[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [previewLevel, setPreviewLevel] = useState<string>("ALL");
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -108,10 +120,16 @@ export function ExerciseLibrary() {
     }
   };
 
-  const filteredScripts = scripts.filter(s => 
+  // 1. Search filter
+  const baseFiltered = scripts.filter(s => 
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // 2. Privilege/Tier filter
+  const filteredScripts = previewLevel === "ALL" 
+    ? baseFiltered 
+    : filterScriptsByQuota(baseFiltered, previewLevel);
 
   const totalPages = Math.ceil(filteredScripts.length / itemsPerPage);
   const currentScripts = filteredScripts.slice(
@@ -121,42 +139,78 @@ export function ExerciseLibrary() {
 
   const getDifficultyBadge = (level: string) => {
     switch (level?.toUpperCase()) {
+      case "1":
+      case "L1":
       case "EASY":
-        return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/20">{t("wellness.difficulty.easy")}</Badge>;
+        return <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-black text-[10px] uppercase tracking-tighter">L1: {t("wellness.difficulty.easy") || "Basic"}</Badge>;
+      case "2":
+      case "L2":
       case "MEDIUM":
-        return <Badge className="bg-sky-500/15 text-sky-600 border-sky-500/20">{t("wellness.difficulty.medium")}</Badge>;
+        return <Badge className="bg-indigo-500/10 text-indigo-600 border-indigo-500/20 font-black text-[10px] uppercase tracking-tighter">L2: {t("wellness.difficulty.medium") || "Intermediate"}</Badge>;
+      case "3":
+      case "L3":
       case "HARD":
-        return <Badge className="bg-rose-500/15 text-rose-600 border-rose-500/20">{t("wellness.difficulty.hard")}</Badge>;
+        return <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 font-black text-[10px] uppercase tracking-tighter">L3: {t("wellness.difficulty.hard") || "Complex"}</Badge>;
       default:
-        return <Badge variant="outline">{level}</Badge>;
+        return <Badge variant="outline" className="text-[10px] font-bold">{level}</Badge>;
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t("wellness.scripts.search_placeholder")}
-            className="pl-10 h-11 bg-card border-border/50 shadow-sm focus-visible:ring-primary/30"
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-          />
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1">
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t("wellness.scripts.search_placeholder")}
+              className="pl-10 h-11 bg-card border-border/50 shadow-sm focus-visible:ring-primary/30 rounded-xl"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+
+          <div className="flex items-center gap-2 w-full md:w-auto">
+             <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest hidden lg:inline">Xem theo gói:</span>
+             <Select value={previewLevel} onValueChange={setPreviewLevel}>
+                <SelectTrigger className="h-11 w-full md:w-48 rounded-xl border-slate-200 bg-white shadow-sm">
+                   <div className="flex items-center gap-2">
+                      <Zap className="h-3.5 w-3.5 text-amber-500" />
+                      <SelectValue placeholder="Chọn gói coi thử" />
+                   </div>
+                </SelectTrigger>
+                <SelectContent>
+                   <SelectItem value="ALL">Toàn bộ thư viện</SelectItem>
+                   <SelectItem value="BASIC">Gói Basic (Cơ bản)</SelectItem>
+                   <SelectItem value="STANDARD">Gói Standard (Tiêu chuẩn)</SelectItem>
+                   <SelectItem value="PREMIUM">Gói Premium (Cao cấp)</SelectItem>
+                </SelectContent>
+             </Select>
+          </div>
+          
+          {previewLevel !== "ALL" && (
+            <Badge className="h-11 px-4 rounded-xl bg-indigo-50 text-indigo-700 border-indigo-100 flex items-center gap-2 animate-in zoom-in duration-300">
+               <ShieldCheck className="h-4 w-4" />
+               <span className="text-xs font-bold">{getQuotaDescription(previewLevel)}</span>
+            </Badge>
+          )}
         </div>
-        <Button 
-          onClick={() => {
-            setSelectedScript(null);
-            setIsModalOpen(true);
-          }}
-          className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 h-11 px-6 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          {t("wellness.scripts.add_btn")}
-        </Button>
+
+        {!readOnly && (
+          <Button 
+            onClick={() => {
+              setSelectedScript(null);
+              setIsModalOpen(true);
+            }}
+            className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 h-11 px-6 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            {t("wellness.scripts.add_btn")}
+          </Button>
+        )}
       </div>
 
       <Card className="border-none shadow-xl bg-card/60 backdrop-blur-sm overflow-hidden rounded-2xl">
@@ -187,16 +241,21 @@ export function ExerciseLibrary() {
               ) : (
                 currentScripts.map((script) => (
                   <TableRow key={script.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 border-border/40 transition-colors">
-                    <TableCell className="pl-6">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-slate-900 dark:text-slate-100">{script.name}</span>
-                        <span className="text-xs text-muted-foreground line-clamp-1 max-w-[300px]">{script.description}</span>
+                    <TableCell className="pl-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg group-hover:bg-indigo-500/10 transition-colors">
+                          <Code className="h-4 w-4 text-slate-400 group-hover:text-indigo-600" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-slate-900 dark:text-slate-100">{script.name}</span>
+                          <span className="text-[10px] font-mono text-muted-foreground opacity-50">SCRIPT_ID: {script.id.toString().padStart(4, '0')}</span>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
                         <Clock className="h-3.5 w-3.5 opacity-60" />
-                        {script.durationMinutes} min
+                        {script.durationMinutes} MINS
                       </div>
                     </TableCell>
                     <TableCell>
@@ -210,23 +269,38 @@ export function ExerciseLibrary() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl border-border/50 animate-in fade-in zoom-in duration-200">
-                          <DropdownMenuItem 
-                            onClick={() => {
-                              setSelectedScript(script);
-                              setIsModalOpen(true);
-                            }}
-                            className="cursor-pointer focus:bg-primary/10 focus:text-primary"
-                          >
-                            <FileEdit className="mr-2 h-4 w-4" />
-                            {t("common.edit")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDelete(script.id)}
-                            className="cursor-pointer text-rose-600 focus:bg-rose-50 focus:text-rose-700"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            {t("common.delete")}
-                          </DropdownMenuItem>
+                          {readOnly ? (
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                setSelectedScript(script);
+                                setIsModalOpen(true);
+                              }}
+                              className="cursor-pointer focus:bg-primary/10 focus:text-primary font-bold"
+                            >
+                              <Eye className="mr-2 h-4 w-4" />
+                              {t("common.view") || "View Details"}
+                            </DropdownMenuItem>
+                          ) : (
+                            <>
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  setSelectedScript(script);
+                                  setIsModalOpen(true);
+                                }}
+                                className="cursor-pointer focus:bg-primary/10 focus:text-primary"
+                              >
+                                <FileEdit className="mr-2 h-4 w-4" />
+                                {t("common.edit")}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDelete(script.id)}
+                                className="cursor-pointer text-rose-600 focus:bg-rose-50 focus:text-rose-700"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                {t("common.delete")}
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -275,6 +349,7 @@ export function ExerciseLibrary() {
         onSubmit={selectedScript ? handleUpdate : handleCreate}
         initialData={selectedScript}
         isLoading={isSubmitting}
+        readOnly={readOnly}
       />
     </div>
   );

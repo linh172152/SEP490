@@ -45,11 +45,11 @@ export const accountService = {
       phone: data.phone,
       password: data.password,
       role: data.role,
-      deleted: data.deleted, // NEW: Boolean flag from BE
+      deleted: data.deleted ?? false, // Ensure non-null for backend unboxing
       roomId: data.roomId
     };
 
-    // Only send fields that are not undefined
+    // Only send fields that are not undefined (except deleted which is now guaranteed)
     const cleanPayload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v !== undefined));
 
     return apiClient.put<AccountResponse>(`/api/${id}`, cleanPayload);

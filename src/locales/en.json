@@ -19,6 +19,9 @@
     "create_success": "Created successfully!",
     "delete_success": "Deleted successfully!",
     "error": "An error occurred. Please try again.",
+    "recent_deletions": "Recent Deletions (24h)",
+    "restore_btn": "Restore recently deleted",
+    "remove": "Remove",
     "showing": "Showing",
     "of": "of",
     "results": "results",
@@ -26,30 +29,85 @@
     "next": "Next",
     "id": "ID",
     "roles": {
+      "ALL": "All Roles",
       "ADMINISTRATOR": "Administrator",
-      "ADMIN": "Admin",
       "MANAGER": "Manager",
       "CAREGIVER": "Caregiver",
-      "FAMILYMEMBER": "Family Member"
+      "FAMILYMEMBER": "Family Member",
+      "ELDERLYUSER": "Elderly User"
+    },
+    "upload_file": "Upload Script (.py)",
+    "supported_formats": "Accepted: .py (Python)",
+    "click_to_change": "Click to change file",
+    "supported_python_only": "Only Python (.py) files are accepted",
+    "clear_all": "Clear all filters",
+    "robot_status": {
+      "ACTIVE": "Active",
+      "MAINTENANCE": "Maintenance",
+      "OFFLINE": "Offline"
+    },
+    "view_all": "View all fleet"
+  },
+  "auth": {
+    "login": {
+      "title": "CareBot-MH Portal",
+      "subtitle": "Enter your credentials to access your dashboard",
+      "email_label": "Email",
+      "email_placeholder": "example@gmail.com",
+      "password_label": "Password",
+      "password_placeholder": "••••••••",
+      "submit_btn": "Sign In",
+      "submitting_btn": "Signing in...",
+      "no_account": "Don't have an account?",
+      "register_link": "Register here",
+      "need_verify": "Need to verify your account?",
+      "verify_link": "Verify OTP here",
+      "welcome": "Welcome, {name}!",
+      "error_user_not_found": "User information not found",
+      "error_unverified": "Account not verified. Redirecting to verification page...",
+      "error_generic": "Login failed. Please check your credentials."
+    },
+    "verify_otp": {
+      "title": "Verify Your OTP",
+      "subtitle": "We've sent an OTP to your email. Please enter it below to activate your account.",
+      "email_label": "Email",
+      "email_placeholder": "example@gmail.com",
+      "otp_label": "OTP Code (6 digits)",
+      "otp_placeholder": "000000",
+      "submit_btn": "Activate Account",
+      "submitting_btn": "Verifying...",
+      "resend_prompt": "Didn't receive the code?",
+      "resend_link": "Resend OTP",
+      "resend_wip": "Resend feature is under development!",
+      "back_to": "Back to",
+      "register_link": "registration page",
+      "success_msg": "Verification successful! Redirecting to dashboard...",
+      "success_no_login": "Verification successful! You can now log in.",
+      "error_generic": "OTP verification failed. Please check your code."
     }
   },
   "settings": {
     "workspace_title": "Settings Workspace",
     "workspace_desc": "Manage system configurations, personal preferences, and security protocols relative to your access clearance.",
     "profile": {
-      "title": "Caregiver Profile",
-      "desc": "Use the caregiver profile API to load account-specific profile details.",
-      "card_title": "Caregiver Details",
-      "card_desc": "Sync the caregiver profile fields with backend account information",
-      "first_name": "First Name",
-      "last_name": "Last Name",
+      "title": "Personal Profile",
+      "desc": "Manage your account information and personal preferences.",
+      "card_title": "Account Details",
+      "card_desc": "Sync your personal profile fields with account information.",
+      "full_name": "Full Name",
       "email": "Email Address",
       "phone": "Phone Number",
-      "professional_id": "Professional ID / License",
-      "department": "Department",
-      "role_medical": "Medical Professional",
-      "role_care": "Care Team",
-      "save_success": "Profile updated successfully"
+      "professional_id": "Professional License ID",
+      "department": "Department / Unit",
+      "role_medical": "Medical Expert",
+      "role_care": "Care Support",
+      "save_success": "Profile updated successfully",
+      "recipient_title": "Care Recipient Details",
+      "recipient_desc": "Configure health profiles and robot interaction preferences for members.",
+      "relationship": "Your Relationship",
+      "notification_channel": "Notification Channel",
+      "elderly_name": "Member Name",
+      "health_notes": "Health Notes & Conditions"
     },
     "audit_logs": "System Activity Logs",
     "data_export": "Export Data Logs",
@@ -96,7 +154,7 @@
   },
   "sidebar": {
     "overview": "Overview",
-    "staff_mgt": "Staff Management",
+    "staff_mgt": "User Management",
     "robot_mgt": "Robot Management",
     "robot_fleet": "Robot Fleet",
     "service_plans": "Service Plans",
@@ -108,30 +166,39 @@
     "data_security": "Data & Security",
     "audit_logs": "Audit Logs",
     "settings": "Settings",
+    "subscriptions": "Subscription Management",
     "exercises": "Exercise Library",
+    "rooms": "Room Management",
+    "residents": "Elderly Directory",
     "logout": "Log out"
   },
   "admin": {
     "dashboard": {
-      "title": "Centralized Administration System",
-      "subtitle": "Real-time infrastructure monitoring & Enterprise-grade security.",
+      "title": "System Overview",
+      "subtitle": "Real-time monitoring of operations and technical infrastructure.",
       "security_title": "System Security",
       "security_status": "Secure",
-      "security_desc": "Zero Threats Detected",
+      "security_desc": "Active security monitoring",
       "ota_title": "Robot OTA Status",
       "server_load": "Server Load (API)",
       "server_load_low": "Low",
-      "storage_title": "Database Storage",
-      "uptime_title": "System Stability (Uptime)",
-      "uptime_desc": "Global connectivity rate over the last 24 hours.",
-      "fleet_distribution": "Robot Distribution",
-      "fleet_desc": "Technical status across the robot fleet.",
-      "infrastructure_title": "Core Infrastructure",
-      "infrastructure_desc": "Platform connectivity status.",
-      "audit_logs_title": "System Audit Logs",
+      "storage_title": "Data Storage",
+      "total_accounts": "Total Accounts",
+      "robots_status": "Robots Team",
+      "service_packages": "Service Packages",
+      "uptime_title": "System Stability",
+      "uptime_desc": "Monitoring platform connectivity and interaction flows.",
+      "fleet_distribution": "Robot Technical Status",
+      "fleet_desc": "Operational statistics across all active devices.",
+      "infrastructure_title": "Platform Infrastructure",
+      "infrastructure_desc": "Global node status and security protocols",
       "performance_mode": "Performance Mode",
       "gateway_node": "Gateway Node",
-      "ssl_encryption": "SSL Encryption"
+      "ssl_encryption": "Security Protocol",
+      "audit_logs_title": "System Activity Logs",
+      "user_distribution_title": "User Role Distribution",
+      "user_distribution_desc": "Breakdown of all active accounts in the platform.",
+      "service_packages_desc": "Available configs"
     },
     "fleet": {
       "title": "Robot Management",
@@ -142,6 +209,13 @@
       "voice_toggle": "Voice Interface",
       "tech_inventory": "Technical Inventory",
       "tech_desc": "Identity data and hardware status for the entire robot fleet.",
+      "search_placeholder": "Search robot by name or serial...",
+      "filter_status": "Status Filter",
+      "all_statuses": "All Statuses",
+      "no_results": "No robot found matching your search.",
+      "sort_date": "Sort by date",
+      "sort_newest": "Newest first",
+      "sort_oldest": "Oldest first",
       "audit_logs": "Technical Logs (Admin)",
       "no_audit_logs": "No recent actions",
       "important_note": "Important Note",
@@ -206,35 +280,12 @@
         }
       }
     },
-    "overview": {
-      "welcome": "Hello, Administrator! Here is what's happening today.",
-      "total_accounts": "Total Accounts (Mocked)",
-      "total_accounts_desc": "Pending real API implementation",
-      "robots_status": "Robots Status",
-      "robots_status_desc": "Registered and active",
-      "service_packages": "Service Packages",
-      "service_packages_desc": "Total configurations",
-      "system_uptime": "System Uptime",
-      "uptime_desc": "Stable operation",
-      "recent_packages": "Recent Service Packages",
-      "recent_packages_desc": "Available service plans for users",
-      "recent_robots": "Recent Robots",
-      "recent_robots_desc": "Monitor individual CareBot systems",
-      "table": {
-        "level": "Level",
-        "name": "Name",
-        "price": "Price ($)",
-        "model": "Model",
-        "status": "Status",
-        "no_data_packages": "No service packages found",
-        "no_data_robots": "No robots found"
-      }
-    },
     "robots": {
       "title": "Robot Management",
       "desc": "Monitor, register, and maintain the medical robot fleet.",
       "register_btn": "Register New Robot",
-      "search_placeholder": "Search by name, ID or model...",
+      "search_placeholder": "Quick search by name or S/N...",
+      "filter_all": "All Statuses",
       "status": {
         "active": "Active",
         "maintenance": "Maintenance",
@@ -252,6 +303,24 @@
       "delete_btn": "Delete System",
       "confirm_delete": "Are you sure you want to delete this robot?"
     },
+    "security": {
+      "title": "Security & Integrity",
+      "subtitle": "Monitor system access, audit trails, and data persistence.",
+      "privileged_access": "Privileged Access",
+      "audit_records": "Audit Records",
+      "system_status": "System Status",
+      "data_persistence": "Data Persistence",
+      "audit_explorer": "Security Audit Explorer",
+      "audit_desc": "Critical actions requiring administrative oversight.",
+      "export_csv": "Export CSV",
+      "last_backup": "Last Backup",
+      "encryption_title": "Encryption & Trust",
+      "encryption_desc": "System-wide data protection protocols.",
+      "data_transit": "Data Transit",
+      "identity_protection": "Identity Protection",
+      "privacy_compliance": "Privacy Compliance",
+      "no_events": "No security-critical events detected."
+    },
     "packages": {
       "title": "Service Packages",
       "desc": "Configure and manage subscription plans.",
@@ -262,7 +331,7 @@
         "level": "Level",
         "name": "Name",
         "desc": "Description",
-        "price": "Price",
+        "price": "Price (VNĐ)",
         "status": "Status",
         "actions": "Actions",
         "active": "Active",
@@ -277,7 +346,7 @@
           "name": "Package Name",
           "description": "Full Description",
           "level": "Service Level (e.g. Basic, Pro)",
-          "price": "Base Price ($)",
+          "price": "Base Price (VNĐ)",
           "status_active": "Set Package as Active"
         }
       },
@@ -343,6 +412,12 @@
         "create_success": "Account created successfully",
         "delete_success": "Account soft deleted",
         "error_generic": "Operation failed. Backend might not support this fully yet."
+      },
+      "filters": {
+        "role_all": "All Roles",
+        "sort_newest": "Newest First",
+        "sort_oldest": "Oldest First",
+        "sort_label": "Sort by time"
       }
     }
   },
@@ -399,13 +474,17 @@
   "manager": {
     "dashboard": {
       "title": "Operations Management",
-      "subtitle": "Monitor Robot performance, services, and user behavior analytics.",
+      "subtitle": "Monitor robot performance, manage service packages, and support the elderly.",
       "robot_group": "Robot Group",
       "active_robots": "Active Robots",
       "active_subscriptions": "Active Subscriptions",
       "maintenance_required": "Maintenance Required",
       "usage_trends": "Robot Usage Trends",
-      "usage_desc": "Weekly interaction and uptime stats.",
+      "usage_desc": "Real-time daily interaction statistics between robots and the elderly.",
+      "revenue_overview": "Revenue Statistics",
+      "revenue_desc": "Analysis of actual income vs. monthly targets.",
+      "revenue_actual": "Actual",
+      "revenue_target": "Target",
       "interaction_efficiency": "Interaction Efficiency",
       "interaction_desc": "User engagement analysis with CareBot.",
       "completion_rate": "Task Completion Rate",
@@ -415,17 +494,49 @@
       "allocated_fleet_desc": "List of robots currently managed by the Manager.",
       "available_packages": "Available Service Packages",
       "available_packages_desc": "Service configurations managed by the Manager.",
+      "total_residents": "Elderly Managed",
+      "ops_team": "Caregiver Team",
+      "user_distribution": "Personnel Correlation",
+      "user_desc": "Ratio between elderly and the caregiver team.",
+      "package_popularity": "Package Popularity",
+      "package_desc": "Usage rates of available service tiers.",
+      "elderly_label": "Elderly",
+      "caregiver_label": "Caregiver",
       "analytics": {
         "title": "Usage Analytics",
         "subtitle": "Module is currently under development.",
         "placeholder_desc": "Robot interaction data and performance metrics will be displayed here after Analytics API integration."
       }
     },
+    "subscriptions": {
+      "title": "Subscription Management",
+      "subtitle": "Manage service tier definitions for the platform.",
+      "table": {
+        "account": "User Account",
+        "package": "Service Package",
+        "assigned_date": "Assigned Date",
+        "expiry_date": "Expiry Date"
+      },
+      "fields": {
+        "duration": "Duration (Days)"
+      },
+      "placeholders": {
+        "select_user": "Select an elderly user...",
+        "select_package": "Select a service package..."
+      },
+      "toasts": {
+        "select_required": "Please select both a user and a package.",
+        "assign_success": "Assignment created successfully"
+      }
+    },
+    "nav": {
+      "rooms": "Manage via Rooms"
+    },
     "staff": {
-      "title": "Staff Management",
-      "subtitle": "Manage caregivers and their assigned rooms.",
-      "add_btn": "Add New Caregiver",
-      "list_title": "Staff List",
+      "title": "User Management",
+      "subtitle": "Manage caregiver and family member accounts.",
+      "add_btn": "Create New Account",
+      "list_title": "Account List",
       "unassigned_room": "Unassigned Room",
       "room_note": "* Each Caregiver is assigned to exactly one room.",
       "room_prefix": "Room",
@@ -446,9 +557,110 @@
       }
     },
     "robots": {
-      "subtitle": "Monitor Robot operations.",
+      "title": "Robot Fleet Management",
+      "subtitle": "Monitor robot connectivity and operational status across the facility.",
+      "search_placeholder": "Search robot by name or serial...",
+      "filter_status": "Status",
+      "all_statuses": "All Statuses",
+      "no_match_desc": "We couldn't find any robot matching your search or filter criteria.",
+      "manage_assignment": "Manage Assignment",
       "admin_note": "(Technical management by Admin)",
       "no_data_desc": "There are no robots currently registered in the system."
+    },
+    "patients": {
+      "title": "Elderly Directory",
+      "subtitle": "Manage elderly profiles, health records, and account data.",
+      "add_btn": "Add New Elderly",
+      "btn_update": "Update Profile",
+      "table": {
+        "name": "Full Name",
+        "dob": "Date of Birth",
+        "health": "Medical History",
+        "config": "Settings"
+      },
+      "dialog": {
+        "add_title": "Register New Elderly Profile"
+      },
+      "toasts": {
+        "fetch_error": "Failed to fetch elderly list",
+        "create_success": "Elderly account and profile created",
+        "update_success": "Elderly profile updated successfully",
+        "delete_success": "Elderly profile removed"
+      }
+    },
+    "residents": {
+      "title": "Elderly Directory",
+      "subtitle": "Manage elderly profiles, health records, and account data.",
+      "add_btn": "New Elderly",
+      "table": {
+        "name": "Elderly Name",
+        "dob": "Date of Birth",
+        "health": "Medical History",
+        "config": "Settings"
+      },
+      "dialog": {
+        "add_title": "Register New Patient"
+      }
+    },
+    "rooms": {
+      "title": "Nursing Home Rooms",
+      "subtitle": "Manage rooms, assign caregivers, patients, and robots.",
+      "add_btn": "Add New Room",
+      "search_placeholder": "Search rooms by name...",
+      "search_placeholder_patient": "Search by patient name...",
+      "filter_robot": "Robot Assignment",
+      "filter_occupancy": "Elderly Occupancy",
+      "robot_all": "All Robots",
+      "robot_assigned": "With Robot",
+      "robot_none": "Without Robot",
+      "occupancy_all": "All Status",
+      "occupancy_filled": "Occupied",
+      "occupancy_empty": "Empty Room",
+      "empty_state": "No matching results found.",
+      "card": {
+        "caregivers": "Staff",
+        "elderly": "Elderly",
+        "robot": "Robot",
+        "none": "None",
+        "assign_btn": "Assign",
+        "manage_btn": "Manage Members",
+        "edit_info": "Edit Info",
+        "delete_room": "Delete Room"
+      },
+      "modal": {
+        "edit_title": "Update Room Information",
+        "create_title": "Add New Room",
+        "room_name": "Room Name",
+        "room_desc": "Description / Notes",
+        "select_robot": "Select Robot",
+        "select_caregiver": "Assign Caregiver",
+        "tab_info": "Info",
+        "tab_staff": "Caregivers",
+        "tab_elderly": "Elderly",
+        "tab_robot": "Robot",
+        "staff_desc": "Assign caregivers to manage this room.",
+        "elderly_desc": "Add elderly users currently living in this room.",
+        "robot_desc": "Assign a dedicated robot to support this room.",
+        "status_assigned": "Assignment successful",
+        "status_in_room": "Successfully added to room",
+        "status_active": "Robot assigned successfully",
+        "btn_assign": "Assign",
+        "btn_add": "Add",
+        "btn_remove": "Remove",
+        "btn_save": "Save Room",
+        "btn_update": "Update",
+        "placeholder_name": "e.g., Room 101 - Wing A",
+        "none": "Not recorded"
+      },
+      "toasts": {
+        "delete_confirm": "Confirm delete room? This action cannot be undone.",
+        "delete_success": "Room deleted successfully",
+        "delete_error": "Error deleting room",
+        "update_success": "Room updated successfully",
+        "create_success": "Room created successfully",
+        "error_generic": "Operation failed",
+        "remove_success": "Removed successfully from room"
+      }
     }
   },
   "user_modal": {
@@ -474,7 +686,9 @@
       "phone": "+1234567890",
       "password": "••••••",
       "role": "Select role",
-      "gender": "Select gender"
+      "gender": "Select gender",
+      "lang": "Preferred Language",
+      "speaking_speed": "Robot Speaking Speed"
     },
     "gender_options": {
       "male": "Male",
@@ -487,53 +701,55 @@
     "confirm_desc": "This action cannot be undone.",
     "soft_delete_title": "Confirm Account Deletion",
     "soft_delete_desc": "Are you sure you want to delete {{name}}? This account will be marked as deleted and disabled from login.",
+    "soft_delete_desc_patient": "Are you sure you want to delete this elderly profile? (Soft delete, historical data remains preserved)",
     "delete_confirm": "Delete (Soft)",
     "confirm_btn": "Confirm",
     "cancel_btn": "Cancel"
   },
   "wellness": {
-    "title": "Wellness Center",
-    "sidebar_label": "Wellness & Exercises",
-    "subtitle": "Manage physical exercise library and track elderly activity progress.",
-    "library_tab": "Exercise Library",
-    "history_tab": "Activity History",
+    "title": "Exercise Library",
+    "sidebar_label": "Exercise Plans",
+    "subtitle": "Manage Robot control scripts and monitor system-wide execution logs.",
+    "desc": "Global Scripts",
+    "library_tab": "Script Library",
+    "history_tab": "System Audit",
     "scripts": {
-      "title": "Exercise Library",
-      "add_btn": "Create New Script",
-      "search_placeholder": "Search exercises...",
+      "title": "Script Repository",
+      "add_btn": "Deploy New Script",
+      "search_placeholder": "Search scripts (Name, desc)...",
       "table": {
-        "name": "Exercise Name",
-        "duration": "Duration",
-        "difficulty": "Difficulty",
-        "actions": "Actions"
+        "name": "Script Name",
+        "duration": "Est. Duration",
+        "difficulty": "Complexity",
+        "actions": "Manage"
       },
       "modal": {
-        "create_title": "Add New Exercise",
-        "edit_title": "Update Script",
-        "name_label": "Exercise Name",
-        "duration_label": "Duration (minutes)",
-        "difficulty_label": "Difficulty Level",
-        "script_label": "Script / Command Sequence",
-        "script_placeholder": "Enter Robot commands or instruction content here...",
-        "desc_label": "Description"
+        "create_title": "Initialize New Script",
+        "edit_title": "Configure Script",
+        "name_label": "Script Identifier",
+        "duration_label": "Duration (min)",
+        "difficulty_label": "Logic Complexity",
+        "script_label": "Source Code / Control Sequence (Python)",
+        "script_placeholder": "Enter Python code or Robot control sequence...",
+        "desc_label": "Technical Description"
       }
     },
     "history": {
-      "title": "Exercise Activity Log",
-      "search_placeholder": "Search by elderly or exercise name...",
+      "title": "Robot Execution Monitor",
+      "search_placeholder": "Search by Robot ID or Script...",
       "table": {
-        "elderly": "Elderly User",
-        "exercise": "Exercise",
-        "robot": "Assisting Robot",
-        "time": "Date & Time",
-        "duration": "Actual Duration",
-        "feedback": "Feedback / Notes"
+        "elderly": "Elderly / Node ID",
+        "exercise": "Executed Script",
+        "robot": "Assigned Robot",
+        "time": "Execution Timestamp",
+        "duration": "Execution Cycle",
+        "feedback": "Technical Status / Log"
       }
     },
     "difficulty": {
-      "easy": "Easy",
-      "medium": "Medium",
-      "hard": "Hard"
+      "easy": "Basic",
+      "medium": "Advanced",
+      "hard": "Complex"
     }
   }
 }

@@ -57,7 +57,7 @@ import { differenceInYears } from 'date-fns';
 
 interface ElderlyDetailViewProps {
   elderlyId: string;
-  role: 'FAMILY' | 'CAREGIVER' | 'DOCTOR';
+  role: 'FAMILY' | 'CAREGIVER' | 'MANAGER' | 'ADMIN';
 }
 
 export function ElderlyDetailView({ elderlyId, role }: ElderlyDetailViewProps) {

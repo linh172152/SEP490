@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Upload, FileText, CheckCircle2, Dumbbell } from "lucide-react";
 import { ExerciseScript, ExerciseScriptRequest } from "@/services/api/types";
 import { useI18nStore } from "@/store/useI18nStore";
 
@@ -50,6 +51,7 @@ interface ExerciseModalProps {
   onSubmit: (data: ExerciseScriptRequest) => void;
   initialData?: ExerciseScript | null;
   isLoading?: boolean;
+  readOnly?: boolean;
 }
 
 export function ExerciseModal({
@@ -58,8 +60,11 @@ export function ExerciseModal({
   onSubmit,
   initialData,
   isLoading,
+  readOnly = false,
 }: ExerciseModalProps) {
   const { t } = useI18nStore();
+  const [fileName, setFileName] = React.useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -67,7 +72,7 @@ export function ExerciseModal({
       name: initialData?.name || "",
       description: initialData?.description || "",
       durationMinutes: initialData?.durationMinutes || 10,
-      difficultyLevel: initialData?.difficultyLevel || "MEDIUM",
+      difficultyLevel: initialData?.difficultyLevel || "2",
       uploadScript: initialData?.uploadScript || "",
     },
   });
@@ -79,11 +84,33 @@ export function ExerciseModal({
         name: initialData?.name || "",
         description: initialData?.description || "",
         durationMinutes: initialData?.durationMinutes || 10,
-        difficultyLevel: initialData?.difficultyLevel || "MEDIUM",
+        difficultyLevel: initialData?.difficultyLevel || "2",
         uploadScript: initialData?.uploadScript || "",
       });
+      setFileName(initialData ? "Existing Script" : null);
     }
   }, [isOpen, initialData, form]);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Strict validation for .py extension
+    if (!file.name.toLowerCase().endsWith('.py')) {
+      toast.error(t("common.supported_python_only") || "Only Python (.py) files are accepted");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    setFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      form.setValue("uploadScript", content, { shouldValidate: true });
+      toast.success(`Python script "${file.name}" loaded successfully`);
+    };
+    reader.readAsText(file);
+  };
 
   const handleFormSubmit: SubmitHandler<FormValues> = (values) => {
     onSubmit(values as ExerciseScriptRequest);
@@ -91,18 +118,25 @@ export function ExerciseModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-card border-border shadow-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            {initialData ? t("wellness.scripts.modal.edit_title") : t("wellness.scripts.modal.create_title")}
-          </DialogTitle>
-          <DialogDescription>
-            {t("wellness.subtitle")}
-          </DialogDescription>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0 border-none shadow-2xl">
+        <DialogHeader className="p-8 bg-slate-50 dark:bg-slate-900/50 border-b">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-2xl text-primary shadow-sm">
+              <Dumbbell className="h-6 w-6" />
+            </div>
+            <div>
+              <DialogTitle className="text-2xl font-bold tracking-tight">
+                {readOnly ? (t('common.view_details') || "View Script Details") : (!!initialData ? t('wellness.library.edit_btn') : t('wellness.library.add_btn'))}
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                {t('wellness.library.modal_desc') || "Provide the script details and configuration for the robotic exercise session."}
+              </p>
+            </div>
+          </div>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-5 py-4">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-5 py-4 px-8">
             <FormField
               control={form.control}
               name="name"
@@ -110,7 +144,7 @@ export function ExerciseModal({
                 <FormItem>
                   <FormLabel>{t("wellness.scripts.modal.name_label")}</FormLabel>
                   <FormControl>
-                    <Input placeholder={t("wellness.scripts.modal.name_label")} {...field} className="bg-background/50" />
+                    <Input placeholder={t("wellness.scripts.modal.name_label")} {...field} className="bg-background/50" disabled={readOnly} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -125,7 +159,7 @@ export function ExerciseModal({
                   <FormItem>
                     <FormLabel>{t("wellness.scripts.modal.duration_label")}</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} className="bg-background/50" />
+                      <Input type="number" {...field} className="bg-background/50" disabled={readOnly} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -140,14 +174,14 @@ export function ExerciseModal({
                     <FormLabel>{t("wellness.scripts.modal.difficulty_label")}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger className="bg-background/50">
+                        <SelectTrigger className="bg-background/50" disabled={readOnly}>
                           <SelectValue placeholder={t("wellness.scripts.modal.difficulty_label")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="EASY">{t("wellness.difficulty.easy")}</SelectItem>
-                        <SelectItem value="MEDIUM">{t("wellness.difficulty.medium")}</SelectItem>
-                        <SelectItem value="HARD">{t("wellness.difficulty.hard")}</SelectItem>
+                        <SelectItem value="1">{t("wellness.difficulty.easy")}</SelectItem>
+                        <SelectItem value="2">{t("wellness.difficulty.medium")}</SelectItem>
+                        <SelectItem value="3">{t("wellness.difficulty.hard")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -167,6 +201,7 @@ export function ExerciseModal({
                       placeholder={t("wellness.scripts.modal.desc_label")} 
                       {...field} 
                       className="bg-background/50 min-h-[80px] resize-none"
+                      disabled={readOnly}
                     />
                   </FormControl>
                   <FormMessage />
@@ -178,15 +213,57 @@ export function ExerciseModal({
               control={form.control}
               name="uploadScript"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("wellness.scripts.modal.script_label")}</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-primary" />
+                    {t("wellness.scripts.modal.script_label")}
+                  </FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder={t("wellness.scripts.modal.script_placeholder")} 
-                      {...field} 
-                      className="bg-background/50 font-mono text-xs min-h-[150px] border-dashed border-primary/30"
-                    />
+                    <div 
+                      className={`relative group ${readOnly ? 'cursor-default' : 'cursor-pointer'}`}
+                      onClick={() => !readOnly && fileInputRef.current?.click()}
+                    >
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        ref={fileInputRef}
+                        accept=".py"
+                        onChange={handleFileChange}
+                      />
+                      <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-primary/20 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 group-hover:border-primary/40 group-hover:bg-primary/5 transition-all duration-300">
+                        {fileName ? (
+                          <div className="flex flex-col items-center gap-2 animate-in zoom-in duration-300">
+                             <div className="p-3 bg-emerald-500/10 rounded-full">
+                               <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+                             </div>
+                             <span className="font-bold text-slate-700 dark:text-slate-200">{fileName}</span>
+                             <span className="text-xs text-muted-foreground">{t("common.click_to_change") || "Click to change file"}</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="p-4 bg-primary/10 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                              <Upload className="h-8 w-8 text-primary" />
+                            </div>
+                            <div className="mt-4 text-center">
+                              <p className="font-bold text-slate-900 dark:text-slate-100 italic">{t("common.upload_file") || "Upload Script (.py)"}</p>
+                              {!readOnly && <p className="text-xs text-muted-foreground mt-1">{t("common.supported_formats") || "Accepted: .py (Python)"}</p>}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </FormControl>
+                  {field.value && (
+                    <div className="mt-2 p-3 bg-slate-900 rounded-xl overflow-hidden shadow-lg">
+                       <div className="flex items-center justify-between mb-2">
+                         <span className="text-[10px] uppercase tracking-widest text-primary font-bold">Python Script Preview</span>
+                         <span className="text-[10px] text-slate-500">{field.value.slice(0, 100).length} characters loaded</span>
+                       </div>
+                       <pre className="text-[10px] text-emerald-400 font-mono overflow-x-auto max-h-[100px] scrollbar-hide opacity-80 italic">
+                         {field.value.slice(0, 300)}{field.value.length > 300 ? "..." : ""}
+                       </pre>
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -194,11 +271,13 @@ export function ExerciseModal({
 
             <DialogFooter className="pt-4 border-t border-border/50">
               <Button type="button" variant="outline" onClick={onClose} className="hover:bg-slate-100 dark:hover:bg-slate-800">
-                {t("common.cancel")}
+                {readOnly ? (t("common.close") || "Close") : t("common.cancel")}
               </Button>
-              <Button type="submit" disabled={isLoading} className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20">
-                {isLoading ? t("common.processing") : t("common.save")}
-              </Button>
+              {!readOnly && (
+                <Button type="submit" disabled={isLoading} className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20">
+                  {isLoading ? t("common.processing") : t("common.save")}
+                </Button>
+              )}
             </DialogFooter>
           </form>
         </Form>

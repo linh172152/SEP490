@@ -271,3 +271,37 @@ export interface InteractionLogResponse extends InteractionLogRequest {
   robotName: string;
   createdAt: string;
 }
+
+// Room Types
+export interface RoomRequest {
+  roomId?: number;
+  roomName: string;
+  managerId: number;
+}
+
+export interface CaregiverDTO {
+  id: number;
+  name: string;
+  email: string;
+}
+
+export interface ElderlyDTO {
+  id: number;
+  name: string;
+  accountId: number;
+}
+
+export interface RobotDTO {
+  id: number;
+  robotName: string;
+  model: string;
+}
+
+export interface RoomResponse {
+  id: number;
+  roomName: string;
+  managerId: number;
+  caregivers: CaregiverDTO[];
+  elderlies: ElderlyDTO[];
+  robot: RobotDTO | null;
+}

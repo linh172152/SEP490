@@ -171,49 +171,29 @@ export function UserFormModal({
               {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="role">{t('user_modal.role')}</Label>
-              <Select
-                value={roleWatch}
-                onValueChange={(val) => setValue("role", val as any)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('user_modal.placeholders.role')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {allowedRoles.map((r) => (
-                    <SelectItem key={r} value={r}>
-                      {r}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.role && <p className="text-sm text-red-500">{errors.role.message}</p>}
-            </div>
-
-            {roleWatch === "CAREGIVER" && (
+            {allowedRoles.length > 1 && (
               <div className="grid gap-2">
-                <Label htmlFor="roomId">{t('user_modal.room_assignment')}</Label>
+                <Label htmlFor="role">{t('user_modal.role')}</Label>
                 <Select
-                  value={roomIdWatch?.toString()}
-                  onValueChange={(val) => setValue("roomId", parseInt(val))}
+                  value={roleWatch}
+                  onValueChange={(val) => setValue("role", val as any)}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('user_modal.room_placeholder')} />
+                  <SelectTrigger className="h-11 rounded-xl border-slate-200">
+                    <SelectValue placeholder={t('user_modal.placeholders.role')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {MOCK_ROOMS.map((room) => (
-                      <SelectItem key={room.id} value={room.id.toString()}>
-                        {room.name}
+                    {allowedRoles.map((r) => (
+                      <SelectItem key={r} value={r} className="font-medium">
+                        {t(`common.roles.${r}`) || r}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-[10px] text-muted-foreground italic">
-                  {t('user_modal.room_note')}
-                </p>
+                {errors.role && <p className="text-sm text-red-500">{errors.role.message}</p>}
               </div>
             )}
+
+
 
             <div className="grid gap-2">
               <Label htmlFor="gender">{t('user_modal.gender')}</Label>

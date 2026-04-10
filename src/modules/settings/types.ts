@@ -12,6 +12,8 @@ export interface SettingsData {
         fullName: string;
         email: string;
         phone: string;
+        professionalId: string;
+        department: string;
     };
     notifications: {
         criticalRisk: AlertNotificationConfig;
@@ -63,4 +65,5 @@ export interface RoleCapabilities {
     canAccessRoleAccess: boolean;
     canAccessNotifications: boolean;
     canAccessDataExport: boolean;
+    canAccessProfessionalProfile: boolean;
 }

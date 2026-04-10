@@ -12,7 +12,8 @@ import {
   ChevronRight,
   Activity,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  History
 } from "lucide-react";
 import { 
   Table, 

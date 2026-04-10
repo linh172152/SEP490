@@ -12,7 +12,8 @@ import {
   ChevronRight,
   MoreHorizontal,
   Code,
-  Eye
+  Eye,
+  Smile
 } from "lucide-react";
 import { 
   Table, 

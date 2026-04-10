@@ -14,8 +14,8 @@ class AuthService {
     return apiClient.post<AccountResponse>("/api/register", data);
   }
 
-  async verifyOtp(data: VerifyOtpRequest): Promise<string> {
-    return apiClient.post<string>(`/api/verify-otp?email=${encodeURIComponent(data.email)}&otp=${encodeURIComponent(data.otp)}`, {});
+  async verifyOtp(data: VerifyOtpRequest): Promise<AccountResponse> {
+    return apiClient.post<AccountResponse>(`/api/verify-otp?email=${encodeURIComponent(data.email)}&otp=${encodeURIComponent(data.otp)}`, {});
   }
 
   async getMe(): Promise<AccountResponse> {

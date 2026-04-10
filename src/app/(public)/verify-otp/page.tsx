@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import Link from 'next/link';
 
 import { useAuthStore } from '@/store/useAuthStore';
+import { useI18nStore } from '@/store/useI18nStore';
 import { Button } from '@/components/ui/button';
 import {
   Form,

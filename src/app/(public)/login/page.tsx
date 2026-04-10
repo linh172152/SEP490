@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import Link from 'next/link';
 
 import { useAuthStore } from '@/store/useAuthStore';
+import { useI18nStore } from '@/store/useI18nStore';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -52,6 +53,7 @@ function getRolePath(role: string): string {
 }
 
 export default function LoginPage() {
+  const { t } = useI18nStore();
   const router = useRouter();
   const { login } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
@@ -69,16 +71,14 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       await login(values.email, values.password);
       
-      // Get the fresh user from the store after login completes
       const currentUser = useAuthStore.getState().user;
       
       if (currentUser) {
-        toast.success(`Chào mừng, ${currentUser.name}!`);
+        toast.success(t('auth.login.welcome', { name: currentUser.name }));
         const rolePath = getRolePath(currentUser.role || 'caregiver');
-        // Replace để tránh người dùng bấm Back quay lại trang login
         router.replace(`/dashboard/${rolePath}`);
       } else {
-        throw new Error('Không tìm thấy thông tin người dùng');
+        throw new Error(t('auth.login.error_user_not_found'));
       }
     } catch (error: unknown) {
         const message =
@@ -89,12 +89,12 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
               : undefined;
 
         if (message?.toLowerCase().includes('verify otp')) {
-            toast.error('Tài khoản chưa được kích hoạt. Đang chuyển hướng đến trang xác thực...');
+            toast.error(t('auth.login.error_unverified'));
             setTimeout(() => {
                 router.push(`/verify-otp?email=${values.email}`);
             }, 2500);
         } else {
-            toast.error(message || 'Đăng nhập thất bại. Vui lòng kiểm tra thông tin.');
+            toast.error(message || t('auth.login.error_generic'));
         }
     } finally {
       setIsLoading(false);
@@ -109,10 +109,10 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
             <HeartPulse className="h-8 w-8 text-primary" />
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
-            CareBot-MH Portal
+            {t('auth.login.title')}
           </CardTitle>
           <CardDescription>
-            Enter your credentials to access your dashboard
+            {t('auth.login.subtitle')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -123,9 +123,9 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t('auth.login.email_label')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="example@gmail.com" type="email" disabled={isLoading} {...field} />
+                      <Input placeholder={t('auth.login.email_placeholder')} type="email" disabled={isLoading} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -136,9 +136,9 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t('auth.login.password_label')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="••••••••" type="password" disabled={isLoading} {...field} />
+                      <Input placeholder={t('auth.login.password_placeholder')} type="password" disabled={isLoading} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -148,10 +148,10 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
+                    {t('auth.login.submitting_btn')}
                   </>
                 ) : (
-                  'Sign In'
+                  t('auth.login.submit_btn')
                 )}
               </Button>
             </form>
@@ -160,15 +160,15 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
         <CardFooter className="flex flex-col space-y-2 text-sm text-center text-muted-foreground bg-muted/20 py-4 border-t">
           <div className="pt-2 text-xs">
             <p>
-              Don&apos;t have an account?{' '}
+              {t('auth.login.no_account')}{' '}
               <Link href="/register" className="text-primary hover:underline font-medium">
-                Register here
+                {t('auth.login.register_link')}
               </Link>
             </p>
             <p className="mt-1">
-              Need to verify your account?{' '}
+              {t('auth.login.need_verify')}{' '}
               <Link href="/verify-otp" className="text-primary hover:underline font-medium">
-                Verify OTP here
+                {t('auth.login.verify_link')}
               </Link>
             </p>
           </div>

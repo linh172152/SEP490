@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function ManagerWellnessPage() {
-  return <WellnessHub />;
+  return <WellnessHub readOnly={true} />;
 }

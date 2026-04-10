@@ -73,9 +73,6 @@ export function SettingsModule({ role }: SettingsModuleProps) {
     <div className="space-y-6 pb-16 block">
       <div className="space-y-0.5">
         <h2 className="text-2xl font-bold tracking-tight">{t('settings.workspace_title')}</h2>
-        <p className="text-muted-foreground">
-          {t('settings.workspace_desc')}
-        </p>
       </div>
       <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
         <aside className="lg:w-1/5 overflow-x-auto pb-4 lg:pb-0 scrollbar-hide">

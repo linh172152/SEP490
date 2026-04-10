@@ -48,7 +48,9 @@ export const useI18nStore = create<I18nState>((set, get) => ({
     // Handle parameter replacement
     if (params && typeof result === 'string') {
       Object.entries(params).forEach(([k, v]) => {
-        result = result.replace(new RegExp(`{{${k}}}`, 'g'), String(v));
+        // Support both {key} and {{key}} formats
+        const regex = new RegExp(`\\{?\\{${k}\\}\\}?`, 'g');
+        result = result.replace(regex, String(v));
       });
     }
 

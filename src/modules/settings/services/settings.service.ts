@@ -6,17 +6,11 @@ export class SettingsService {
         const id = typeof userId === 'string' ? parseInt(userId, 10) : userId;
         const account = await accountService.getAccountById(id);
 
-        // Split fullName into first and last name for the UI
-        const names = (account.fullName || account.FullName || "").split(' ');
-        const firstName = names[0] || "";
-        const lastName = names.slice(1).join(' ') || "";
-
         return {
             profile: {
-                // Use Dicebear for avatars since BE doesn't store them yet
-                avatar: `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(account.fullName || account.email)}`,
-                firstName,
-                lastName,
+                // Backend doesn't support images yet, using initials in UI
+                avatar: "",
+                fullName: account.fullName || account.FullName || "",
                 email: account.email,
                 phone: account.phone || "",
                 professionalId: "", // Mocked as not in BE
@@ -50,11 +44,10 @@ export class SettingsService {
     async updateProfile(userId: string | number, data: Partial<SettingsData['profile']>): Promise<void> {
         const id = typeof userId === 'string' ? parseInt(userId, 10) : userId;
 
-        // Combine names back for Backend
-        const fullName = [data.firstName, data.lastName].filter(Boolean).join(' ');
-
-        const updatePayload: any = {};
-        if (fullName) updatePayload.name = fullName;
+        const updatePayload: any = {
+            deleted: false // Mandatory for backend unboxing
+        };
+        if (data.fullName) updatePayload.name = data.fullName;
         if (data.phone) updatePayload.phone = data.phone;
         // Email usually not updatable via this endpoint in backend
 
@@ -64,7 +57,10 @@ export class SettingsService {
     async changePassword(userId: string | number, newPass: string): Promise<boolean> {
         const id = typeof userId === 'string' ? parseInt(userId, 10) : userId;
         try {
-            await accountService.updateAccount(id, { password: newPass });
+            await accountService.updateAccount(id, { 
+                password: newPass,
+                deleted: false // Mandatory for backend unboxing
+            });
             return true;
         } catch (error) {
             console.error("Failed to change password:", error);

@@ -30,7 +30,7 @@ export function RiskManagementSection({ settings, capabilities, updateRiskManage
           <h3 className="text-lg font-semibold text-rose-900 dark:text-rose-100">Access Restricted</h3>
           <p className="text-sm text-rose-700 dark:text-rose-300 mt-2 max-w-md mx-auto">
             Your role does not have permission to modify clinical risk thresholds. 
-            Please contact a supervising doctor or system administrator.
+            Please contact a system administrator.
           </p>
         </CardContent>
       </Card>

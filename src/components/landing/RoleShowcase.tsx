@@ -14,13 +14,6 @@ const roles = [
     features: ['Live patient mood tracking', 'Medication compliance timelines', 'Instant crisis alerts']
   },
   {
-    id: 'doctor',
-    title: 'Clinical Hub',
-    icon: BrainCircuit,
-    description: 'Advanced psychiatric overview driven by predictive AI models.',
-    features: ['Aggregate mood history charts', 'AI-driven risk escalation models', 'Deeper behavioral analytics']
-  },
-  {
     id: 'family',
     title: 'Family Connection',
     icon: ShieldCheck,
@@ -52,7 +45,7 @@ export function RoleShowcase() {
               One platform, multiple perspectives
             </p>
             <p className="mt-6 text-lg leading-8 text-muted-foreground">
-              Whether you are a clinician requiring deep data, or a family member desiring simple reassurance, the interface adapts to your specific needs.
+              Whether you are a caregiver requiring deep data, or a family member desiring simple reassurance, the interface adapts to your specific needs.
             </p>
           </motion.div>
         </div>
@@ -65,7 +58,7 @@ export function RoleShowcase() {
           transition={{ duration: 0.6 }}
         >
           <Tabs defaultValue="caregiver" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-8 h-auto p-1 bg-muted/50 rounded-xl">
+            <TabsList className="grid w-full grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mb-8 h-auto p-1 bg-muted/50 rounded-xl">
               {roles.map((role) => (
                 <TabsTrigger 
                   key={role.id} 

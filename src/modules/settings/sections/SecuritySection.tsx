@@ -65,10 +65,14 @@ export function SecuritySection({ isSaving }: SecuritySectionProps) {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div>
-        <h3 className="text-lg font-medium">{t('settings.security.title')}</h3>
-        <p className="text-sm text-muted-foreground">{t('settings.security.desc')}</p>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col gap-1 pb-2 border-b border-border/40">
+        <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 italic">
+          {t('settings.security.title')}
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          {t('settings.security.desc')}
+        </p>
       </div>
 
       <div className="max-w-2xl mx-auto">

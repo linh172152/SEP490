@@ -142,7 +142,50 @@ export const useAuthStore = create<AuthState>()(
             verifyOtp: async (email: string, otp: string) => {
                 set({ isLoading: true, error: null });
                 try {
-                    await authService.verifyOtp({ email, otp });
+                    const response: AccountResponse = await authService.verifyOtp({ email, otp });
+                    
+                    // Nếu Backend có trả về token sau khi verify (để auto-login)
+                    const token = response?.token;
+                    if (token) {
+                        authService.setToken(token);
+
+                        // Đồng bộ logic xử lý role giống hệt hàm login
+                        const rawRole = (response as any).role || (response as any).Role || "";
+                        let roleStr = typeof rawRole === 'string' ? rawRole : (rawRole?.name || String(rawRole));
+                        roleStr = roleStr.replace(/^ROLE_/i, '');
+                        let roleLower = roleStr.toLowerCase().trim();
+
+                        const mappedRole =
+                            roleLower === 'administrator' || roleLower === 'admin'
+                                ? 'ADMIN'
+                                : roleLower === 'manager'
+                                    ? 'MANAGER'
+                                    : roleLower === 'caregiver'
+                                        ? 'CAREGIVER'
+                                        : roleLower === 'elderly' || roleLower === 'family' || roleLower === 'familymember' || roleLower === 'elderlyuser'
+                                            ? 'ELDERLY'
+                                            : 'ADMIN';
+
+                        if (typeof document !== 'undefined') {
+                            document.cookie = `accessToken=${token}; path=/; max-age=86400; SameSite=Lax`;
+                            document.cookie = `userRole=${mappedRole}; path=/; max-age=86400; SameSite=Lax`;
+                        }
+
+                        const user: User = {
+                            id: response.id.toString(),
+                            name: (response.fullName || response.FullName) || response.email,
+                            email: response.email,
+                            phone: response.phone,
+                            role: mappedRole,
+                            avatar: undefined,
+                        };
+
+                        set({
+                            user,
+                            accessToken: token,
+                            isAuthenticated: true,
+                        });
+                    }
                 } catch (error: unknown) {
                     const message =
                         error instanceof Error

@@ -12,7 +12,7 @@ import { useI18nStore } from '@/store/useI18nStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-toastify';
 // Dùng chung Modal từ thư mục manager
-import { ServicePackageModal } from '../../manager/service-packages/ServicePackageModal';
+import { ServicePackageModal } from '../../manager/subscriptions/ServicePackageModal';
 
 export default function ServicePackagesAdminPage() {
   const { t } = useI18nStore();

@@ -1,4 +1,4 @@
-export type RoleType = 'doctor' | 'caregiver' | 'admin' | 'family' | 'manager';
+export type RoleType = 'caregiver' | 'admin' | 'family' | 'manager';
 
 export interface AlertNotificationConfig {
     email: boolean;
@@ -9,12 +9,11 @@ export interface AlertNotificationConfig {
 export interface SettingsData {
     profile: {
         avatar: string;
-        firstName: string;
-        lastName: string;
-        professionalId?: string; // Doctor specific
-        department?: string; // Doctor specific
+        fullName: string;
         email: string;
         phone: string;
+        professionalId: string;
+        department: string;
     };
     notifications: {
         criticalRisk: AlertNotificationConfig;
@@ -64,7 +63,7 @@ export interface RoleCapabilities {
     canManageCaregivers: boolean;
     canAccessAuditLogs: boolean;
     canAccessRoleAccess: boolean;
-    canAccessProfessionalProfile: boolean;
     canAccessNotifications: boolean;
     canAccessDataExport: boolean;
+    canAccessProfessionalProfile: boolean;
 }

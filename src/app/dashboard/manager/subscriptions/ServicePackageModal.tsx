@@ -122,7 +122,7 @@ export function ServicePackageModal({
                 onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
                 required
                 min="0"
-                step="0.01"
+                step="1000"
               />
             </div>
           </div>

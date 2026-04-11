@@ -21,6 +21,8 @@ interface FamilyState {
   generateDemoData: (accountId: number) => void;
   setUsingMock: (value: boolean) => void;
   clearError: () => void;
+  createReminder: (data: Omit<ReminderResponse, 'id' | 'elderlyName' | 'caregiverName'>) => Promise<ReminderResponse>;
+  getReminderById: (id: number) => ReminderResponse | undefined;
   purchasePackage: (accountId: number, packageId: number) => Promise<void>;
 }
 
@@ -91,6 +93,33 @@ export const useFamilyStore = create<FamilyState>()(
           isUsingMock: true,
           error: null
         });
+      },
+
+      createReminder: async (data) => {
+        if (get().isUsingMock) {
+          const generated: ReminderResponse = {
+            id: Math.floor(Math.random() * 100000),
+            ...data,
+            elderlyName: get().elderlyList.find(e => e.id === data.elderlyId)?.name ?? 'Unknown',
+            caregiverName: 'Assigned Caregiver',
+          };
+          set({ reminders: [...get().reminders, generated] });
+          return generated;
+        }
+
+        set({ isLoading: true });
+        try {
+          const created = await reminderService.create(data);
+          set({ reminders: [...get().reminders, created], isLoading: false });
+          return created;
+        } catch (error) {
+          set({ error: 'Failed to create reminder', isLoading: false });
+          throw error;
+        }
+      },
+
+      getReminderById: (id) => {
+        return get().reminders.find((reminder) => reminder.id === id);
       },
 
       purchasePackage: async (accountId, packageId) => {

@@ -158,7 +158,7 @@ export default function StaffManagePage() {
     }
   };
 
-  const getRoomName = (roomId?: number) => {
+  const getRoomName = (roomId?: number | null) => {
     if (!roomId) return <span className="text-muted-foreground italic text-[10px]">{t('manager.staff.unassigned_room')}</span>;
     const room = MOCK_ROOMS.find(r => r.id === roomId);
     return (

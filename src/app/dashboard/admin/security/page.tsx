@@ -1,10 +1,9 @@
+import { SecurityDashboard } from "@/components/security/SecurityDashboard";
+
 export default function SecurityPage() {
   return (
-    <div className="flex h-full items-center justify-center p-8 text-center bg-slate-50 border border-dashed rounded-xl">
-      <div>
-        <h2 className="text-2xl font-bold">Data & Security Management</h2>
-        <p className="text-muted-foreground mt-2">This module is under development.</p>
-      </div>
+    <div className="container mx-auto py-6">
+      <SecurityDashboard />
     </div>
   );
 }

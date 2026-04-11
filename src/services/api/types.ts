@@ -206,6 +206,7 @@ export interface ElderlyProfileResponse extends ElderlyProfileRequest {
   fullName?: string;
   deleted: boolean;
   name: string;
+  roomId?: number | null;
 }
 
 // Caregiver Profile Types
@@ -220,6 +221,21 @@ export interface CaregiverProfileResponse extends CaregiverProfileRequest {
   id: number;
   accountEmail: string;
   name: string;
+}
+
+export interface CaregiverDTO {
+  id: number;
+  name: string;
+}
+
+export interface ElderlyDTO {
+  id: number;
+  name: string;
+}
+
+export interface RobotDTO {
+  id: number;
+  robotName: string;
 }
 
 // Account Response from BE
@@ -238,7 +254,7 @@ export interface AccountResponse {
   verified?: string;
   createdAt: string;
   role?: any;
-  roomId?: number;
+  roomId?: number | null;
 }
 
 // Alert Notification Types
@@ -273,16 +289,41 @@ export interface InteractionLogResponse extends InteractionLogRequest {
 }
 
 // Room Types
-export interface RoomRequest {
+export interface RoomCaregiver {
+  id: number;
   name: string;
-  description?: string;
-  capacity: number;
-  floor?: string;
 }
 
-export interface RoomResponse extends RoomRequest {
+export interface RoomElderly {
   id: number;
-  elderlyCount: number;
+  name: string;
+}
+
+export interface RoomRobot {
+  id: number;
+  robotName: string;
+}
+
+export interface RoomRequest {
+  roomName: string;
+  managerId?: number | null;
+  capacity?: number;
+  floor?: string;
+  description?: string;
+}
+
+export interface RoomResponse {
+  id: number;
+  roomName?: string;
+  name?: string;
+  managerId?: number | null;
+  capacity?: number;
+  floor?: string;
+  description?: string;
+  caregivers?: RoomCaregiver[];
+  elderlies?: RoomElderly[];
+  robot?: RoomRobot | null;
+  elderlyCount?: number;
   caregiverId?: number;
   caregiverName?: string;
 }

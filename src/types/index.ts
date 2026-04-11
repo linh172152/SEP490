@@ -44,6 +44,17 @@ export interface Elderly {
     cognitiveHistory?: { timestamp: string, score: number }[]; // New for Phase F7
 }
 
+export interface Patient {
+    id: string;
+    name: string;
+    age: number;
+    condition: string;
+    moodScore: number;
+    riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    lastMedication: string;
+    email: string;
+}
+
 export interface ClinicalNote {
     id: string;
     elderlyId: string;

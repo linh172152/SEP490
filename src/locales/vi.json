@@ -96,6 +96,7 @@
   },
   "sidebar": {
     "overview": "Tổng quan",
+    "room_mgt": "Quản lý phòng",
     "staff_mgt": "Quản lý nhân viên",
     "robot_mgt": "Quản lý Robot",
     "robot_fleet": "Đội hình Robot",

@@ -1,21 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useFamilyStore } from '@/store/useFamilyStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription 
-} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Bell, 
   Search, 
-  Filter, 
   RotateCcw, 
   CheckCircle2, 
   Clock, 
@@ -26,6 +19,7 @@ import {
   User,
   Plus
 } from 'lucide-react';
+import { ReminderResponse } from '@/services/api/types';
 import { 
   Select, 
   SelectContent, 
@@ -79,7 +73,7 @@ export default function RemindersPage() {
     })
   };
 
-  const ReminderItem = ({ reminder }: { reminder: any }) => (
+  const ReminderItem = ({ reminder }: { reminder: ReminderResponse }) => (
     <div className="flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-md transition-all group">
       <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${
         reminder.reminderType === 'MEDICINE' 
@@ -127,7 +121,9 @@ export default function RemindersPage() {
                <CheckCircle2 className="h-4 w-4" />
             </div>
          )}
-         <ChevronRight className="h-4 w-4 text-slate-300 group-hover:translate-x-1 transition-transform" />
+         <Link href={`/dashboard/family/reminders/${reminder.id}`} className="flex items-center text-slate-400 hover:text-slate-600 transition-colors">
+           <ChevronRight className="h-4 w-4" />
+         </Link>
       </div>
     </div>
   );
@@ -139,8 +135,10 @@ export default function RemindersPage() {
           <h1 className="text-3xl font-bold tracking-tight">Care Reminders</h1>
           <p className="text-muted-foreground mt-1">Track medication and physical therapy schedules.</p>
         </div>
-        <Button variant="outline" className="h-11 px-6 shadow-sm">
-           <Plus className="mr-2 h-5 w-5" /> Schedule New
+        <Button asChild className="bg-sky-600 hover:bg-sky-700 text-white shadow-lg shadow-sky-200 dark:shadow-none transition-all hover:scale-105 h-11 px-6">
+          <Link href="/dashboard/family/reminders/create">
+            <Plus className="mr-2 h-5 w-5" /> Schedule New Reminder
+          </Link>
         </Button>
       </div>
 

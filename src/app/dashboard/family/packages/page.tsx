@@ -30,7 +30,7 @@ import { toast } from 'react-toastify';
 
 export default function PackagesPage() {
   const { user } = useAuthStore();
-  const { userPackages, purchasePackage } = useFamilyStore();
+  const { userPackages, purchasePackage, fetchDashboardData } = useFamilyStore();
   const [packages, setPackages] = useState<ServicePackageResponse[]>([]);
   const [packagesLoading, setPackagesLoading] = useState(false);
   const [purchasingId, setPurchasingId] = useState<number | null>(null);
@@ -50,6 +50,11 @@ export default function PackagesPage() {
 
     loadPackages();
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchDashboardData(Number(user.id));
+  }, [user?.id, fetchDashboardData]);
 
   const activePackage = userPackages.length > 0 ? userPackages[0] : null;
 

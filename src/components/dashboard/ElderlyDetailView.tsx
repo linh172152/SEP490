@@ -350,14 +350,14 @@ export function ElderlyDetailView({ elderlyId, role }: ElderlyDetailViewProps) {
                             </div>
                             <div>
                               <p className="font-semibold text-slate-800 dark:text-slate-100">{reminder.title}</p>
-                              <p className="text-sm text-slate-600 dark:text-slate-400">{reminder.description}</p>
+                              <p className="text-sm text-slate-600 dark:text-slate-400">{reminder.reminderType}</p>
                               <p className="text-xs text-slate-500 mt-1">
-                                {new Date(reminder.scheduledTime).toLocaleString()}
+                                {new Date(reminder.scheduleTime).toLocaleString()}
                               </p>
                             </div>
                           </div>
-                          <Badge variant={reminder.isActive ? "default" : "secondary"}>
-                            {reminder.isActive ? "Active" : "Inactive"}
+                          <Badge variant={reminder.active ? "default" : "secondary"}>
+                            {reminder.active ? "Active" : "Inactive"}
                           </Badge>
                         </div>
                       ))}

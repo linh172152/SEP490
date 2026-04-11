@@ -19,6 +19,7 @@ import {
   Cpu,
   History,
   Bell,
+  Home,
   type LucideIcon
 } from 'lucide-react';
 import { Role } from '@/types';
@@ -33,6 +34,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   // Admin Routes (System & Platform Administration)
   { i18nKey: 'sidebar.overview', href: '/dashboard/admin', icon: LayoutDashboard, roles: ['ADMIN'] },
+  { i18nKey: 'sidebar.room_mgt', href: '/dashboard/admin/rooms', icon: Home, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.user_mgt', href: '/dashboard/admin/users', icon: Users, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.service_plans', href: '/dashboard/admin/service-packages', icon: Package, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.data_security', href: '/dashboard/admin/security', icon: ShieldCheck, roles: ['ADMIN'] },
@@ -42,6 +44,7 @@ const navItems: NavItem[] = [
 
   // Manager Routes (from main)
   { i18nKey: 'sidebar.overview', href: '/dashboard/manager', icon: LayoutDashboard, roles: ['MANAGER'] },
+  { i18nKey: 'sidebar.room_mgt', href: '/dashboard/manager/rooms', icon: Home, roles: ['MANAGER'] },
   { i18nKey: 'sidebar.staff_mgt', href: '/dashboard/manager/staff', icon: Users, roles: ['MANAGER'] },
   { i18nKey: 'sidebar.robot_fleet', href: '/dashboard/manager/robots', icon: Bot, roles: ['MANAGER'] },
   { i18nKey: 'sidebar.service_plans', href: '/dashboard/manager/service-packages', icon: Package, roles: ['MANAGER'] },
@@ -56,7 +59,7 @@ const navItems: NavItem[] = [
   { i18nKey: 'sidebar.reminders', href: '/dashboard/family/reminders', icon: Bell, roles: ['ELDERLY', 'FAMILYMEMBER'] },
   { i18nKey: 'sidebar.exercises', href: '/dashboard/family/exercises', icon: Activity, roles: ['ELDERLY', 'FAMILYMEMBER'] },
   { i18nKey: 'sidebar.service_plans', href: '/dashboard/family/packages', icon: Package, roles: ['ELDERLY', 'FAMILYMEMBER'] },
-  { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['ELDERLY', 'FAMILYMEMBER'] },
+  { i18nKey: 'sidebar.settings', href: '/dashboard/family/settings', icon: Settings, roles: ['ELDERLY', 'FAMILYMEMBER'] },
 
   // Caregiver Routes
   { i18nKey: 'sidebar.overview', href: '/dashboard/caregiver', icon: LayoutDashboard, roles: ['CAREGIVER'] },

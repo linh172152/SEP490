@@ -18,7 +18,7 @@ interface ElderlyState {
     resolveAlert: (alertId: string) => void;
 
     // Clinical & Activity Actions (New for Phase F7)
-    addClinicalNote: (elderlyId: string, doctorId: string, content: string) => void;
+    addClinicalNote: (elderlyId: string, managerId: string, content: string) => void;
     addActivity: (elderlyId: string, activity: Omit<ActivityEntry, 'id' | 'timestamp'>) => void;
 
     // Selectors
@@ -137,11 +137,11 @@ export const useElderlyStore = create<ElderlyState>()(
                 }));
             },
 
-            addClinicalNote: (elderlyId, doctorId, content) => {
+            addClinicalNote: (elderlyId, managerId, content) => {
                 const newNote: ClinicalNote = {
                     id: `note-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                     elderlyId,
-                    doctorId,
+                    managerId,
                     content,
                     createdAt: new Date().toISOString(),
                 };

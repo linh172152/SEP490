@@ -14,6 +14,7 @@ interface ElderlyProfileState {
   createProfile: (accountId: number, data: ElderlyProfileRequest) => Promise<void>;
   updateProfile: (id: number, data: ElderlyProfileRequest) => Promise<void>;
   deleteProfile: (id: number) => Promise<void>;
+  generateDemoData: (accountId?: number) => void;
   clearError: () => void;
 }
 
@@ -111,6 +112,35 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
     } finally {
       set({ isLoading: false });
     }
+  },
+
+  generateDemoData: (accountId?: number) => {
+    const demoAccountId = accountId ?? 0;
+    set({
+      profiles: [
+        {
+          id: 101,
+          accountId: demoAccountId,
+          name: 'Nguyễn Văn A',
+          dateOfBirth: '1945-05-15',
+          healthNotes: 'Cao huyết áp và tiểu đường giai đoạn 2',
+          preferredLanguage: 'Vietnamese',
+          speakingSpeed: 'normal',
+          deleted: false,
+        },
+        {
+          id: 102,
+          accountId: demoAccountId,
+          name: 'Trần Thị B',
+          dateOfBirth: '1952-11-09',
+          healthNotes: 'Suy giảm trí nhớ nhẹ, cần nhắc thuốc hàng ngày',
+          preferredLanguage: 'Vietnamese',
+          speakingSpeed: 'slow',
+          deleted: false,
+        }
+      ],
+      error: null,
+    });
   },
 
   clearError: () => set({ error: null }),

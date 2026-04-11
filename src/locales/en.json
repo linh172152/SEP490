@@ -96,6 +96,7 @@
   },
   "sidebar": {
     "overview": "Overview",
+    "room_mgt": "Room Management",
     "staff_mgt": "Staff Management",
     "robot_mgt": "Robot Management",
     "robot_fleet": "Robot Fleet",

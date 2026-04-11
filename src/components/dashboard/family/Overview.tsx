@@ -25,7 +25,6 @@ import {
   Plus
 } from 'lucide-react';
 import Link from 'next/link';
-import { formatDate } from '@/lib/utils'; // I will check if this exists or create it
 
 export function FamilyOverview() {
   const { user } = useAuthStore();
@@ -90,6 +89,16 @@ export function FamilyOverview() {
             Generate Demo Data
           </Button>
         )}
+      </div>
+      <div className="flex flex-wrap gap-3">
+        <Button asChild className="bg-sky-600 hover:bg-sky-700 text-white shadow-lg shadow-sky-200 dark:shadow-none h-11 px-5">
+          <Link href="/dashboard/family/elderly">
+            <Plus className="mr-2 h-4 w-4" /> Manage Family Members
+          </Link>
+        </Button>
+        <Button asChild variant="outline" className="h-11 px-5">
+          <Link href="/dashboard/family/reminders">View Reminders</Link>
+        </Button>
       </div>
 
       {/* Metrics Row */}

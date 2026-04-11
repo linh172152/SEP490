@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useElderlyProfileStore } from '@/store/useElderlyProfileStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { 
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { 
   Plus, 
   Search, 
@@ -22,7 +23,9 @@ import {
   HeartPulse,
   Activity,
   Calendar,
-  Users
+  Users,
+  Package,
+  ShoppingCart
 } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
@@ -32,16 +35,88 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { userPackageService } from '@/services/api/userPackageService';
+import { servicePackageService } from '@/services/api/servicePackageService';
+import { roomService } from '@/services/api/roomService';
+import { UserPackageResponse, ServicePackageResponse, Room } from '@/services/api/types';
 
 export default function ElderlyListPage() {
   const { user } = useAuthStore();
-  const { profiles, fetchProfiles } = useElderlyProfileStore();
+  const { profiles, fetchProfiles, generateDemoData } = useElderlyProfileStore();
+  const [userPackages, setUserPackages] = useState<UserPackageResponse[]>([]);
+  const [servicePackages, setServicePackages] = useState<ServicePackageResponse[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [selectedElderly, setSelectedElderly] = useState<number | null>(null);
+  const [isBuyDialogOpen, setIsBuyDialogOpen] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
       fetchProfiles(Number(user.id));
     }
   }, [user?.id, fetchProfiles]);
+
+  useEffect(() => {
+    const loadPackagesData = async () => {
+      try {
+        const [userPkgs, servicePkgs, roomData] = await Promise.all([
+          userPackageService.getAll(),
+          servicePackageService.getAll(),
+          roomService.getAllRooms()
+        ]);
+        setUserPackages(userPkgs);
+        setServicePackages(servicePkgs);
+        setRooms(roomData);
+      } catch (error) {
+        console.error('Failed to load packages:', error);
+      }
+    };
+    loadPackagesData();
+  }, [user?.id]);
+
+  const getActivePackage = () => {
+    if (!user?.id) return undefined;
+    const accountPackages = userPackages.filter(pkg => pkg.accountId === Number(user.id));
+    return accountPackages
+      .slice()
+      .sort((a, b) => new Date(b.expiredAt).getTime() - new Date(a.expiredAt).getTime())[0];
+  };
+
+  const activePackage = getActivePackage();
+
+  const handleBuyPackage = async (servicePackageId: number) => {
+    if (!selectedElderly || !user?.id) return;
+
+    const now = new Date();
+    const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    try {
+      await userPackageService.create({
+        accountId: Number(user.id),
+        servicePackageId,
+        assignedAt: now.toISOString(),
+        expiredAt: thirtyDaysLater.toISOString()
+      });
+      setIsBuyDialogOpen(false);
+      setSelectedElderly(null);
+      // Reload packages data
+      const reloadData = async () => {
+        try {
+          const [userPkgs, servicePkgs] = await Promise.all([
+            userPackageService.getAll(),
+            servicePackageService.getAll()
+          ]);
+          setUserPackages(userPkgs);
+          setServicePackages(servicePkgs);
+        } catch (error) {
+          console.error('Failed to reload packages:', error);
+        }
+      };
+      reloadData();
+    } catch (error) {
+      console.error('Failed to buy package:', error);
+    }
+  };
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -49,11 +124,18 @@ export default function ElderlyListPage() {
           <h1 className="text-3xl font-bold tracking-tight">Elderly Management</h1>
           <p className="text-muted-foreground mt-1">Manage profiles and care circles for your loved ones.</p>
         </div>
-        <Button asChild className="bg-sky-600 hover:bg-sky-700">
-          <Link href="/dashboard/family/elderly/create">
-            <Plus className="mr-2 h-4 w-4" /> Add New Member
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-3 items-center">
+          {!profiles.length && user?.id ? (
+            <Button variant="outline" onClick={() => generateDemoData(Number(user.id))} className="h-11">
+              Load Demo Data
+            </Button>
+          ) : null}
+          <Button asChild className="bg-sky-600 hover:bg-sky-700">
+            <Link href="/dashboard/family/elderly/create">
+              <Plus className="mr-2 h-4 w-4" /> Add New Member
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm">
@@ -121,6 +203,79 @@ export default function ElderlyListPage() {
                    </p>
                 </div>
 
+                <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-4 border border-slate-100 dark:border-slate-800">
+                   <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                      <Package className="h-3 w-3" /> Service Package
+                   </div>
+                   {(() => {
+                     const pkg = activePackage;
+                     if (pkg) {
+                       const servicePkg = servicePackages.find(sp => sp.id === pkg.servicePackageId);
+                       return (
+                         <div className="space-y-2">
+                           <div className="flex items-center justify-between">
+                             <Badge variant="default" className="bg-green-100 text-green-800">
+                               {servicePkg?.name || 'Active Package'}
+                             </Badge>
+                             <span className="text-xs text-muted-foreground">
+                               Expires: {new Date(pkg.expiredAt).toLocaleDateString()}
+                             </span>
+                           </div>
+                           <p className="text-sm text-slate-700 dark:text-slate-300">
+                             {servicePkg?.description || 'Package details'}
+                           </p>
+                         </div>
+                       );
+                     } else {
+                       return (
+                         <div className="space-y-2">
+                           <Badge variant="secondary">No Package</Badge>
+                           <p className="text-sm text-slate-600 dark:text-slate-400">
+                             Purchase a service package to enable full care features.
+                           </p>
+                         </div>
+                       );
+                     }
+                   })()}
+                </div>
+
+                <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-4 border border-slate-100 dark:border-slate-800">
+                   <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                      <Users className="h-3 w-3" /> Room Assignment
+                   </div>
+                   {(() => {
+                     const room = rooms.find(r => r.id === elderly.roomId);
+                     if (room) {
+                       const roomLabel = room.roomName ?? room.name ?? 'Room';
+                       const caregiverLabel = room.caregivers?.[0]?.name ?? room.caregiverName;
+                       return (
+                         <div className="space-y-2">
+                           <div className="flex items-center justify-between">
+                             <Badge variant="default" className="bg-blue-100 text-blue-800">
+                               {roomLabel}
+                             </Badge>
+                             <span className="text-xs text-muted-foreground">
+                               Floor {room.floor}
+                             </span>
+                           </div>
+                           <p className="text-sm text-slate-700 dark:text-slate-300">
+                             {caregiverLabel ? `Assigned to ${caregiverLabel}` : 'No caregiver assigned'}
+                           </p>
+                         </div>
+                       );
+                     } else {
+                       return (
+                         <div className="space-y-2">
+                           <Badge variant="secondary">Unassigned</Badge>
+                           <p className="text-sm text-slate-600 dark:text-slate-400">
+                             Waiting for room assignment by manager.
+                           </p>
+                         </div>
+                       );
+                     }
+                   })()}
+                </div>
+
                 <div className="flex items-center justify-between text-sm">
                    <div className="flex items-center gap-2 text-muted-foreground">
                       <HeartPulse className="h-4 w-4 text-rose-500" />
@@ -132,12 +287,51 @@ export default function ElderlyListPage() {
                 </div>
               </CardContent>
 
-              <CardFooter className="pt-2 border-t border-slate-50 dark:border-slate-800/50">
-                <Button variant="outline" className="w-full text-sky-600 border-sky-100 hover:bg-sky-50 group-hover:bg-sky-600 group-hover:text-white transition-all duration-300" asChild>
-                  <Link href={`/dashboard/family/elderly/${elderly.id}`}>
-                    Manage Care Circle
-                  </Link>
-                </Button>
+              <CardFooter className="pt-2 border-t border-slate-50 dark:border-slate-800/50 space-y-2">
+                <div className="flex gap-2 w-full">
+                  <Button variant="outline" className="flex-1 text-sky-600 border-sky-100 hover:bg-sky-50 group-hover:bg-sky-600 group-hover:text-white transition-all duration-300" asChild>
+                    <Link href={`/dashboard/family/elderly/${elderly.id}`}>
+                      Manage Care Circle
+                    </Link>
+                  </Button>
+                  {!activePackage && (
+                    <Dialog open={isBuyDialogOpen && selectedElderly === elderly.id} onOpenChange={(open) => {
+                      setIsBuyDialogOpen(open);
+                      if (!open) setSelectedElderly(null);
+                    }}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedElderly(elderly.id)}
+                          className="text-green-600 border-green-100 hover:bg-green-50"
+                        >
+                          <ShoppingCart className="w-4 h-4 mr-1" />
+                          Buy Package
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Choose Service Package for {elderly.name}</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          {servicePackages.map((pkg) => (
+                            <div key={pkg.id} className="border rounded-lg p-4 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer" onClick={() => handleBuyPackage(pkg.id)}>
+                              <div className="flex justify-between items-start mb-2">
+                                <h3 className="font-semibold">{pkg.name}</h3>
+                                <Badge variant="outline">${pkg.price}/month</Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-2">{pkg.description}</p>
+                              <Badge variant={pkg.active ? "default" : "secondary"}>
+                                {pkg.level}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
               </CardFooter>
             </Card>
           ))}
@@ -152,11 +346,16 @@ export default function ElderlyListPage() {
             Add your elderly family members to start monitoring their health and coordinating care.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-             <Button asChild className="bg-sky-600 hover:bg-sky-700 min-w-[200px] h-12 text-lg">
-                <Link href="/dashboard/family/elderly/create">
-                   Add First Member
-                </Link>
-             </Button>
+            <Button asChild className="bg-sky-600 hover:bg-sky-700 min-w-[200px] h-12 text-lg">
+              <Link href="/dashboard/family/elderly/create">
+                Add First Member
+              </Link>
+            </Button>
+            {user?.id ? (
+              <Button variant="outline" className="min-w-[200px] h-12 text-lg" onClick={() => generateDemoData(Number(user.id))}>
+                Load Demo Data
+              </Button>
+            ) : null}
           </div>
         </div>
       )}

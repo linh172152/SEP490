@@ -98,7 +98,7 @@ export function UserFormModal({
         role: user.role || allowedRoles[0],
         gender: user.gender || "Male",
         status: user.status || "ACTIVE",
-        roomId: user.roomId
+        roomId: user.roomId ?? undefined
       });
     } else if (!user && open) {
       reset({

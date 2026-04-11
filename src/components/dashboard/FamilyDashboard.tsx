@@ -69,6 +69,7 @@ export function FamilyDashboard() {
   const [alerts, setAlerts] = useState<AlertNotificationResponse[]>([]);
   const [robots, setRobots] = useState<RobotResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   const fetchData = async () => {
     if (!familyMember?.id) {
@@ -92,10 +93,102 @@ export function FamilyDashboard() {
       setRobots(Array.isArray(robotsData) ? robotsData : []);
     } catch (error) {
       console.error('Failed to fetch family dashboard data:', error);
+      setFetchError(true);
       toast.error('Failed to load dashboard data.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const loadDemoData = () => {
+    setFetchError(false);
+    setElderlyList([
+      {
+        id: 101,
+        accountId: Number(familyMember?.id ?? 0),
+        name: 'Nguyễn Văn A',
+        dateOfBirth: '1945-05-15',
+        healthNotes: 'Cao huyết áp và mất ngủ, cần nhắc uống thuốc buổi sáng.',
+        preferredLanguage: 'Vietnamese',
+        speakingSpeed: 'normal',
+        deleted: false,
+      },
+      {
+        id: 102,
+        accountId: Number(familyMember?.id ?? 0),
+        name: 'Trần Thị B',
+        dateOfBirth: '1950-10-20',
+        healthNotes: 'Tiểu đường type 2, theo dõi glucose hàng ngày.',
+        preferredLanguage: 'Vietnamese',
+        speakingSpeed: 'slow',
+        deleted: false,
+      }
+    ]);
+    setReminders([
+      {
+        id: 1,
+        elderlyId: 101,
+        caregiverId: 11,
+        title: 'Uống thuốc huyết áp',
+        reminderType: 'MEDICINE',
+        scheduleTime: new Date(new Date().setHours(8, 0, 0, 0)).toISOString(),
+        repeatPattern: 'daily',
+        active: true,
+        elderlyName: 'Nguyễn Văn A',
+        caregiverName: 'Caregiver 1',
+      },
+      {
+        id: 2,
+        elderlyId: 102,
+        caregiverId: 11,
+        title: 'Kiểm tra đường huyết',
+        reminderType: 'MEDICINE',
+        scheduleTime: new Date(new Date().setHours(7, 30, 0, 0)).toISOString(),
+        repeatPattern: 'daily',
+        active: true,
+        elderlyName: 'Trần Thị B',
+        caregiverName: 'Caregiver 1',
+      }
+    ]);
+    setAlerts([
+      {
+        id: 11,
+        elderlyId: 101,
+        alertType: 'heart_rate',
+        message: 'Nhịp tim tăng cao cần kiểm tra ngay.',
+        resolved: false,
+        elderlyName: 'Nguyễn Văn A',
+        createdAt: new Date(Date.now() - 3600000).toISOString(),
+      },
+      {
+        id: 12,
+        elderlyId: 102,
+        alertType: 'medication',
+        message: 'Nhắc uống thuốc đường huyết.',
+        resolved: false,
+        elderlyName: 'Trần Thị B',
+        createdAt: new Date(Date.now() - 7200000).toISOString(),
+      }
+    ]);
+    setRobots([
+      {
+        id: 21,
+        robotName: 'CareBot Alpha',
+        model: 'CB-2025',
+        serialNumber: 'RB-101-A',
+        firmwareVersion: '1.3.2',
+        status: 'ONLINE',
+      },
+      {
+        id: 22,
+        robotName: 'CareBot Beta',
+        model: 'CB-2026',
+        serialNumber: 'RB-102-B',
+        firmwareVersion: '1.3.2',
+        status: 'ONLINE',
+      }
+    ]);
+    toast.success('Demo data loaded for family dashboard');
   };
 
   useEffect(() => {
@@ -141,12 +234,19 @@ export function FamilyDashboard() {
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Family Overview</h1>
           <p className="text-muted-foreground mt-1">Monitor your elderly family members and overall alerts.</p>
         </div>
-        <Button asChild className="bg-sky-600 hover:bg-sky-700 text-white shadow-lg shadow-sky-200 dark:shadow-none transition-all hover:scale-105 h-11 px-6">
-          <Link href="/dashboard/family/elderly/create">
-            <Plus className="mr-2 h-5 w-5" />
-            Add New Member
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-3 items-center">
+          {(fetchError || (elderlyList.length === 0 && reminders.length === 0 && alerts.length === 0 && robots.length === 0)) && (
+            <Button variant="outline" className="h-11 px-6" onClick={loadDemoData}>
+              Load Demo Data
+            </Button>
+          )}
+          <Button asChild className="bg-sky-600 hover:bg-sky-700 text-white shadow-lg shadow-sky-200 dark:shadow-none transition-all hover:scale-105 h-11 px-6">
+            <Link href="/dashboard/family/elderly/create">
+              <Plus className="mr-2 h-5 w-5" />
+              Add New Member
+            </Link>
+          </Button>
+        </div>
       </motion.div>
 
       {/* KPI Cards */}

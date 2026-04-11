@@ -63,10 +63,12 @@ export default function CaregiverElderlyPage() {
   const { 
     profiles, 
     isLoading, 
+    error,
     fetchProfiles, 
     createProfile, 
     updateProfile, 
-    deleteProfile 
+    deleteProfile,
+    generateDemoData
   } = useElderlyProfileStore();
   
   const [search, setSearch] = useState('');
@@ -160,9 +162,16 @@ export default function CaregiverElderlyPage() {
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Elderly Registry</h1>
           <p className="text-muted-foreground">Manage health records for your assigned elderly members.</p>
         </div>
-        <Button onClick={handleOpenAdd} className="shrink-0 bg-blue-600 hover:bg-blue-700">
+        <div className="flex flex-wrap gap-3 items-center">
+          {!isLoading && profiles.length === 0 && caregiver?.id ? (
+            <Button variant="outline" onClick={() => generateDemoData(Number(caregiver.id))} className="shrink-0">
+              Load Demo Data
+            </Button>
+          ) : null}
+          <Button onClick={handleOpenAdd} className="shrink-0 bg-blue-600 hover:bg-blue-700">
             <Plus className="mr-2 h-4 w-4" /> Add Elderly Member
-        </Button>
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -249,10 +258,18 @@ export default function CaregiverElderlyPage() {
             {!isLoading && filteredMembers.length === 0 && (
               <TableRow>
                 <TableCell colSpan={4} className="h-40 text-center">
-                  <div className="flex flex-col items-center justify-center gap-2">
+                  <div className="flex flex-col items-center justify-center gap-4">
                     <Plus className="h-10 w-10 text-slate-200" />
                     <p className="text-lg font-bold text-slate-400">No members found</p>
-                    <p className="text-sm text-slate-400">Start by adding a new elderly profile.</p>
+                    <p className="text-sm text-slate-400">Start by adding a new elderly profile or use demo data.</p>
+                    <div className="flex flex-wrap justify-center gap-3">
+                      <Button variant="outline" onClick={() => caregiver?.id && generateDemoData(Number(caregiver.id))}>
+                        Load Demo Data
+                      </Button>
+                      <Button onClick={handleOpenAdd} className="bg-blue-600 hover:bg-blue-700">
+                        <Plus className="mr-2 h-4 w-4" /> Add Elderly Member
+                      </Button>
+                    </div>
                   </div>
                 </TableCell>
               </TableRow>

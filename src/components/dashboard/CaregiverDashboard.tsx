@@ -67,6 +67,7 @@ export function CaregiverDashboard() {
   const [robots, setRobots] = useState<RobotResponse[]>([]);
   const [reminders, setReminders] = useState<ReminderResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -84,10 +85,102 @@ export function CaregiverDashboard() {
       setReminders(Array.isArray(remindersData) ? remindersData : []);
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
-      toast.error("Failed to load dashboard data. Showing local state.");
+      setFetchError(true);
+      toast.error("Failed to load dashboard data. Use demo data to continue.");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const loadDemoData = () => {
+    setFetchError(false);
+    setElderlyList([
+      {
+        id: 101,
+        accountId: Number(caregiver?.id ?? 0),
+        name: 'Maria Trần',
+        dateOfBirth: '1948-08-12',
+        healthNotes: 'Cần hỗ trợ đi lại và giám sát nhịp tim.',
+        preferredLanguage: 'Vietnamese',
+        speakingSpeed: 'normal',
+        deleted: false,
+      },
+      {
+        id: 102,
+        accountId: Number(caregiver?.id ?? 0),
+        name: 'Lê Văn D',
+        dateOfBirth: '1953-03-29',
+        healthNotes: 'Chỉ định theo dõi huyết áp và chế độ dinh dưỡng.',
+        preferredLanguage: 'Vietnamese',
+        speakingSpeed: 'slow',
+        deleted: false,
+      }
+    ]);
+    setActiveAlerts([
+      {
+        id: 201,
+        elderlyId: 101,
+        alertType: 'fall_risk',
+        message: 'Nguy cơ ngã cao cho Maria Trần.',
+        resolved: false,
+        elderlyName: 'Maria Trần',
+        createdAt: new Date(Date.now() - 5400000).toISOString(),
+      },
+      {
+        id: 202,
+        elderlyId: 102,
+        alertType: 'medication',
+        message: 'Nhắc uống thuốc hạ huyết áp cho Lê Văn D.',
+        resolved: false,
+        elderlyName: 'Lê Văn D',
+        createdAt: new Date(Date.now() - 3600000).toISOString(),
+      }
+    ]);
+    setRobots([
+      {
+        id: 31,
+        robotName: 'CareBot Gamma',
+        model: 'CB-2025',
+        serialNumber: 'RB-201-G',
+        firmwareVersion: '1.4.0',
+        status: 'ONLINE',
+      },
+      {
+        id: 32,
+        robotName: 'CareBot Delta',
+        model: 'CB-2025',
+        serialNumber: 'RB-202-D',
+        firmwareVersion: '1.4.0',
+        status: 'ONLINE',
+      }
+    ]);
+    setReminders([
+      {
+        id: 301,
+        elderlyId: 101,
+        caregiverId: Number(caregiver?.id ?? 0),
+        title: 'Kiểm tra huyết áp buổi sáng',
+        reminderType: 'MEDICINE',
+        scheduleTime: new Date(new Date().setHours(7, 30, 0, 0)).toISOString(),
+        repeatPattern: 'daily',
+        active: true,
+        elderlyName: 'Maria Trần',
+        caregiverName: 'Caregiver',
+      },
+      {
+        id: 302,
+        elderlyId: 102,
+        caregiverId: Number(caregiver?.id ?? 0),
+        title: 'Theo dõi đường huyết',
+        reminderType: 'MEDICINE',
+        scheduleTime: new Date(new Date().setHours(8, 30, 0, 0)).toISOString(),
+        repeatPattern: 'daily',
+        active: true,
+        elderlyName: 'Lê Văn D',
+        caregiverName: 'Caregiver',
+      }
+    ]);
+    toast.success('Demo data loaded for caregiver dashboard');
   };
 
   useEffect(() => {
@@ -99,7 +192,7 @@ export function CaregiverDashboard() {
       await alertService.markAsResolved(id);
       setActiveAlerts(prev => prev.filter(a => a.id !== id));
       toast.success("Alert resolved");
-    } catch (error) {
+    } catch {
       toast.error("Failed to resolve alert");
     }
   };
@@ -156,7 +249,15 @@ export function CaregiverDashboard() {
           <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Caregiver Terminal</h2>
           <p className="text-muted-foreground">Monitor and assist your assigned care circle.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap gap-3 items-center">
+          {(fetchError || (elderlyList.length === 0 && activeAlerts.length === 0 && robots.length === 0 && reminders.length === 0)) && (
+            <Button variant="outline" onClick={loadDemoData} className="h-11">
+              Load Demo Data
+            </Button>
+          )}
+          <Button asChild variant="outline" className="h-11 px-5">
+            <Link href="/dashboard/caregiver/alerts">View Alerts</Link>
+          </Button>
           <Badge variant="secondary" className="bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-300 px-3 py-1 text-sm border-sky-200 dark:border-sky-800">
             {elderlyList.length} Active Members
           </Badge>
@@ -325,7 +426,7 @@ export function CaregiverDashboard() {
         <div className="flex items-center justify-between">
           <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Assigned Care Circle</h3>
           <Button variant="outline" size="sm" asChild>
-            <Link href="/dashboard/caregiver/patients">
+            <Link href="/dashboard/caregiver/elderly">
               View All Members
             </Link>
           </Button>

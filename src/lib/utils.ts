@@ -17,3 +17,23 @@ export function formatDate(dateString: string | Date): string {
   
   return `${d}/${m}/${y} ${h}:${min}`;
 }
+
+export function normalizeRobotStatus(status?: string | null): string {
+  const normalized = String(status || '').trim().toLowerCase();
+  if (!normalized) {
+    return 'UNKNOWN';
+  }
+
+  const activeTokens = ['active', 'online', 'available', 'ready', 'idle', 'charging', 'working', 'busy'];
+  const maintenanceTokens = ['maintenance', 'maint', 'error', 'fault', 'offline', 'unavailable', 'paused'];
+
+  if (activeTokens.some((token) => normalized.includes(token))) {
+    return 'ACTIVE';
+  }
+
+  if (maintenanceTokens.some((token) => normalized.includes(token))) {
+    return 'MAINTENANCE';
+  }
+
+  return 'UNKNOWN';
+}

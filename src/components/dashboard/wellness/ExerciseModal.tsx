@@ -126,10 +126,10 @@ export function ExerciseModal({
             </div>
             <div>
               <DialogTitle className="text-2xl font-bold tracking-tight">
-                {readOnly ? (t('common.view_details') || "View Script Details") : (!!initialData ? t('wellness.library.edit_btn') : t('wellness.library.add_btn'))}
+                {readOnly ? (t('common.view_details') || "View Script Details") : (!!initialData ? t('wellness.scripts.modal.edit_title') : t('wellness.scripts.modal.create_title'))}
               </DialogTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                {t('wellness.library.modal_desc') || "Provide the script details and configuration for the robotic exercise session."}
+                {t('wellness.scripts.modal.instruction') || "Provide the script details and configuration for the robotic exercise session."}
               </p>
             </div>
           </div>

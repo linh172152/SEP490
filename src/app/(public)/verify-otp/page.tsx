@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { HeartPulse, Loader2, Mail } from 'lucide-react';
+import { Loader2, Mail } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email('Email không hợp lệ.'),
@@ -54,6 +54,11 @@ function VerifyOtpContent() {
   const { verifyOtp } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
 
+  const formSchema = z.object({
+    email: z.string().email(t('auth.register.validation.email_invalid', 'Invalid email address.')),
+    otp: z.string().length(6, t('auth.register.validation.otp_placeholder', 'OTP must be 6 digits.')),
+  });
+
   // Lấy email từ query params nếu có
   const emailParam = searchParams.get('email') || '';
 
@@ -76,18 +81,8 @@ function VerifyOtpContent() {
     setIsLoading(true);
     try {
       await verifyOtp(values.email, values.otp);
-      
-      // Kiểm tra xem store đã có user chưa (nếu BE trả về token)
-      const currentUser = useAuthStore.getState().user;
-      
-      if (currentUser) {
-        toast.success(t('auth.verify_otp.success_msg'));
-        const rolePath = getRolePath(currentUser.role || 'caregiver');
-        router.replace(`/dashboard/${rolePath}`);
-      } else {
-        toast.success(t('auth.verify_otp.success_no_login'));
-        router.push('/login');
-      }
+      toast.success(t('auth.verify_otp.success_no_login', 'Verification successful! You can now log in.'));
+      router.push('/login');
     } catch (error: unknown) {
       const message =
         error instanceof Error
@@ -163,30 +158,17 @@ function VerifyOtpContent() {
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="flex flex-col space-y-2 text-sm text-center text-muted-foreground bg-muted/20 py-4 border-t">
-        <p>
-          {t('auth.verify_otp.resend_prompt')}{' '}
-          <button className="text-primary hover:underline font-medium" type="button" onClick={() => toast.info(t('auth.verify_otp.resend_wip'))}>
-            {t('auth.verify_otp.resend_link')}
-          </button>
-        </p>
-        <div className="pt-2 text-xs">
-          <p>
-            {t('auth.verify_otp.back_to')}{' '}
-            <Link href="/register" className="text-primary hover:underline font-medium">
-              {t('auth.verify_otp.register_link')}
-            </Link>
-          </p>
-        </div>
-      </CardFooter>
+      <CardFooter className="bg-muted/20 py-4 border-t h-12" />
     </Card>
   );
 }
 
 export default function VerifyOtpPage() {
+  const { t } = useI18nStore();
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<div>{t('common.loading', 'Loading...')}</div>}>
          <VerifyOtpContent />
       </Suspense>
     </div>

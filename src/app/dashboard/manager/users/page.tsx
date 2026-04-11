@@ -227,9 +227,9 @@ export default function UserManagementPage() {
   // -- Helpers --
   const getRoleBadge = (role: any) => {
     const roleStr = (typeof role === 'string' ? role : role?.name || "").toUpperCase();
-    if (roleStr.includes("CAREGIVER")) return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/20">Caregiver</Badge>;
-    if (roleStr.includes("FAMILY")) return <Badge className="bg-purple-500/15 text-purple-600 border-purple-500/20">Family Member</Badge>;
-    return <Badge variant="outline">Resident</Badge>;
+    if (roleStr.includes("CAREGIVER")) return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/20">{t('common.roles.CAREGIVER')}</Badge>;
+    if (roleStr.includes("FAMILY")) return <Badge className="bg-purple-500/15 text-purple-600 border-purple-500/20">{t('common.roles.FAMILYMEMBER')}</Badge>;
+    return <Badge variant="outline">{t('common.roles.ELDERLYUSER')}</Badge>;
   };
 
   return (
@@ -395,18 +395,17 @@ export default function UserManagementPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48 p-1 rounded-xl shadow-2xl border-none">
                             <DropdownMenuLabel className="px-3 py-2 text-[10px] font-black uppercase opacity-30 tracking-widest">{t('common.actions')}</DropdownMenuLabel>
-                            
-                            {/* Elderly can be edited, staff/family NO (as per requirement) */}
-                            {activeTab === "elderly" && (
+                               {/* Caregivers/Family can only be removed. Elderly is now read-only View + Remove. */}
+                            {activeTab === "elderly" ? (
                               <DropdownMenuItem 
                                 className="rounded-lg gap-2 font-bold py-2.5" 
                                 onClick={() => { setSelectedElderly(item); setIsElderlyFormOpen(true); }}
                               >
-                                <Plus className="h-4 w-4 text-indigo-500" /> {t('common.edit')}
+                                <Users className="h-4 w-4 text-indigo-500" /> {t('common.view_profile')}
                               </DropdownMenuItem>
-                            )}
+                            ) : null}
 
-                            {activeTab !== "elderly" && !item.deleted && (
+                            {!item.deleted && (
                               <DropdownMenuItem 
                                 className="text-rose-600 rounded-lg gap-2 font-bold py-2.5" 
                                 onClick={() => handleDelete(item)}
@@ -495,6 +494,7 @@ export default function UserManagementPage() {
         onClose={() => setIsElderlyFormOpen(false)}
         patient={selectedElderly}
         onRefresh={fetchData}
+        isReadOnly={true}
       />
 
       {/* Pagination Controls */}

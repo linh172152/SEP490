@@ -10,8 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn, getAvatarColor, getInitials } from '@/lib/utils';
 
 export function Topbar() {
   const currentUser = useAuthStore((state) => state.user);
@@ -22,17 +22,16 @@ export function Topbar() {
   return (
     <header className="fixed top-0 z-30 flex h-16 w-full items-center justify-between border-b bg-background/95 px-4 backdrop-blur sm:px-6 lg:px-8">
       <div className="flex flex-1 items-center justify-end gap-4">
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5 text-muted-foreground" />
-          <span className="absolute right-2 top-2 flex h-2 w-2 rounded-full bg-destructive"></span>
-        </Button>
-
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={`https://api.dicebear.com/7.x/notionists/svg?seed=${currentUser.name}`} alt={currentUser.name} />
-                <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+            <Button variant="ghost" className="relative h-9 w-9 rounded-full ring-offset-background transition-all hover:scale-110 active:scale-95">
+              <Avatar className="h-9 w-9 border-2 border-white shadow-sm overflow-hidden">
+                <AvatarFallback className={cn(
+                  "text-xs text-white font-bold uppercase",
+                  getAvatarColor(currentUser.name)
+                )}>
+                  {getInitials(currentUser.name)}
+                </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>

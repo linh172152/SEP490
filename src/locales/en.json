@@ -5,8 +5,17 @@
     "confirm": "Confirm",
     "delete": "Delete",
     "edit": "Edit",
+    "view": "View",
+    "view_profile": "View Profile",
+    "close": "Close",
     "actions": "Actions",
+    "name": "Full Name",
     "status": "Status",
+    "status_labels": {
+      "success": "Success",
+      "error": "Error",
+      "pending": "Pending"
+    },
     "loading": "Loading data...",
     "no_data": "No data found.",
     "active": "Active",
@@ -48,6 +57,24 @@
     },
     "view_all": "View all fleet"
   },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "overview": "Overview",
+    "user_mgt": "User Management",
+    "fleet": "Robot Fleet",
+    "robot_mgt": "Robot Management",
+    "robot_fleet": "Robot Fleet Hub",
+    "subscriptions": "Subscriptions",
+    "rooms": "Room Management",
+    "wellness": "Wellness Hub",
+    "settings": "Settings",
+    "logout": "Log Out",
+    "data_security": "Data Security",
+    "staff_mgt": "Staff Management",
+    "reminders": "Reminders",
+    "service_plans": "Service Plans",
+    "exercises": "Exercises"
+  },
   "auth": {
     "login": {
       "title": "CareBot-MH Portal",
@@ -65,7 +92,27 @@
       "welcome": "Welcome, {name}!",
       "error_user_not_found": "User information not found",
       "error_unverified": "Account not verified. Redirecting to verification page...",
-      "error_generic": "Login failed. Please check your credentials."
+      "error_generic": "Login failed. Please check your credentials.",
+      "already_have_account": "Already have an account?",
+      "login_link": "Sign in here"
+    },
+    "register": {
+      "title": "Create an Account",
+      "subtitle": "Join CareBot-MH to start monitoring mental well-being",
+      "submit_btn": "Sign Up",
+      "submitting": "Creating account...",
+      "success_toast": "Registration successful! Please check your email for the OTP code.",
+      "error_toast": "Account creation failed.",
+      "otp_validation_error": "Please enter a valid 6-digit OTP code.",
+      "otp_success_toast": "OTP verified successfully! Please log in to continue.",
+      "otp_error_toast": "OTP verification failed. Please check your code.",
+      "validation": {
+        "name_min": "Full name must be at least 2 characters.",
+        "email_invalid": "Invalid email address.",
+        "phone_invalid": "Invalid VN phone number (10 digits, starting with 0[3|5|7|8|9] or 84).",
+        "password_min": "Password must be at least 6 characters.",
+        "gender_required": "Please select a gender"
+      }
     },
     "verify_otp": {
       "title": "Verify Your OTP",
@@ -107,7 +154,12 @@
       "relationship": "Your Relationship",
       "notification_channel": "Notification Channel",
       "elderly_name": "Member Name",
-      "health_notes": "Health Notes & Conditions"
+      "health_notes": "Health Notes & Conditions",
+      "gender": "Gender",
+      "select_gender": "Select gender",
+      "male": "Male",
+      "female": "Female",
+      "other": "Other"
     },
     "audit_logs": "System Activity Logs",
     "data_export": "Export Data Logs",
@@ -185,7 +237,7 @@
       "storage_title": "Data Storage",
       "total_accounts": "Total Accounts",
       "robots_status": "Robots Team",
-      "service_packages": "Service Packages",
+      "security_records": "Security Records",
       "uptime_title": "System Stability",
       "uptime_desc": "Monitoring platform connectivity and interaction flows.",
       "fleet_distribution": "Robot Technical Status",
@@ -198,7 +250,7 @@
       "audit_logs_title": "System Activity Logs",
       "user_distribution_title": "User Role Distribution",
       "user_distribution_desc": "Breakdown of all active accounts in the platform.",
-      "service_packages_desc": "Available configs"
+      "security_records_desc": "Recent system security events"
     },
     "fleet": {
       "title": "Robot Management",
@@ -326,7 +378,7 @@
       "desc": "Configure and manage subscription plans.",
       "create_btn": "Create Package",
       "table_card_title": "Available Service Tiers",
-      "table_card_desc": "All defined service packages that can be assigned to user accounts.",
+      "table_card_desc": "List of available service tiers that family members can purchase for elderly profiles.",
       "table": {
         "level": "Level",
         "name": "Name",
@@ -510,24 +562,15 @@
     },
     "subscriptions": {
       "title": "Subscription Management",
-      "subtitle": "Manage service tier definitions for the platform.",
-      "table": {
-        "account": "User Account",
-        "package": "Service Package",
-        "assigned_date": "Assigned Date",
-        "expiry_date": "Expiry Date"
-      },
-      "fields": {
-        "duration": "Duration (Days)"
-      },
-      "placeholders": {
-        "select_user": "Select an elderly user...",
-        "select_package": "Select a service package..."
-      },
-      "toasts": {
-        "select_required": "Please select both a user and a package.",
-        "assign_success": "Assignment created successfully"
-      }
+      "subtitle": "Define package tiers and map specialized exercises to each level.",
+      "tab_packages": "Package Levels",
+      "tab_sessions": "Exercise Mapping",
+      "assign_exercises": "Configure Exercises",
+      "no_exercises": "No exercises assigned to this package.",
+      "package_select": "Select a package to configure",
+      "exercises_title": "Assigned Exercises",
+      "add_exercise": "Add Exercise",
+      "remove_exercise": "Remove"
     },
     "nav": {
       "rooms": "Manage via Rooms"
@@ -599,15 +642,15 @@
         "config": "Settings"
       },
       "dialog": {
-        "add_title": "Register New Patient"
+        "add_title": "Register New Elderly Profile"
       }
     },
     "rooms": {
       "title": "Nursing Home Rooms",
-      "subtitle": "Manage rooms, assign caregivers, patients, and robots.",
+      "subtitle": "Manage rooms, assign caregivers, elderly, and robots.",
       "add_btn": "Add New Room",
-      "search_placeholder": "Search rooms by name...",
-      "search_placeholder_patient": "Search by patient name...",
+      "search_placeholder": "Search rooms by name or elderly...",
+      "search_placeholder_patient": "Search by elderly name...",
       "filter_robot": "Robot Assignment",
       "filter_occupancy": "Elderly Occupancy",
       "robot_all": "All Robots",
@@ -618,7 +661,7 @@
       "occupancy_empty": "Empty Room",
       "empty_state": "No matching results found.",
       "card": {
-        "caregivers": "Staff",
+        "caregivers": "Caregivers",
         "elderly": "Elderly",
         "robot": "Robot",
         "none": "None",
@@ -713,10 +756,20 @@
     "desc": "Global Scripts",
     "library_tab": "Script Library",
     "history_tab": "System Audit",
+    "library": {
+      "add_btn": "Initialize New Script",
+      "edit_btn": "Configure Script",
+      "modal_desc": "Provide the script details and configuration for the robotic exercise session."
+    },
     "scripts": {
       "title": "Script Repository",
       "add_btn": "Deploy New Script",
       "search_placeholder": "Search scripts (Name, desc)...",
+      "filter_level": "Filter by Level",
+      "all_levels": "All Levels",
+      "difficulty_easy": "Easy Exercises",
+      "difficulty_medium": "Medium Exercises",
+      "difficulty_hard": "Hard Exercises",
       "table": {
         "name": "Script Name",
         "duration": "Est. Duration",
@@ -731,7 +784,8 @@
         "difficulty_label": "Logic Complexity",
         "script_label": "Source Code / Control Sequence (Python)",
         "script_placeholder": "Enter Python code or Robot control sequence...",
-        "desc_label": "Technical Description"
+        "desc_label": "Technical Description",
+        "instruction": "Provide the script details and configuration for the robotic exercise session."
       }
     },
     "history": {
@@ -750,6 +804,118 @@
       "easy": "Basic",
       "medium": "Advanced",
       "hard": "Complex"
+    }
+  },
+  "landing": {
+    "header": {
+      "login": "Log In",
+      "signup": "Sign Up"
+    },
+    "footer": {
+      "rights": "All rights reserved.",
+      "links": {
+        "privacy": "Privacy Policy",
+        "terms": "Terms of Service",
+        "contact": "Contact Support"
+      }
+    },
+    "hero": {
+      "badge": "Modern Care Ecosystem",
+      "title_main": "The Intelligent",
+      "title_highlight": "Eldercare Ecosystem",
+      "subtitle": "CareBot-MH empowers caregivers, managers, and families with AI-driven insights and continuous compassionate robotic assistance for senior well-being.",
+      "cta_access": "Access Portal",
+      "features": {
+        "ai": "Predictive AI Monitoring",
+        "sensing": "Real-time Emotion Sensing",
+        "security": "Enterprise-Grade Security"
+      }
+    },
+    "features": {
+      "badge": "Intelligent Care Delivery",
+      "title": "Comprehensive Support System",
+      "desc": "CareBot-MH integrates state-of-the-art robotics with an intuitive software suite designed specifically for institutional healthcare protocols.",
+      "items": {
+        "fleet": {
+          "name": "Fleet Operations",
+          "desc": "Technical oversight of robot health, battery status, and OTA firmware updates across the entire inventory."
+        },
+        "wellness": {
+          "name": "Wellness Library",
+          "desc": "Master catalog of physical and therapeutic exercise protocols (scripts) used by robotic care units."
+        },
+        "subscription": {
+          "name": "Subscription Control",
+          "desc": "Commercial management of service packages, user plans, and revenue analytics for operations managers."
+        },
+        "tracking": {
+          "name": "Localized Tracking",
+          "desc": "Precise room-based assignment system linking physical assets directly to specific residents and staff."
+        },
+        "rbac": {
+          "name": "User Governance",
+          "desc": "Secure role-based access control ensuring privacy and tailored perspectives for all platform personnel."
+        },
+        "family": {
+          "name": "Family Connectivity",
+          "desc": "Peace of mind through real-time status updates and direct health summaries bridging seniors and loved ones."
+        }
+      }
+    },
+    "roles": {
+      "badge": "One Ecosystem",
+      "title": "Tailored Perspectives",
+      "desc": "Our platform adapts seamlessly to every role in the care circle, from technical oversight to operational management.",
+      "tabs": {
+        "caregiver": "Caregiver",
+        "family": "Family"
+      },
+      "caregiver": {
+        "title": "Caregiver (WIP)",
+        "desc": "Direct professional support for daily resident care routines.",
+        "features": {
+          "0": "Assigned Resident Health Alerts",
+          "1": "Task Reminders & Robot Controls",
+          "2": "Real-time Behavior Monitoring"
+        }
+      },
+      "family": {
+        "title": "Family Member (WIP)",
+        "desc": "Direct connection and peace of mind for loved ones.",
+        "features": {
+          "0": "Automated Progress Summaries",
+          "1": "Video Connection Requests",
+          "2": "Direct Health Observation Feed"
+        }
+      }
+    },
+    "robot": {
+      "badge": "Meet CareBot",
+      "title": "Approachable Engineering",
+      "desc": "Built for safety and reliability, our hardware is designed to move autonomously in hospital and home environments.",
+      "specs": {
+        "connected": {
+          "title": "Always Connected",
+          "desc": "Maintains a secure link to the clinical cloud, ensuring real-time data flow for AI analysis."
+        },
+        "charging": {
+          "title": "Smart Charging",
+          "desc": "Autonomous navigation to charging docks ensures 24/7 availability without human intervention."
+        },
+        "safety": {
+          "title": "Safety First",
+          "desc": "Advanced obstacle avoidance and soft-materials prevent accidental injury in living areas."
+        }
+      },
+      "status": "SYSTEM_ONLINE"
+    },
+    "footer": {
+      "rights": "All rights reserved.",
+      "links": {
+        "privacy": "Privacy Policy",
+        "terms": "Terms of Service",
+        "contact": "Contact Support"
+      }
     }
   }
 }

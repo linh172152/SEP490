@@ -2,43 +2,59 @@
 
 import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, BellRing, Link as LinkIcon, Lock, Sparkles, UserCheck } from 'lucide-react';
-
-const features = [
-  {
-    name: 'Real-time Mood Analysis',
-    description: 'Continuous non-intrusive monitoring of behavioral patterns and emotional states.',
-    icon: Activity,
-  },
-  {
-    name: 'AI Predictive Risk Detection',
-    description: 'Advanced machine learning models forecast potential mental health crises before they escalate.',
-    icon: Sparkles,
-  },
-  {
-    name: 'Unbroken Family Connection',
-    description: 'Secure, high-quality video links bridging the gap between isolated patients and their loved ones.',
-    icon: LinkIcon,
-  },
-  {
-    name: 'Smart Alert System',
-    description: 'Instant notifications to caregivers for missed medications or unexpected mood drops.',
-    icon: BellRing,
-  },
-  {
-    name: 'Enterprise Grade Security',
-    description: 'End-to-end encryption securing sensitive medical and emotional data records.',
-    icon: Lock,
-  },
-  {
-    name: 'Role-Based Access',
-    description: 'Tailored dashboard perspectives ensuring privacy and relevance for every user type.',
-    icon: UserCheck,
-  },
-];
+import { 
+  HeartPulse, 
+  Cpu, 
+  MapPin, 
+  CreditCard, 
+  ShieldCheck, 
+  Users 
+} from 'lucide-react';
+import { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardContent, 
+  CardDescription 
+} from '@/components/ui/card';
+import { useI18nStore } from '@/store/useI18nStore';
 
 export function Features() {
+  const { t } = useI18nStore();
+
+  const features = [
+    {
+      name: t('landing.features.items.fleet.name', 'Fleet Operations'),
+      description: t('landing.features.items.fleet.desc', 'Technical oversight of robot health, battery status, and OTA firmware updates across all units.'),
+      icon: Cpu,
+    },
+    {
+      name: t('landing.features.items.wellness.name', 'Wellness Library'),
+      description: t('landing.features.items.wellness.desc', "Master catalog of physical and therapeutic exercise protocols (scripts) used by robotic care units."),
+      icon: HeartPulse,
+    },
+    {
+      name: t('landing.features.items.subscription.name', 'Subscription Control'),
+      description: t('landing.features.items.subscription.desc', 'Commercial management of service packages, user plans, and revenue analytics for operations managers.'),
+      icon: CreditCard,
+    },
+    {
+      name: t('landing.features.items.tracking.name', 'Localized Tracking'),
+      description: t('landing.features.items.tracking.desc', 'Precise room-based assignment system linking physical assets directly to specific residents and staff.'),
+      icon: MapPin,
+    },
+    {
+      name: t('landing.features.items.rbac.name', 'User Governance'),
+      description: t('landing.features.items.rbac.desc', 'Secure role-based access control ensuring privacy and tailored perspectives for all platform personnel.'),
+      icon: ShieldCheck,
+    },
+    {
+      name: t('landing.features.items.family.name', 'Family Connectivity'),
+      description: t('landing.features.items.family.desc', 'Peace of mind through real-time status updates and direct health summaries bridging seniors and loved ones.'),
+      icon: Users,
+    },
+  ];
+
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -94,12 +110,14 @@ export function Features() {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-base font-semibold leading-7 text-primary">Intelligent Care Delivery</h2>
+            <h2 className="text-base font-semibold leading-7 text-primary uppercase tracking-widest">
+              {t('landing.features.badge', 'Intelligent Care Delivery')}
+            </h2>
             <p className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Everything you need to support mental well-being
+              {t('landing.features.title', 'Comprehensive Support System')}
             </p>
             <p className="mt-6 text-lg leading-8 text-muted-foreground">
-              CareBot-MH integrates state-of-the-art robotics with an intuitive software suite designed specifically for mental health treatment protocols.
+              {t('landing.features.desc', 'CareBot-MH integrates state-of-the-art robotics with an intuitive software suite designed specifically for institutional and home-based care protocols.')}
             </p>
           </motion.div>
         </div>

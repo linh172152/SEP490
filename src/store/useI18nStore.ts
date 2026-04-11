@@ -7,7 +7,7 @@ type Language = 'en' | 'vi';
 interface I18nState {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string, params?: Record<string, string | number>) => string;
+  t: (key: string, secondArg?: Record<string, string | number> | string) => string;
 }
 
 const dictionaries: Record<Language, any> = {
@@ -24,7 +24,10 @@ export const useI18nStore = create<I18nState>((set, get) => ({
     }
     set({ language: lang });
   },
-  t: (key, params) => {
+  t: (key, secondArg) => {
+    const params = typeof secondArg === 'object' ? secondArg : undefined;
+    const fallback = typeof secondArg === 'string' ? secondArg : undefined;
+
     const keys = key.split('.');
     let value = dictionaries[get().language];
     
@@ -33,19 +36,20 @@ export const useI18nStore = create<I18nState>((set, get) => ({
       value = value[k];
     }
     
-    // Fallback to English if key missing in VI
+    // Fallback to English if key missing in current language
     if (value === undefined && get().language !== 'en') {
-      let fallbackValue = dictionaries['en'];
+      let fallbackDictValue = dictionaries['en'];
       for (const k of keys) {
-        if (fallbackValue === undefined) break;
-        fallbackValue = fallbackValue[k];
+        if (fallbackDictValue === undefined) break;
+        fallbackDictValue = fallbackDictValue[k];
       }
-      value = fallbackValue;
+      value = fallbackDictValue;
     }
     
-    let result = (typeof value === 'string' ? value : key) as string;
+    // Final result determination
+    let result = (typeof value === 'string' ? value : (fallback || key)) as string;
 
-    // Handle parameter replacement
+    // Handle parameter replacement if params exist (only if result is from dictionary or fallback)
     if (params && typeof result === 'string') {
       Object.entries(params).forEach(([k, v]) => {
         // Support both {key} and {{key}} formats

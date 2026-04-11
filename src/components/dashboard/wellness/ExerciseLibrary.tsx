@@ -53,7 +53,7 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
   const [scripts, setScripts] = useState<ExerciseScript[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [previewLevel, setPreviewLevel] = useState<string>("ALL");
+  const [difficultyFilter, setDifficultyFilter] = useState<string>("ALL");
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -121,16 +121,21 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
     }
   };
 
-  // 1. Search filter
-  const baseFiltered = scripts.filter(s => 
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // 2. Privilege/Tier filter
-  const filteredScripts = previewLevel === "ALL" 
-    ? baseFiltered 
-    : filterScriptsByQuota(baseFiltered, previewLevel);
+  // 1. Unified filtering
+  const filteredScripts = scripts.filter(s => {
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = s.name.toLowerCase().includes(q) || 
+                          s.description.toLowerCase().includes(q);
+    
+    const sLevel = (s.difficultyLevel || "").toUpperCase();
+    const matchesDifficulty = difficultyFilter === "ALL" || 
+                             sLevel === difficultyFilter || 
+                             (difficultyFilter === "EASY" && (sLevel === "1" || sLevel === "L1")) ||
+                             (difficultyFilter === "MEDIUM" && (sLevel === "2" || sLevel === "L2")) ||
+                             (difficultyFilter === "HARD" && (sLevel === "3" || sLevel === "L3"));
+                             
+    return matchesSearch && matchesDifficulty;
+  });
 
   const totalPages = Math.ceil(filteredScripts.length / itemsPerPage);
   const currentScripts = filteredScripts.slice(
@@ -175,29 +180,24 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
           </div>
 
           <div className="flex items-center gap-2 w-full md:w-auto">
-             <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest hidden lg:inline">Xem theo gói:</span>
-             <Select value={previewLevel} onValueChange={setPreviewLevel}>
-                <SelectTrigger className="h-11 w-full md:w-48 rounded-xl border-slate-200 bg-white shadow-sm">
+             <span className="text-xs font-black text-muted-foreground uppercase tracking-widest hidden lg:inline">
+               {t("wellness.scripts.filter_level")}:
+             </span>
+             <Select value={difficultyFilter} onValueChange={(val) => { setDifficultyFilter(val); setCurrentPage(1); }}>
+                <SelectTrigger className="h-11 w-full md:w-60 rounded-xl border-slate-200 bg-white shadow-sm font-bold text-slate-700">
                    <div className="flex items-center gap-2">
                       <Zap className="h-3.5 w-3.5 text-amber-500" />
-                      <SelectValue placeholder="Chọn gói coi thử" />
+                      <SelectValue placeholder={t("wellness.scripts.filter_level")} />
                    </div>
                 </SelectTrigger>
                 <SelectContent>
-                   <SelectItem value="ALL">Toàn bộ thư viện</SelectItem>
-                   <SelectItem value="BASIC">Gói Basic (Cơ bản)</SelectItem>
-                   <SelectItem value="STANDARD">Gói Standard (Tiêu chuẩn)</SelectItem>
-                   <SelectItem value="PREMIUM">Gói Premium (Cao cấp)</SelectItem>
+                   <SelectItem value="ALL" className="font-medium">{t("wellness.scripts.all_levels")}</SelectItem>
+                   <SelectItem value="EASY" className="font-medium">{t("wellness.scripts.difficulty_easy")}</SelectItem>
+                   <SelectItem value="MEDIUM" className="font-medium">{t("wellness.scripts.difficulty_medium")}</SelectItem>
+                   <SelectItem value="HARD" className="font-medium">{t("wellness.scripts.difficulty_hard")}</SelectItem>
                 </SelectContent>
              </Select>
           </div>
-          
-          {previewLevel !== "ALL" && (
-            <Badge className="h-11 px-4 rounded-xl bg-indigo-50 text-indigo-700 border-indigo-100 flex items-center gap-2 animate-in zoom-in duration-300">
-               <ShieldCheck className="h-4 w-4" />
-               <span className="text-xs font-bold">{getQuotaDescription(previewLevel)}</span>
-            </Badge>
-          )}
         </div>
 
         {!readOnly && (
@@ -206,7 +206,7 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
               setSelectedScript(null);
               setIsModalOpen(true);
             }}
-            className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 h-11 px-6 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 h-11 px-6 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] font-bold"
           >
             <Plus className="mr-2 h-4 w-4" />
             {t("wellness.scripts.add_btn")}
@@ -222,26 +222,28 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
                 <TableHead className="pl-6 py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t("wellness.scripts.table.name")}</TableHead>
                 <TableHead className="py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t("wellness.scripts.table.duration")}</TableHead>
                 <TableHead className="py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t("wellness.scripts.table.difficulty")}</TableHead>
-                <TableHead className="pr-6 py-4 text-right uppercase tracking-wider text-[11px] font-bold opacity-70">{t("wellness.scripts.table.actions")}</TableHead>
+                {!readOnly && (
+                  <TableHead className="pr-6 py-4 text-right uppercase tracking-wider text-[11px] font-bold opacity-70">{t("wellness.scripts.table.actions")}</TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i} className="animate-pulse border-border/40">
-                    <TableCell colSpan={4} className="h-16 bg-slate-100/20 dark:bg-slate-800/20" />
+                    <TableCell colSpan={readOnly ? 3 : 4} className="h-16 bg-slate-100/20 dark:bg-slate-800/20" />
                   </TableRow>
                 ))
               ) : currentScripts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-40 text-center text-muted-foreground/60 italic">
+                  <TableCell colSpan={readOnly ? 3 : 4} className="h-40 text-center text-muted-foreground/60 italic">
                     <Smile className="h-10 w-10 mx-auto mb-3 opacity-20" />
                     {t("common.no_data")}
                   </TableCell>
                 </TableRow>
               ) : (
                 currentScripts.map((script) => (
-                  <TableRow key={script.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 border-border/40 transition-colors">
+                  <TableRow key={script.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 border-border/40 transition-colors cursor-pointer" onClick={() => { if(readOnly) { setSelectedScript(script); setIsModalOpen(true); } }}>
                     <TableCell className="pl-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg group-hover:bg-indigo-500/10 transition-colors">
@@ -262,49 +264,36 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
                     <TableCell>
                       {getDifficultyBadge(script.difficultyLevel)}
                     </TableCell>
-                    <TableCell className="pr-6 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl border-border/50 animate-in fade-in zoom-in duration-200">
-                          {readOnly ? (
+                    {!readOnly && (
+                      <TableCell className="pr-6 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl border-border/50 animate-in fade-in zoom-in duration-200">
                             <DropdownMenuItem 
                               onClick={() => {
                                 setSelectedScript(script);
                                 setIsModalOpen(true);
                               }}
-                              className="cursor-pointer focus:bg-primary/10 focus:text-primary font-bold"
+                              className="cursor-pointer focus:bg-primary/10 focus:text-primary"
                             >
-                              <Eye className="mr-2 h-4 w-4" />
-                              {t("common.view") || "View Details"}
+                              <FileEdit className="mr-2 h-4 w-4" />
+                              {t("common.edit")}
                             </DropdownMenuItem>
-                          ) : (
-                            <>
-                              <DropdownMenuItem 
-                                onClick={() => {
-                                  setSelectedScript(script);
-                                  setIsModalOpen(true);
-                                }}
-                                className="cursor-pointer focus:bg-primary/10 focus:text-primary"
-                              >
-                                <FileEdit className="mr-2 h-4 w-4" />
-                                {t("common.edit")}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleDelete(script.id)}
-                                className="cursor-pointer text-rose-600 focus:bg-rose-50 focus:text-rose-700"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                {t("common.delete")}
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                            <DropdownMenuItem 
+                              onClick={() => handleDelete(script.id)}
+                              className="cursor-pointer text-rose-600 focus:bg-rose-50 focus:text-rose-700"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              {t("common.delete")}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))
               )}

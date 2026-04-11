@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import Link from 'next/link';
 
 import { useAuthStore } from '@/store/useAuthStore';
+import { useI18nStore } from '@/store/useI18nStore';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -20,7 +21,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { HeartPulse, Loader2, Mail } from 'lucide-react';
+import { Bot, Loader2, Mail } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -30,17 +31,19 @@ import {
 } from '@/components/ui/select';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from '@/components/ui/alert-dialog';
 
-const formSchema = z.object({
-  name: z.string().min(2, 'Họ tên ít nhất 2 ký tự.'),
-  email: z.string().email('Email không hợp lệ.'),
-  phone: z.string().regex(/^(84|0[3|5|7|8|9])\d{8}$/, 'Số điện thoại VN không hợp lệ (10 số, bắt đầu 0[3|5|7|8|9] hoặc 84).'),
-  password: z.string().min(6, 'Mật khẩu ít nhất 6 ký tự.'),
-  gender: z.union([z.literal('Male'), z.literal('Female'), z.literal('Other')], {
-    message: 'Vui lòng chọn giới tính',
-  }),
-});
 
 export default function RegisterPage() {
+  const { t } = useI18nStore();
+
+  const formSchema = z.object({
+    name: z.string().min(2, t('auth.register.validation.name_min', 'Full name must be at least 2 characters.')),
+    email: z.string().email(t('auth.register.validation.email_invalid', 'Invalid email address.')),
+    phone: z.string().regex(/^(84|0[3|5|7|8|9])\d{8}$/, t('auth.register.validation.phone_invalid', 'Invalid VN phone number.')),
+    password: z.string().min(6, t('auth.register.validation.password_min', 'Password must be at least 6 characters.')),
+    gender: z.union([z.literal('Male'), z.literal('Female'), z.literal('Other')], {
+      message: t('auth.register.validation.gender_required', 'Please select a gender'),
+    }),
+  });
   const router = useRouter();
   const { register, verifyOtp } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
@@ -73,11 +76,11 @@ export default function RegisterPage() {
         gender: values.gender,
       });
       
-      toast.success('Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP.');
+      toast.success(t('auth.register.success_toast', 'Registration successful! Please check your email for the OTP code.'));
       setRegisteredEmail(values.email);
       setShowOtpDialog(true);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Tạo tài khoản thất bại.';
+      const errorMessage = err instanceof Error ? err.message : t('auth.register.error_toast', 'Account creation failed.');
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -86,14 +89,14 @@ export default function RegisterPage() {
 
   async function handleVerifyOtp() {
     if (!otpValue || otpValue.length !== 6) {
-      toast.error('Vui lòng nhập mã OTP gồm 6 chữ số hợp lệ.');
+      toast.error(t('auth.register.otp_validation_error', 'Please enter a valid 6-digit OTP code.'));
       return;
     }
     
     setIsVerifying(true);
     try {
       await verifyOtp(registeredEmail, otpValue);
-      toast.success('Xác thực OTP thành công! Bạn có thể đăng nhập ngay bây giờ.');
+      toast.success(t('auth.register.otp_success_toast', 'OTP verified successfully! Please log in to continue.'));
       setShowOtpDialog(false);
       router.push('/login');
     } catch (error: unknown) {
@@ -104,7 +107,7 @@ export default function RegisterPage() {
             ? String((error as { message?: unknown }).message || '')
             : undefined;
 
-      toast.error(message || 'Xác thực OTP thất bại. Vui lòng kiểm tra lại mã.');
+      toast.error(message || t('auth.register.otp_error_toast', 'OTP verification failed. Please check your code.'));
     } finally {
       setIsVerifying(false);
     }
@@ -114,14 +117,14 @@ export default function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4 py-12">
       <Card className="w-full max-w-md border-t-4 border-t-primary shadow-lg">
         <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <HeartPulse className="h-8 w-8 text-primary" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
+            <Bot className="h-8 w-8 text-white" />
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
-            Create an Account
+            {t('auth.register.title')}
           </CardTitle>
           <CardDescription>
-            Join CareBot-MH to start monitoring mental well-being
+            {t('auth.register.subtitle')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -132,9 +135,9 @@ export default function RegisterPage() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel>{t('settings.profile.full_name', 'Full Name')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" disabled={isLoading} {...field} />
+                      <Input placeholder={t('settings.profile.full_name')} disabled={isLoading} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -145,9 +148,9 @@ export default function RegisterPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t('auth.login.email_label', 'Email')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="example@gmail.com" type="email" disabled={isLoading} {...field} />
+                      <Input placeholder={t('auth.login.email_placeholder', 'example@gmail.com')} type="email" disabled={isLoading} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -158,7 +161,7 @@ export default function RegisterPage() {
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Số điện thoại</FormLabel>
+                    <FormLabel>{t('settings.profile.phone', 'Phone Number')}</FormLabel>
                     <FormControl>
                       <Input placeholder="09xxxxxxxx" disabled={isLoading} {...field} />
                     </FormControl>
@@ -171,9 +174,9 @@ export default function RegisterPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t('auth.login.password_label')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="••••••••" type="password" disabled={isLoading} {...field} />
+                      <Input placeholder={t('auth.login.password_placeholder')} type="password" disabled={isLoading} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -185,16 +188,16 @@ export default function RegisterPage() {
                 name="gender"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Gender</FormLabel>
+                    <FormLabel>{t('settings.profile.gender')}</FormLabel>
                     <Select disabled={isLoading} onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select gender" />
+                          <SelectValue placeholder={t('settings.profile.select_gender')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Male">Male</SelectItem>
-                        <SelectItem value="Female">Female</SelectItem>
+                        <SelectItem value="Male">{t('settings.profile.male')}</SelectItem>
+                        <SelectItem value="Female">{t('settings.profile.female')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -205,17 +208,17 @@ export default function RegisterPage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating account...
+                    {t('auth.register.submitting')}
                   </>
                 ) : (
-                  'Sign Up'
+                  t('auth.register.submit_btn')
                 )}
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2 text-sm text-center text-muted-foreground bg-muted/20 py-4 border-t">
-          <p>Already have an account? <Link href="/login" className="text-primary hover:underline font-medium">Sign in here</Link></p>
+          <p>{t('auth.login.already_have_account')} <Link href="/login" className="text-primary hover:underline font-medium">{t('auth.login.login_link')}</Link></p>
         </CardFooter>
       </Card>
 
@@ -225,16 +228,16 @@ export default function RegisterPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
               <Mail className="h-8 w-8 text-primary" />
             </div>
-            <AlertDialogTitle className="text-center text-2xl font-bold">Xác thực OTP</AlertDialogTitle>
+            <AlertDialogTitle className="text-center text-2xl font-bold">{t('auth.verify_otp.title')}</AlertDialogTitle>
             <AlertDialogDescription className="text-center">
-              Chúng tôi đã gửi mã OTP đến email <b>{registeredEmail}</b>. Vui lòng nhập mã bên dưới để kích hoạt tài khoản.
+              {t('auth.verify_otp.subtitle')} <b>{registeredEmail}</b>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex flex-col items-center space-y-6 py-4">
             <div className="w-full">
-              <label className="mb-2 block text-sm font-medium">Mã OTP (6 chữ số)</label>
+              <label className="mb-2 block text-sm font-medium">{t('auth.verify_otp.otp_label')}</label>
               <Input
-                placeholder="000000"
+                placeholder={t('auth.verify_otp.otp_placeholder')}
                 maxLength={6}
                 value={otpValue}
                 onChange={(e) => setOtpValue(e.target.value)}
@@ -250,20 +253,14 @@ export default function RegisterPage() {
               {isVerifying ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Đang xác thực...
+                  {t('auth.verify_otp.submitting_btn')}
                 </>
               ) : (
-                'Xác nhận OTP'
+                t('auth.verify_otp.submit_btn')
               )}
             </Button>
           </div>
           <AlertDialogFooter className="sm:justify-center">
-             <div className="text-sm text-muted-foreground text-center">
-                Chưa nhận được mã?{' '}
-                <button className="text-primary hover:underline font-medium" type="button" onClick={() => toast.info('Tính năng gửi lại OTP đang được phát triển!')}>
-                   Gửi lại OTP
-                </button>
-             </div>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

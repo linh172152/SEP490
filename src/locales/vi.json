@@ -5,8 +5,13 @@
     "confirm": "Xác Nhận",
     "delete": "Xóa",
     "edit": "Chỉnh Sửa",
+    "view": "Xem",
+    "view_profile": "Xem hồ sơ",
+    "close": "Đóng",
     "actions": "Thao Tác",
-    "status": {
+    "name": "Họ và tên",
+    "status": "Trạng thái",
+    "status_labels": {
       "success": "Thành công",
       "error": "Thất bại",
       "pending": "Đang chờ"
@@ -52,6 +57,24 @@
       "OFFLINE": "Ngoại tuyến"
     }
   },
+  "sidebar": {
+    "dashboard": "Bảng điều khiển",
+    "overview": "Tổng quan",
+    "user_mgt": "Quản lý người dùng",
+    "fleet": "Đội ngũ Robot",
+    "robot_mgt": "Quản lý Robot",
+    "robot_fleet": "Trung tâm Robot",
+    "subscriptions": "Gói đăng ký",
+    "rooms": "Quản lý phòng",
+    "wellness": "Trung tâm sức khỏe",
+    "settings": "Cài đặt",
+    "logout": "Đăng xuất",
+    "data_security": "Bảo mật dữ liệu",
+    "staff_mgt": "Quản lý nhân sự",
+    "reminders": "Nhắc nhở",
+    "service_plans": "Gói dịch vụ",
+    "exercises": "Bài tập"
+  },
   "auth": {
     "login": {
       "title": "Cổng thông tin CareBot-MH",
@@ -69,7 +92,27 @@
       "welcome": "Chào mừng, {name}!",
       "error_user_not_found": "Không tìm thấy thông tin người dùng",
       "error_unverified": "Tài khoản chưa được kích hoạt. Đang chuyển hướng đến trang xác thực...",
-      "error_generic": "Đăng nhập thất bại. Vui lòng kiểm tra thông tin."
+      "error_generic": "Đăng nhập thất bại. Vui lòng kiểm tra thông tin.",
+      "already_have_account": "Đã có tài khoản?",
+      "login_link": "Đăng nhập tại đây"
+    },
+    "register": {
+      "title": "Tạo tài khoản",
+      "subtitle": "Tham gia CareBot-MH để bắt đầu theo dõi sức khỏe tinh thần",
+      "submit_btn": "Đăng ký",
+      "submitting": "Đang tạo tài khoản...",
+      "success_toast": "Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP.",
+      "error_toast": "Tạo tài khoản thất bại.",
+      "otp_validation_error": "Vui lòng nhập mã OTP gồm 6 chữ số hợp lệ.",
+      "otp_success_toast": "Xác thực OTP thành công! Vui lòng đăng nhập để tiếp tục.",
+      "otp_error_toast": "Xác thực OTP thất bại. Vui lòng kiểm tra lại mã.",
+      "validation": {
+        "name_min": "Họ tên ít nhất 2 ký tự.",
+        "email_invalid": "Email không hợp lệ.",
+        "phone_invalid": "Số điện thoại VN không hợp lệ (10 số, bắt đầu 0[3|5|7|8|9] hoặc 84).",
+        "password_min": "Mật khẩu ít nhất 6 ký tự.",
+        "gender_required": "Vui lòng chọn giới tính"
+      }
     },
     "verify_otp": {
       "title": "Xác thực mã OTP",
@@ -111,7 +154,12 @@
       "relationship": "Mối quan hệ",
       "notification_channel": "Kênh thông báo",
       "elderly_name": "Họ tên người thân",
-      "health_notes": "Ghi chú sức khỏe & Tình trạng"
+      "health_notes": "Ghi chú sức khỏe & Tình trạng",
+      "gender": "Giới tính",
+      "select_gender": "Chọn giới tính",
+      "male": "Nam",
+      "female": "Nữ",
+      "other": "Khác"
     },
     "audit_logs": "Nhật Ký Hoạt Động",
     "data_export": "Xuất Dữ Liệu Nhật Ký",
@@ -173,7 +221,7 @@
     "subscriptions": "Quản lý đăng ký",
     "exercises": "Thư viện bài tập",
     "rooms": "Quản lý phòng",
-    "residents": "Danh sách bệnh nhân",
+    "residents": "Danh sách người cao tuổi",
     "logout": "Đăng xuất"
   },
   "admin": {
@@ -189,7 +237,7 @@
       "storage_title": "Lưu trữ dữ liệu",
       "total_accounts": "Số lượng người dùng",
       "robots_status": "Hệ thống Robot",
-      "service_packages": "Gói dịch vụ",
+      "security_records": "Bản ghi an ninh",
       "uptime_title": "Độ ổn định hệ thống",
       "uptime_desc": "Theo dõi lưu lượng tương tác và kết nối nền tảng.",
       "fleet_distribution": "Trạng thái kỹ thuật Robot",
@@ -202,7 +250,7 @@
       "audit_logs_title": "Nhật ký hệ thống",
       "user_distribution_title": "Phân bổ vai trò người dùng",
       "user_distribution_desc": "Chi tiết phân loại các tài khoản đang hoạt động trên hệ thống.",
-      "service_packages_desc": "Cấu hình hiện có",
+      "security_records_desc": "Các sự kiện an ninh hệ thống gần đây",
       "realtime_feed": "Dữ liệu thời gian thực",
       "no_recent_activity": "Không có hoạt động hệ thống gần đây."
     },
@@ -331,7 +379,7 @@
       "desc": "Cấu hình và quản lý các gói đăng ký dịch vụ.",
       "create_btn": "Tạo Gói Mới",
       "table_card_title": "Danh sách cấp độ dịch vụ",
-      "table_card_desc": "Tất cả các gói dịch vụ đã định nghĩa có thể được gán cho tài khoản người dùng.",
+      "table_card_desc": "Danh sách các cấp độ dịch vụ có sẵn để người dùng đăng ký mua.",
       "table": {
         "level": "Cấp độ",
         "name": "Tên gói",
@@ -514,25 +562,16 @@
       "placeholder_desc": "Dữ liệu tương tác và hiệu suất Robot sẽ được hiển thị tại đây sau khi tích hợp API Analytics."
     },
     "subscriptions": {
-      "title": "Quản lý gói đăng ký",
-      "subtitle": "Quản lý danh mục các gói dịch vụ trên toàn hệ thống.",
-      "table": {
-        "account": "Tài khoản người dùng",
-        "package": "Gói dịch vụ",
-        "assigned_date": "Ngày gán",
-        "expiry_date": "Ngày hết hạn"
-      },
-      "fields": {
-        "duration": "Thời hạn (Ngày)"
-      },
-      "placeholders": {
-        "select_user": "Chọn một người cao tuổi...",
-        "select_package": "Chọn một gói dịch vụ..."
-      },
-      "toasts": {
-        "select_required": "Vui lòng chọn cả người dùng và gói dịch vụ.",
-        "assign_success": "Đã gán gói dịch vụ thành công"
-      }
+      "title": "Quản lý Gói dịch vụ",
+      "subtitle": "Thiết lập cấp độ gói dịch vụ và gán danh sách bài tập chuyên sâu cho từng cấp độ.",
+      "tab_packages": "Cấp độ Gói",
+      "tab_sessions": "Cấu hình Bài tập",
+      "assign_exercises": "Thiết lập bài tập",
+      "no_exercises": "Chưa có bài tập nào được gán cho gói này.",
+      "package_select": "Chọn gói dịch vụ để cấu hình",
+      "exercises_title": "Danh sách bài tập",
+      "add_exercise": "Thêm bài tập",
+      "remove_exercise": "Gỡ bỏ"
     },
     "nav": {
       "rooms": "Quản lý qua Phòng"
@@ -602,14 +641,14 @@
         "config": "Cài đặt"
       },
       "dialog": {
-        "add_title": "Đăng ký bệnh nhân mới"
+        "add_title": "Đăng ký người cao tuổi mới"
       }
     },
     "rooms": {
       "title": "Quản lý phòng nghỉ",
       "subtitle": "Điều phối phòng, người chăm sóc, người cao tuổi và hệ thống robot hỗ trợ.",
       "add_btn": "Thêm phòng mới",
-      "search_placeholder": "Tìm kiếm theo tên phòng...",
+      "search_placeholder": "Tìm kiếm theo tên phòng hoặc người cao tuổi...",
       "search_placeholder_patient": "Tìm kiếm theo tên người cao tuổi...",
       "filter_robot": "Bộ lọc Robot",
       "filter_occupancy": "Bộ lọc Người cao tuổi",
@@ -660,7 +699,7 @@
         "delete_success": "Đã xóa phòng thành công",
         "delete_error": "Lỗi khi xóa phòng",
         "update_success": "Cập nhật thông tin phòng thành công",
-        "create_success": "Đồ tạo phòng mới thành công",
+        "create_success": "Đã tạo phòng mới thành công",
         "error_generic": "Đã có lỗi xảy ra",
         "remove_success": "Đã gỡ bỏ thành công"
       }
@@ -716,10 +755,20 @@
     "desc": "Quy mô kịch bản",
     "library_tab": "Kho kịch bản",
     "history_tab": "Nhật ký hệ thống",
+    "library": {
+      "add_btn": "Khởi tạo kịch bản mới",
+      "edit_btn": "Cấu hình kịch bản",
+      "modal_desc": "Cung cấp chi tiết kịch bản và cấu hình cho phiên tập luyện với robot."
+    },
     "scripts": {
       "title": "Thư viện kịch bản",
       "add_btn": "Thêm kịch bản mới",
       "search_placeholder": "Tìm kiếm kịch bản (Tên, mô tả)...",
+      "filter_level": "Lọc theo độ khó",
+      "all_levels": "Tất cả mức độ",
+      "difficulty_easy": "Bài tập cơ bản (Easy)",
+      "difficulty_medium": "Bài tập nâng cao (Medium)",
+      "difficulty_hard": "Bài tập phức tạp (Hard)",
       "table": {
         "name": "Tên kịch bản",
         "duration": "Thời lượng dự kiến",
@@ -734,7 +783,8 @@
         "difficulty_label": "Độ phức tạp lệnh",
         "script_label": "Source Code / Nội dung điều khiển (Python)",
         "script_placeholder": "Nhập mã lệnh Python hoặc kịch bản điều khiển Robot...",
-        "desc_label": "Mô tả nghiệp vụ"
+        "desc_label": "Mô tả nghiệp vụ",
+        "instruction": "Cung cấp chi tiết kịch bản và cấu hình cho phiên tập luyện với robot."
       }
     },
     "history": {
@@ -753,6 +803,118 @@
       "easy": "Cơ bản",
       "medium": "Nâng cao",
       "hard": "Phức tạp"
+    }
+  },
+  "landing": {
+    "header": {
+      "login": "Đăng nhập",
+      "signup": "Đăng ký"
+    },
+    "footer": {
+      "rights": "Bản quyền được bảo lưu.",
+      "links": {
+        "privacy": "Chính sách Bảo mật",
+        "terms": "Điều khoản Dịch vụ",
+        "contact": "Liên hệ Hỗ trợ"
+      }
+    },
+    "hero": {
+      "badge": "Hệ sinh thái Chăm sóc Hiện đại",
+      "title_main": "Hệ sinh thái",
+      "title_highlight": "Chăm sóc AI Thông minh",
+      "subtitle": "CareBot-MH hỗ trợ người chăm sóc, quản lý và gia đình bằng các phân tích AI và sự trợ giúp tận tâm từ Robot cho sức khỏe của người cao tuổi.",
+      "cta_access": "Truy cập Cổng thông tin",
+      "features": {
+        "ai": "Giám sát AI dự báo rủi ro",
+        "sensing": "Cảm biến Cảm xúc Thời gian thực",
+        "security": "Bảo mật Tiêu chuẩn Doanh nghiệp"
+      }
+    },
+    "features": {
+      "badge": "Cung cấp Chăm sóc Thông minh",
+      "title": "Hệ thống Hỗ trợ Toàn diện",
+      "desc": "CareBot-MH tích hợp công nghệ robot tiên tiến với bộ phần mềm trực quan được thiết kế riêng cho các quy trình chăm sóc tại viện và tại nhà.",
+      "items": {
+        "wellness": {
+          "name": "Kịch bản Wellness",
+          "desc": "Tự động hóa các bài tập vật lý trị liệu và vận động được thiết kế riêng cho nhu cầu của từng cư dân."
+        },
+        "fleet": {
+          "name": "Vận hành Đội ngũ",
+          "desc": "Theo dõi thời gian thực về tình trạng kỹ thuật, dung lượng pin và cập nhật firmware OTA cho tất cả thiết bị."
+        },
+        "monitoring": {
+          "name": "Giám sát Theo Phòng",
+          "desc": "Hệ thống gán phòng tinh vi giúp kết nối trực tiếp Robot với từng phòng nghỉ và người cao tuổi."
+        },
+        "alerts": {
+          "name": "Cảnh báo Rủi ro Thông minh",
+          "desc": "Thông báo tức thì cho người chăm sóc khi quên uống thuốc hoặc có sự thay đổi hành vi đột ngột."
+        },
+        "rbac": {
+          "name": "Phân quyền Truy cập",
+          "desc": "Giao diện Dashboard tùy chỉnh cho Admin, Manager và Nhân viên, đảm bảo tính bảo mật và liên quan."
+        },
+        "family": {
+          "name": "Kết nối Gia đình",
+          "desc": "Cầu nối video chất lượng cao và cập nhật trạng thái giúp xóa tan khoảng cách giữa người già và người thân."
+        }
+      }
+    },
+    "roles": {
+      "badge": "Một Hệ sinh thái",
+      "title": "Góc nhìn Tùy chỉnh",
+      "desc": "Nền tảng của chúng tôi thích ứng hoàn hảo với mọi vai trò, từ giám sát hạ tầng đến chăm sóc tận tâm hàng ngày.",
+      "tabs": {
+        "caregiver": "Người chăm sóc",
+        "family": "Gia đình"
+      },
+      "caregiver": {
+        "title": "Người chăm sóc (Đang phát triển)",
+        "desc": "Hỗ trợ chuyên môn trực tiếp cho các thói quen chăm sóc người dân hàng ngày.",
+        "features": {
+          "0": "Cảnh báo Sức khỏe Người dân được gán",
+          "1": "Nhắc nhở Công việc & Điều khiển Robot",
+          "2": "Giám sát Hành vi Thời gian thực"
+        }
+      },
+      "family": {
+        "title": "Thành viên Gia đình (Đang phát triển)",
+        "desc": "Kết nối trực tiếp và an tâm cho những người thân yêu.",
+        "features": {
+          "0": "Tóm tắt Tiến độ Tự động",
+          "1": "Yêu cầu Kết nối Video",
+          "2": "Nguồn cấp dữ liệu Quan sát Sức khỏe Trực tiếp"
+        }
+      }
+    },
+    "robot": {
+      "badge": "Gặp gỡ CareBot",
+      "title": "Kỹ thuật Thân thiện",
+      "desc": "Được xây dựng để an toàn và tin cậy, phần cứng của chúng tôi có thể di chuyển tự động trong môi trường bệnh viện và nhà ở.",
+      "specs": {
+        "connected": {
+          "title": "Luôn Kết nối",
+          "desc": "Duy trì liên kết an toàn với đám mây lâm sàng, đảm bảo dữ liệu AI luôn thông suốt."
+        },
+        "charging": {
+          "title": "Sạc Thông minh",
+          "desc": "Tự động di chuyển đến trạm sạc khi pin yếu, đảm bảo sẵn sàng 24/7 không cần can thiệp."
+        },
+        "safety": {
+          "title": "An toàn là trên hết",
+          "desc": "Cảm biến tránh vật cản tiên tiến và vật liệu mềm giúp ngăn ngừa chấn thương trong khu vực sinh hoạt."
+        }
+      },
+      "status": "HỆ_THỐNG_ONLINE"
+    },
+    "footer": {
+      "rights": "Bản quyền đã được bảo hộ.",
+      "links": {
+        "privacy": "Chính sách Bảo mật",
+        "terms": "Điều khoản Dịch vụ",
+        "contact": "Hỗ trợ liên hệ"
+      }
     }
   }
 }

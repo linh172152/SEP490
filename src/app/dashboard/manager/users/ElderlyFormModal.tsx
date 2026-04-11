@@ -31,9 +31,10 @@ interface ElderlyFormModalProps {
   onClose: () => void;
   patient: ElderlyProfileResponse | null;
   onRefresh: () => void;
+  isReadOnly?: boolean;
 }
 
-export function ElderlyFormModal({ isOpen, onClose, patient, onRefresh }: ElderlyFormModalProps) {
+export function ElderlyFormModal({ isOpen, onClose, patient, onRefresh, isReadOnly = false }: ElderlyFormModalProps) {
   const { t } = useI18nStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -81,6 +82,7 @@ export function ElderlyFormModal({ isOpen, onClose, patient, onRefresh }: Elderl
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isReadOnly) return;
     setIsSubmitting(true);
     try {
       if (patient) {
@@ -138,8 +140,8 @@ export function ElderlyFormModal({ isOpen, onClose, patient, onRefresh }: Elderl
           <div className="bg-primary p-8 text-white">
             <DialogHeader>
               <DialogTitle className="text-2xl font-black flex items-center gap-3">
-                {patient ? <Save className="h-7 w-7 text-primary-foreground/60" /> : <UserPlus className="h-7 w-7 text-primary-foreground/60" />}
-                {patient ? `${t('common.edit')}: ${patient.name}` : t('manager.patients.dialog.add_title')}
+                {isReadOnly ? <User className="h-7 w-7 text-primary-foreground/60" /> : patient ? <Save className="h-7 w-7 text-primary-foreground/60" /> : <UserPlus className="h-7 w-7 text-primary-foreground/60" />}
+                {isReadOnly ? `${t('common.view')}: ${patient?.name}` : patient ? `${t('common.edit')}: ${patient.name}` : t('manager.patients.dialog.add_title')}
               </DialogTitle>
               <p className="text-primary-foreground/80 mt-2 font-medium">
                 {patient ? t('manager.rooms.modal.elderly_desc') : t('manager.patients.subtitle')}
@@ -156,7 +158,8 @@ export function ElderlyFormModal({ isOpen, onClose, patient, onRefresh }: Elderl
                 <Input 
                   id="name" 
                   value={formData.name} 
-                  className="h-12 rounded-xl font-bold bg-slate-50 border-none focus-visible:ring-primary/20"
+                  disabled={isReadOnly}
+                  className="h-12 rounded-xl font-bold bg-slate-50 border-none focus-visible:ring-primary/20 disabled:opacity-100"
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   required 
                 />
@@ -166,8 +169,9 @@ export function ElderlyFormModal({ isOpen, onClose, patient, onRefresh }: Elderl
                 <Input 
                   id="dob" 
                   type="date"
+                  disabled={isReadOnly}
                   value={formData.dateOfBirth} 
-                  className="h-12 rounded-xl font-bold bg-slate-50 border-none px-4"
+                  className="h-12 rounded-xl font-bold bg-slate-50 border-none px-4 disabled:opacity-100"
                   onChange={(e) => setFormData({...formData, dateOfBirth: e.target.value})}
                   required 
                 />
@@ -213,9 +217,10 @@ export function ElderlyFormModal({ isOpen, onClose, patient, onRefresh }: Elderl
               </Label>
               <Textarea 
                 id="healthNotes" 
+                disabled={isReadOnly}
                 placeholder={t('manager.rooms.modal.none')}
                 value={formData.healthNotes} 
-                className="min-h-[100px] rounded-xl font-medium bg-slate-50 border-none resize-none p-4"
+                className="min-h-[100px] rounded-xl font-medium bg-slate-50 border-none resize-none p-4 disabled:opacity-100"
                 onChange={(e) => setFormData({...formData, healthNotes: e.target.value})}
               />
             </div>
@@ -224,10 +229,11 @@ export function ElderlyFormModal({ isOpen, onClose, patient, onRefresh }: Elderl
               <div className="space-y-2">
                 <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">{t('user_modal.placeholders.lang')}</Label>
                 <Select 
+                    disabled={isReadOnly}
                     value={formData.preferredLanguage} 
                     onValueChange={(v) => setFormData({...formData, preferredLanguage: v})}
                   >
-                    <SelectTrigger className="h-12 rounded-xl border-none bg-slate-50 font-bold">
+                    <SelectTrigger className="h-12 rounded-xl border-none bg-slate-50 font-bold disabled:opacity-100">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -239,10 +245,11 @@ export function ElderlyFormModal({ isOpen, onClose, patient, onRefresh }: Elderl
               <div className="space-y-2">
                 <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">{t('user_modal.placeholders.speaking_speed')}</Label>
                 <Select 
+                    disabled={isReadOnly}
                     value={formData.speakingSpeed} 
                     onValueChange={(v) => setFormData({...formData, speakingSpeed: v})}
                   >
-                    <SelectTrigger className="h-12 rounded-xl border-none bg-slate-50 font-bold">
+                    <SelectTrigger className="h-12 rounded-xl border-none bg-slate-50 font-bold disabled:opacity-100">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -256,13 +263,21 @@ export function ElderlyFormModal({ isOpen, onClose, patient, onRefresh }: Elderl
           </div>
 
           <div className="p-6 bg-slate-50 border-t border-border/40 flex justify-end gap-3">
-            <Button type="button" variant="ghost" className="font-bold px-6 rounded-xl" onClick={onClose}>
-              {t('common.cancel')}
-            </Button>
-            <Button type="submit" className="font-bold px-8 rounded-xl shadow-lg shadow-primary/20" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {patient ? t('manager.patients.btn_update') : t('manager.patients.add_btn')}
-            </Button>
+            {isReadOnly ? (
+              <Button type="button" variant="default" className="font-bold px-10 rounded-xl" onClick={onClose}>
+                {t('common.close')}
+              </Button>
+            ) : (
+              <>
+                <Button type="button" variant="ghost" className="font-bold px-6 rounded-xl" onClick={onClose}>
+                  {t('common.cancel')}
+                </Button>
+                <Button type="submit" className="font-bold px-8 rounded-xl shadow-lg shadow-primary/20" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {patient ? t('manager.patients.btn_update') : t('manager.patients.add_btn')}
+                </Button>
+              </>
+            )}
           </div>
         </form>
       </DialogContent>

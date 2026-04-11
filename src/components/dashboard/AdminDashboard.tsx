@@ -84,10 +84,9 @@ export function AdminDashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [accounts, robots, packages, exercises, logs] = await Promise.all([
+      const [accounts, robots, exercises, logs] = await Promise.all([
         accountService.getAccounts(),
         robotService.getAll(),
-        servicePackageService.getAll(),
         exerciseService.getAllScripts(),
         systemLogService.getAll()
       ]);
@@ -115,7 +114,7 @@ export function AdminDashboard() {
         totalAccounts: accList.length,
         totalRobots: robotList.length,
         activeRobots: active,
-        totalPackages: Array.isArray(packages) ? packages.length : 0,
+        totalPackages: 0, // No longer tracked here
         totalExercises: Array.isArray(exercises) ? exercises.length : 0,
         roleDistribution: Object.entries(roles).map(([name, value]) => ({ 
             name: t(`common.roles.${name}`) || name, 
@@ -127,7 +126,7 @@ export function AdminDashboard() {
           { name: t('admin.robots.status.maintenance') || 'Maintenance', value: maint, color: '#f59e0b' },
           { name: t('admin.robots.status.offline') || 'Offline', value: offline, color: '#ef4444' },
         ],
-        recentLogs: Array.isArray(logs) ? logs.slice(0, 5) : []
+        recentLogs: Array.isArray(logs) ? logs : []
       });
     } catch (error) {
       console.error("Dashboard Fetch Error:", error);
@@ -203,13 +202,13 @@ export function AdminDashboard() {
 
             <Card className="border-none shadow-lg bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/10 transition-all hover:scale-[1.02]">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-violet-800 dark:text-violet-400">{t('admin.dashboard.service_packages') || "Tiers"}</CardTitle>
-                <Package className="h-5 w-5 text-violet-600" />
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-violet-800 dark:text-violet-400">{t('admin.dashboard.security_records') || "Security Records"}</CardTitle>
+                <History className="h-5 w-5 text-violet-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-black text-violet-900 dark:text-violet-300">{stats.totalPackages}</div>
+                <div className="text-3xl font-black text-violet-900 dark:text-violet-300">{stats.recentLogs.length}</div>
                 <p className="text-xs font-medium text-violet-700 dark:text-violet-500 mt-2">
-                    {t('admin.dashboard.service_packages_desc') || "Available configs"}
+                    {t('admin.dashboard.security_records_desc') || "Recent system events"}
                 </p>
               </CardContent>
             </Card>
@@ -387,7 +386,7 @@ export function AdminDashboard() {
                               variant="outline" 
                               className="text-[10px] font-black uppercase border-emerald-200 text-emerald-600 bg-emerald-50/50"
                             >
-                              {t('common.status.success') || "Success"}
+                              {t('common.status_labels.success') || "Success"}
                            </Badge>
                         </div>
                       ))

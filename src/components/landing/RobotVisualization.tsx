@@ -1,9 +1,17 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Bot, BatteryCharging, Wifi, ShieldAlert } from 'lucide-react';
+import { 
+  Wifi, 
+  BatteryCharging, 
+  ShieldAlert, 
+  Bot 
+} from 'lucide-react';
+import { useI18nStore } from '@/store/useI18nStore';
 
 export function RobotVisualization() {
+  const { t } = useI18nStore();
+
   return (
     <section className="py-24 sm:py-32 bg-primary/5 overflow-hidden relative">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
@@ -15,35 +23,37 @@ export function RobotVisualization() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-base font-semibold leading-7 text-primary">Meet CareBot</h2>
+            <h2 className="text-base font-semibold leading-7 text-primary uppercase tracking-widest">
+              {t('landing.robot.badge', 'Meet CareBot')}
+            </h2>
             <p className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Advanced robotics with a human touch
+              {t('landing.robot.title', 'Approachable Engineering')}
             </p>
             <p className="mt-6 text-lg leading-8 text-muted-foreground">
-              Built with precision engineering, the CareBot hardware is designed to be approachable, durable, and highly responsive to its environment.
+              {t('landing.robot.desc', 'Built for safety and reliability, our hardware is designed to move autonomously in hospital and home environments.')}
             </p>
             
             <dl className="mt-10 max-w-xl space-y-8 text-base leading-7 text-muted-foreground lg:max-w-none">
-              <div className="relative pl-9">
-                <dt className="inline font-semibold text-foreground">
-                  <Wifi className="absolute left-1 top-1 h-5 w-5 text-primary" />
-                  Always Connected.
+              <div className="relative pl-9 group">
+                <dt className="inline font-bold text-foreground">
+                  <Wifi className="absolute left-1 top-1 h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
+                  {t('landing.robot.specs.connected.title', 'Always Connected.')}
                 </dt>{' '}
-                <dd className="inline">Maintains a secure link to the clinical network, ensuring no data loss even in low-bandwidth scenarios.</dd>
+                <dd className="inline">{t('landing.robot.specs.connected.desc', 'Maintains a secure link to the clinical cloud, ensuring real-time data flow for AI analysis.')}</dd>
               </div>
-              <div className="relative pl-9">
-                <dt className="inline font-semibold text-foreground">
-                  <BatteryCharging className="absolute left-1 top-1 h-5 w-5 text-primary" />
-                  Smart Charging.
+              <div className="relative pl-9 group">
+                <dt className="inline font-bold text-foreground">
+                  <BatteryCharging className="absolute left-1 top-1 h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
+                  {t('landing.robot.specs.charging.title', 'Smart Charging.')}
                 </dt>{' '}
-                <dd className="inline">Automatically navigates to its charging bay when battery levels drop, ensuring 24/7 autonomous operation.</dd>
+                <dd className="inline">{t('landing.robot.specs.charging.desc', 'Autonomous navigation to charging docks ensures 24/7 availability without human intervention.')}</dd>
               </div>
-              <div className="relative pl-9">
-                <dt className="inline font-semibold text-foreground">
-                  <ShieldAlert className="absolute left-1 top-1 h-5 w-5 text-primary" />
-                  Safety First.
+              <div className="relative pl-9 group">
+                <dt className="inline font-bold text-foreground">
+                  <ShieldAlert className="absolute left-1 top-1 h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
+                  {t('landing.robot.specs.safety.title', 'Safety First.')}
                 </dt>{' '}
-                <dd className="inline">Equipped with obstacle avoidance and soft-touch materials to prevent any accidental injury to patients.</dd>
+                <dd className="inline">{t('landing.robot.specs.safety.desc', 'Advanced obstacle avoidance and soft-materials prevent accidental injury in living areas.')}</dd>
               </div>
             </dl>
           </motion.div>
@@ -56,10 +66,10 @@ export function RobotVisualization() {
             transition={{ duration: 0.8, type: 'spring' }}
           >
             {/* Ambient glowing background */}
-            <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full mix-blend-multiply" />
+            <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full mix-blend-multiply animate-pulse" />
             
             {/* The "Robot" abstract visualization */}
-            <div className="relative h-80 w-80 bg-background rounded-full border border-primary/20 shadow-2xl flex flex-col items-center justify-center overflow-hidden">
+            <div className="relative h-80 w-80 bg-background rounded-full border border-primary/20 shadow-2xl flex flex-col items-center justify-center overflow-hidden group">
               <motion.div 
                 className="absolute top-0 left-0 w-full h-1 bg-primary"
                 animate={{ top: ['0%', '100%', '0%'] }}
@@ -68,7 +78,7 @@ export function RobotVisualization() {
               
               <div className="flex space-x-6 items-center justify-center">
                 <motion.div 
-                  className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary overflow-hidden flex items-center justify-center"
+                  className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary overflow-hidden flex items-center justify-center shadow-[0_0_15px_rgba(var(--primary),0.2)]"
                   animate={{ scale: [1, 1.05, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
@@ -76,7 +86,7 @@ export function RobotVisualization() {
                 </motion.div>
                 
                 <motion.div 
-                  className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary overflow-hidden flex items-center justify-center"
+                  className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary overflow-hidden flex items-center justify-center shadow-[0_0_15px_rgba(var(--primary),0.2)]"
                   animate={{ scale: [1, 1.05, 1] }}
                   transition={{ duration: 2, repeat: Infinity, delay: 0.2 }}
                 >
@@ -92,32 +102,32 @@ export function RobotVisualization() {
                 />
               </div>
 
-              <div className="absolute bottom-6 flex items-center gap-2 text-xs font-mono text-muted-foreground">
-                <Bot className="h-4 w-4 text-primary" />
-                SYSTEM_ONLINE
+              <div className="absolute bottom-6 flex items-center gap-2 text-xs font-mono text-primary font-bold tracking-widest">
+                <Bot className="h-4 w-4 animate-bounce" />
+                {t('landing.robot.status', 'SYSTEM_ONLINE')}
               </div>
             </div>
             
             {/* Floating connecting nodes */}
             <motion.div 
-              className="absolute top-10 left-10 p-4 bg-background rounded-xl border shadow-lg"
+              className="absolute top-10 left-10 p-4 bg-background/80 backdrop-blur-sm rounded-2xl border border-primary/20 shadow-xl"
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 3, repeat: Infinity }}
             >
               <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-green-500" />
-                <span className="text-sm font-medium">Sensors Active</span>
+                <div className="h-3 w-3 rounded-full bg-green-500 animate-ping" />
+                <span className="text-sm font-bold text-foreground">Sensors Active</span>
               </div>
             </motion.div>
 
             <motion.div 
-              className="absolute bottom-20 right-0 p-4 bg-background rounded-xl border shadow-lg"
+              className="absolute bottom-20 right-0 p-4 bg-background/80 backdrop-blur-sm rounded-2xl border border-primary/20 shadow-xl"
               animate={{ y: [0, 10, 0] }}
               transition={{ duration: 4, repeat: Infinity, delay: 1 }}
             >
               <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-primary" />
-                <span className="text-sm font-medium">Processing Data</span>
+                <div className="h-3 w-3 rounded-full bg-primary animate-pulse" />
+                <span className="text-sm font-bold text-foreground">Processing Data</span>
               </div>
             </motion.div>
 

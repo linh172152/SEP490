@@ -84,6 +84,7 @@ export interface ServicePackageRequest {
   level: string;
   price: number;
   active: boolean;
+  exerciseIds?: number[];
 }
 
 export interface ServicePackageResponse extends ServicePackageRequest {

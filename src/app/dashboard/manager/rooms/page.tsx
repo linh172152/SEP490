@@ -65,7 +65,10 @@ export default function RoomsManagerPage() {
 
   const filteredRooms = useMemo(() => {
     return rooms.filter(r => {
-      const matchesSearch = (r.roomName || '').toLowerCase().includes(searchQuery.toLowerCase());
+      const searchLower = searchQuery.toLowerCase();
+      const matchesRoomName = (r.roomName || '').toLowerCase().includes(searchLower);
+      const matchesElderlyName = r.elderlies?.some(e => (e.name || '').toLowerCase().includes(searchLower));
+      const matchesSearch = matchesRoomName || matchesElderlyName;
       
       const hasRobot = !!r.robot;
       const matchesRobot = robotFilter === 'all' 

@@ -166,10 +166,6 @@ export function ManagerDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-black">{totalRevenue.toLocaleString()} <span className="text-sm font-normal opacity-70">VNĐ</span></div>
-            <div className="flex items-center gap-1 mt-2 text-emerald-100 font-bold text-xs">
-              <ArrowUpRight className="h-3 w-3" />
-              <span>+12.5% so với kỳ trước</span>
-            </div>
           </CardContent>
         </Card>
 

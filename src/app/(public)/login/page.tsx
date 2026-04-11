@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { HeartPulse, Loader2 } from 'lucide-react';
+import { Bot, Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address.'),
@@ -105,8 +105,8 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md border-t-4 border-t-primary shadow-lg">
         <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <HeartPulse className="h-8 w-8 text-primary" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
+            <Bot className="h-8 w-8 text-white" />
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
             {t('auth.login.title')}
@@ -163,12 +163,6 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
               {t('auth.login.no_account')}{' '}
               <Link href="/register" className="text-primary hover:underline font-medium">
                 {t('auth.login.register_link')}
-              </Link>
-            </p>
-            <p className="mt-1">
-              {t('auth.login.need_verify')}{' '}
-              <Link href="/verify-otp" className="text-primary hover:underline font-medium">
-                {t('auth.login.verify_link')}
               </Link>
             </p>
           </div>

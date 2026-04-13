@@ -65,6 +65,12 @@ export interface UserPackageResponse extends UserPackageRequest {
   id: number;
 }
 
+export interface RoomElderlySummary {
+  id: number;
+  name: string;
+  accountId?: number;
+}
+
 // System Log Types
 export interface SystemLogRequest {
   accountId: number;
@@ -204,6 +210,7 @@ export interface ElderlyProfileRequest {
 export interface ElderlyProfileResponse extends ElderlyProfileRequest {
   id: number;
   accountId: number;
+  roomId?: number | null;
   fullName?: string;
   deleted: boolean;
   name: string;
@@ -221,6 +228,7 @@ export interface CaregiverProfileResponse extends CaregiverProfileRequest {
   id: number;
   accountEmail: string;
   name: string;
+  roomId?: number | null;
 }
 
 // Account Response from BE

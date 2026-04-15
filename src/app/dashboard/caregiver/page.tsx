@@ -60,11 +60,13 @@ export default function CaregiverOverviewPage() {
         const elderlies = await roomService.getElderliesByRoom(currentProfile.roomId);
         const elderlyIds = new Set(elderlies.map((item) => item.id));
 
-        const [allReminders, allAlerts, robotByRoomSummary] = await Promise.all([
+        const [allReminders, allAlerts, roomData] = await Promise.all([
           reminderService.getAll().catch(() => [] as ReminderResponse[]),
           alertService.getAll().catch(() => [] as AlertNotificationResponse[]),
-          roomService.getRobotByRoom(currentProfile.roomId).catch(() => null),
+          roomService.getRoomById(currentProfile.roomId).catch(() => null),
         ]);
+
+        const robotByRoomSummary = roomData?.robot ?? null;
 
         const robotByRoom = robotByRoomSummary
           ? await robotService.getById(robotByRoomSummary.id).catch(() => null)

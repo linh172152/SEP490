@@ -177,10 +177,9 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
 
     setLoadingRoomDevice(true);
     try {
-      const [room, robotSummary] = await Promise.all([
-        roomService.getRoomById(caregiverProfile.roomId).catch(() => null),
-        roomService.getRobotByRoom(caregiverProfile.roomId).catch(() => null),
-      ]);
+      const room = await roomService.getRoomById(caregiverProfile.roomId).catch(() => null);
+
+      const robotSummary = room?.robot ?? null;
 
       const robot = robotSummary
         ? await robotService.getById(robotSummary.id).catch(() => null)

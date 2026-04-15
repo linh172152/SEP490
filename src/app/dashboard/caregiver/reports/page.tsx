@@ -41,7 +41,8 @@ export default function CaregiverReportsPage() {
         setElderlies(roomElderlies);
 
         const elderlyIds = new Set(roomElderlies.map((item) => item.id));
-        const roomRobotSummary = currentProfile?.roomId ? await roomService.getRobotByRoom(currentProfile.roomId).catch(() => null) : null;
+        const roomData = currentProfile?.roomId ? await roomService.getRoomById(currentProfile.roomId).catch(() => null) : null;
+        const roomRobotSummary = roomData?.robot ?? null;
         const roomRobot = roomRobotSummary ? await robotService.getById(roomRobotSummary.id).catch(() => null) : null;
         setRoomRobot(roomRobot);
 

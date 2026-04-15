@@ -4,7 +4,6 @@ import {
   RoomResponse,
   CaregiverDTO,
   ElderlyDTO,
-  RobotDTO,
   RoomElderlySummary,
 } from './types';
 
@@ -60,9 +59,5 @@ export const roomService = {
   getElderliesByRoom: async (roomId: number): Promise<RoomElderlySummary[]> => {
     return apiClient.get<RoomElderlySummary[]>(`/api/rooms/${roomId}/elderlies`);
   },
-
-  getRobotByRoom: async (roomId: number): Promise<RobotDTO> => {
-    return apiClient.get<RobotDTO>(`/api/rooms/${roomId}/robot`);
-  }
 };
 

@@ -20,11 +20,13 @@ import {
   XAxis,
 } from 'recharts';
 import { elderlyService } from '@/services/api/elderlyService';
+import { robotService } from '@/services/api/robotService';
 import { roomService } from '@/services/api/roomService';
 import { servicePackageService } from '@/services/api/servicePackageService';
 import { userPackageService } from '@/services/api/userPackageService';
 import type {
   ElderlyProfileResponse,
+  RobotResponse,
   RoomResponse,
   ServicePackageResponse,
   UserPackageResponse,
@@ -55,6 +57,7 @@ export default function FamilyElderlyDetailPage() {
 
   const [profile, setProfile] = useState<ElderlyProfileResponse | null>(null);
   const [room, setRoom] = useState<RoomResponse | null>(null);
+  const [robot, setRobot] = useState<RobotResponse | null>(null);
   const [servicePackages, setServicePackages] = useState<ServicePackageResponse[]>([]);
   const [ownedPackages, setOwnedPackages] = useState<UserPackageResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,6 +87,13 @@ export default function FamilyElderlyDetailPage() {
         setServicePackages(packages);
         setOwnedPackages(userPackages);
         setRoom(roomData);
+
+        if (roomData?.robot?.id) {
+          const robotData = await robotService.getById(roomData.robot.id).catch(() => null);
+          setRobot(robotData);
+        } else {
+          setRobot(null);
+        }
       } finally {
         setLoading(false);
       }
@@ -146,8 +156,9 @@ export default function FamilyElderlyDetailPage() {
       { label: 'Active Plans', value: activeOwnedPackages.length },
       { label: 'Health Notes', value: profile?.healthNotes ? 'Ready' : 'Empty' },
       { label: 'Room', value: room?.roomName || (profile?.roomId ? `Room ${profile.roomId}` : 'Unassigned') },
+      { label: 'Robot', value: robot?.robotName || 'Unavailable' },
     ],
-    [activeOwnedPackages.length, profile?.healthNotes, profile?.roomId, room?.roomName]
+    [activeOwnedPackages.length, profile?.healthNotes, profile?.roomId, robot?.robotName, room?.roomName]
   );
 
   const availablePackages = useMemo(
@@ -208,7 +219,7 @@ export default function FamilyElderlyDetailPage() {
                 A clearer family-facing overview of profile context, health notes, service plan coverage, and activity signals. Important information stays above the fold instead of being split across unrelated blocks.
               </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {stats.map((item) => (
                 <div key={item.label} className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
                   <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-sky-100/80">{item.label}</div>
@@ -271,6 +282,7 @@ export default function FamilyElderlyDetailPage() {
                 <SummaryRow icon={<Globe className="h-4 w-4 text-emerald-500" />} label="Preferred Language" value={profile.preferredLanguage} />
                 <SummaryRow icon={<Volume2 className="h-4 w-4 text-violet-500" />} label="Speaking Speed" value={profile.speakingSpeed} />
                 <SummaryRow icon={<MapPin className="h-4 w-4 text-amber-500" />} label="Room" value={room?.roomName || (profile.roomId ? `Room ${profile.roomId}` : 'Unassigned')} />
+                <SummaryRow icon={<Zap className="h-4 w-4 text-cyan-500" />} label="Robot" value={robot?.robotName || 'No robot assigned'} />
               </div>
             </CardContent>
           </Card>
@@ -317,9 +329,24 @@ export default function FamilyElderlyDetailPage() {
               </div>
               <div className="grid gap-3">
                 <InsightCard title="Primary Plan" value={primaryPackage?.name || 'None'} icon={<Package className="h-4 w-4 text-emerald-500" />} />
-                <InsightCard title="Room Status" value={room?.robot ? `Robot ready in ${room.roomName}` : room?.roomName || 'No room assigned'} icon={<Zap className="h-4 w-4 text-amber-500" />} />
+                <InsightCard title="Room Status" value={robot ? `${robot.status} in ${room?.roomName || 'assigned room'}` : room?.roomName || 'No room assigned'} icon={<Zap className="h-4 w-4 text-amber-500" />} />
                 <InsightCard title="Communication" value={`${profile.preferredLanguage} • ${profile.speakingSpeed}`} icon={<Sparkles className="h-4 w-4 text-sky-500" />} />
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Room & Robot Context</CardTitle>
+              <CardDescription>Robot detail is loaded from GET /api/robots/{'{'}id{'}'} after resolving the assigned room robot.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <ContextMetric label="Room" value={room?.roomName || (profile.roomId ? `Room ${profile.roomId}` : 'Unassigned')} />
+              <ContextMetric label="Robot" value={robot?.robotName || 'Not assigned'} />
+              <ContextMetric label="Status" value={robot?.status || 'Unknown'} />
+              <ContextMetric label="Model" value={robot?.model || 'N/A'} />
+              <ContextMetric label="Firmware" value={robot?.firmwareVersion || 'N/A'} />
+              <ContextMetric label="Serial Number" value={robot?.serialNumber || 'N/A'} />
             </CardContent>
           </Card>
 
@@ -454,6 +481,21 @@ function InsightCard({
         {title}
       </div>
       <div className="mt-2 font-semibold text-foreground">{value}</div>
+    </div>
+  );
+}
+
+function ContextMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-2xl border bg-slate-50 p-4">
+      <div className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="mt-2 break-words font-semibold text-foreground">{value}</div>
     </div>
   );
 }

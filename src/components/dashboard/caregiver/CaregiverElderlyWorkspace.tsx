@@ -27,7 +27,7 @@ import type {
   ReminderLogResponse,
   ReminderRequest,
   ReminderResponse,
-  RobotDTO,
+  RobotResponse,
   RobotStatusLogResponse,
   RoomElderlySummary,
   RoomResponse,
@@ -116,7 +116,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   const [selectedInteractions, setSelectedInteractions] = useState<InteractionLogResponse[]>([]);
   const [selectedAlerts, setSelectedAlerts] = useState<AlertNotificationResponse[]>([]);
   const [roomInfo, setRoomInfo] = useState<RoomResponse | null>(null);
-  const [roomRobot, setRoomRobot] = useState<RobotDTO | null>(null);
+  const [roomRobot, setRoomRobot] = useState<RobotResponse | null>(null);
   const [robotLogs, setRobotLogs] = useState<RobotStatusLogResponse[]>([]);
   const [userPackages, setUserPackages] = useState<UserPackageResponse[]>([]);
   const [servicePackages, setServicePackages] = useState<ServicePackageResponse[]>([]);
@@ -177,10 +177,14 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
 
     setLoadingRoomDevice(true);
     try {
-      const [room, robot] = await Promise.all([
+      const [room, robotSummary] = await Promise.all([
         roomService.getRoomById(caregiverProfile.roomId).catch(() => null),
         roomService.getRobotByRoom(caregiverProfile.roomId).catch(() => null),
       ]);
+
+      const robot = robotSummary
+        ? await robotService.getById(robotSummary.id).catch(() => null)
+        : null;
 
       setRoomInfo(room);
       setRoomRobot(robot);
@@ -628,7 +632,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
         <CardContent className="space-y-4">
           <div className="rounded-2xl border bg-slate-50 p-4 text-sm">
             <div className="font-semibold">Assigned Robot</div>
-            <p className="mt-1 text-muted-foreground">{roomRobot ? `${roomRobot.robotName} • ${roomRobot.model}` : 'No robot assigned to this room.'}</p>
+            <p className="mt-1 text-muted-foreground">{roomRobot ? `${roomRobot.robotName} • ${roomRobot.model} • ${roomRobot.status}` : 'No robot assigned to this room.'}</p>
           </div>
           <FormRow label="Interaction Type">
             <Input value={interactionForm.interactionType} onChange={(event) => setInteractionForm((prev) => ({ ...prev, interactionType: event.target.value }))} placeholder="qa" />
@@ -703,6 +707,9 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
           <InfoPair label="Manager" value={roomInfo?.managerName || 'N/A'} />
           <InfoPair label="Robot" value={roomRobot?.robotName || 'No robot assigned'} />
           <InfoPair label="Robot Model" value={roomRobot?.model || 'N/A'} />
+          <InfoPair label="Robot Status" value={roomRobot?.status || 'Unknown'} />
+          <InfoPair label="Firmware" value={roomRobot?.firmwareVersion || 'N/A'} />
+          <InfoPair label="Serial Number" value={roomRobot?.serialNumber || 'N/A'} />
           <div className="rounded-2xl border bg-slate-50 p-4 text-sm">
             <div className="font-semibold">Device Health</div>
             <p className="mt-2 text-muted-foreground">{robotLogs[0] ? `Latest robot status: ${robotLogs[0].status}` : 'No robot device status logs yet.'}</p>

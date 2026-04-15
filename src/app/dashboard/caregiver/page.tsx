@@ -16,7 +16,7 @@ import type {
   AlertNotificationResponse,
   CaregiverProfileResponse,
   ReminderResponse,
-  RobotDTO,
+  RobotResponse,
   RobotStatusLogResponse,
   RoomElderlySummary,
 } from '@/services/api/types';
@@ -29,7 +29,7 @@ export default function CaregiverOverviewPage() {
   const [roomElderlies, setRoomElderlies] = useState<RoomElderlySummary[]>([]);
   const [reminders, setReminders] = useState<ReminderResponse[]>([]);
   const [alerts, setAlerts] = useState<AlertNotificationResponse[]>([]);
-  const [roomRobot, setRoomRobot] = useState<RobotDTO | null>(null);
+  const [roomRobot, setRoomRobot] = useState<RobotResponse | null>(null);
   const [robotLogs, setRobotLogs] = useState<RobotStatusLogResponse[]>([]);
 
   useEffect(() => {
@@ -60,11 +60,15 @@ export default function CaregiverOverviewPage() {
         const elderlies = await roomService.getElderliesByRoom(currentProfile.roomId);
         const elderlyIds = new Set(elderlies.map((item) => item.id));
 
-        const [allReminders, allAlerts, robotByRoom] = await Promise.all([
+        const [allReminders, allAlerts, robotByRoomSummary] = await Promise.all([
           reminderService.getAll().catch(() => [] as ReminderResponse[]),
           alertService.getAll().catch(() => [] as AlertNotificationResponse[]),
           roomService.getRobotByRoom(currentProfile.roomId).catch(() => null),
         ]);
+
+        const robotByRoom = robotByRoomSummary
+          ? await robotService.getById(robotByRoomSummary.id).catch(() => null)
+          : null;
 
         setRoomElderlies(elderlies);
         setReminders(
@@ -175,7 +179,7 @@ export default function CaregiverOverviewPage() {
           <CardContent>
             <div className="text-lg font-bold">{roomRobot?.robotName || 'Chua co robot'}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {latestRobotLog ? `Trang thai gan nhat: ${latestRobotLog.status}` : 'Chua co robot status log'}
+              {roomRobot ? `${roomRobot.model} • ${roomRobot.status} • ${roomRobot.firmwareVersion}` : latestRobotLog ? `Trang thai gan nhat: ${latestRobotLog.status}` : 'Chua co robot status log'}
             </p>
           </CardContent>
         </Card>

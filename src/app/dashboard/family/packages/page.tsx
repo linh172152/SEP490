@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useFamilyStore } from '@/store/useFamilyStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { 
@@ -27,18 +27,24 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-const MOCK_PACKAGES = [
-  { id: 1, name: 'Basic Care', price: 29, duration: '30 days', description: 'Essential monitoring for one elderly family member.', features: ['1 Elderly Profile', 'Daily Medication Reminders', 'Basic Health Reports', 'Standard Support'] },
-  { id: 2, name: 'Standard Care', price: 59, duration: '60 days', description: 'Comprehensive support for up to 3 members.', features: ['Up to 3 Elderly Profiles', 'All Reminders (Exercise + Meds)', 'Weekly Health Analytics', 'Priority Support', 'Robot Assistance Basic'] },
-  { id: 3, name: 'Premium Care', price: 99, duration: '90 days', description: 'Advanced healthcare ecosystem for your entire family.', features: ['Unlimited Elderly Profiles', 'Real-time Vital Monitoring', 'AI Health Predictions', '24/7 Concierge Support', 'Advanced Robot Integration'] },
-];
-
 export default function PackagesPage() {
   const { user } = useAuthStore();
-  const { userPackages, purchasePackage, isLoading, isUsingMock } = useFamilyStore();
+  const { userPackages, servicePackages, purchasePackage, fetchDashboardData, isLoading, isUsingMock } = useFamilyStore();
   const [purchasingId, setPurchasingId] = useState<number | null>(null);
 
-  const activePackage = userPackages.length > 0 ? userPackages[0] : null;
+  useEffect(() => {
+    if (user?.id) {
+      fetchDashboardData(Number(user.id));
+    }
+  }, [user?.id, fetchDashboardData]);
+
+  const activePackage = useMemo(() => {
+    const now = Date.now();
+    return userPackages.find((item) => {
+      const expiry = Date.parse(item.expiredAt);
+      return Number.isNaN(expiry) || expiry >= now;
+    }) || null;
+  }, [userPackages]);
 
   const handlePurchase = async (packageId: number) => {
     if (!user?.id) return;
@@ -74,10 +80,10 @@ export default function PackagesPage() {
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                  <div className="space-y-1">
                     <CardTitle className="text-2xl">
-                       {MOCK_PACKAGES.find(p => p.id === activePackage.servicePackageId)?.name || 'Active Subscription'}
+                        {servicePackages.find(p => p.id === activePackage.servicePackageId)?.name || 'Active Subscription'}
                     </CardTitle>
                     <CardDescription className="text-emerald-50 font-medium">
-                       Membership Level {activePackage.servicePackageId}
+                        {servicePackages.find(p => p.id === activePackage.servicePackageId)?.level || `Membership Level ${activePackage.servicePackageId}`}
                     </CardDescription>
                  </div>
                  <Badge className="bg-white/20 hover:bg-white/30 text-white border-none px-4 py-1 text-sm font-bold">
@@ -142,7 +148,7 @@ export default function PackagesPage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
-          {MOCK_PACKAGES.map((pkg) => {
+          {servicePackages.map((pkg) => {
             const isCurrent = activePackage?.servicePackageId === pkg.id;
             const Icon = pkg.id === 1 ? Zap : pkg.id === 2 ? Crown : ShieldCheck;
 
@@ -166,7 +172,7 @@ export default function PackagesPage() {
                   </div>
                   <CardTitle className="text-2xl font-black tracking-tight">{pkg.name}</CardTitle>
                   <CardDescription className="font-semibold text-sky-600 text-lg">
-                    ${pkg.price} <span className="text-xs text-muted-foreground font-normal"> / {pkg.duration}</span>
+                    {pkg.price.toLocaleString()} <span className="text-xs text-muted-foreground font-normal"> / {pkg.level}</span>
                   </CardDescription>
                 </CardHeader>
                 
@@ -176,7 +182,11 @@ export default function PackagesPage() {
                   </p>
                   
                   <ul className="space-y-3">
-                    {pkg.features.map((feat, idx) => (
+                    {[
+                      `Level: ${pkg.level}`,
+                      pkg.active ? 'Dang mo ban' : 'Tam dong',
+                      `Package ID: ${pkg.id}`,
+                    ].map((feat, idx) => (
                       <li key={idx} className="flex items-start gap-3 text-sm font-medium">
                         <div className="h-5 w-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                            <Check className="h-3 w-3" strokeWidth={3} />
@@ -210,6 +220,11 @@ export default function PackagesPage() {
             );
           })}
         </div>
+        {servicePackages.length === 0 && (
+          <Card className="border-2 border-dashed border-slate-200 bg-slate-50/50 p-8 text-center rounded-3xl">
+            <p className="text-muted-foreground">Chua tai duoc danh sach goi tu GET /api/service-packages.</p>
+          </Card>
+        )}
       </section>
 
       <section className="bg-sky-50 dark:bg-sky-900/10 p-8 rounded-3xl border border-sky-100 dark:border-sky-900/30 flex flex-col md:flex-row items-center gap-6">

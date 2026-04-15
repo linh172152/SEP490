@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useFamilyStore } from '@/store/useFamilyStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { 
@@ -12,6 +12,7 @@ import {
   CardFooter 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Plus, 
@@ -23,7 +24,8 @@ import {
   HeartPulse,
   Activity,
   Calendar,
-  AlertTriangle,
+  Package,
+  MapPin,
   Users
 } from 'lucide-react';
 import Link from 'next/link';
@@ -37,13 +39,38 @@ import {
 
 export default function ElderlyListPage() {
   const { user } = useAuthStore();
-  const { elderlyList, fetchDashboardData, isLoading, generateDemoData, isUsingMock } = useFamilyStore();
+  const { elderlyList, userPackages, servicePackages, roomNames, fetchDashboardData, isLoading, generateDemoData, isUsingMock } = useFamilyStore();
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (user?.id) {
       fetchDashboardData(Number(user.id));
     }
   }, [user?.id, fetchDashboardData]);
+
+  const filteredElderlies = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return elderlyList;
+    return elderlyList.filter((item) => item.name.toLowerCase().includes(query));
+  }, [elderlyList, searchQuery]);
+
+  const getPurchasedPackageLabel = (accountId: number) => {
+    const now = Date.now();
+    const ownedPackages = userPackages.filter((item) => {
+      const expiry = Date.parse(item.expiredAt);
+      return item.accountId === accountId && (Number.isNaN(expiry) || expiry >= now);
+    });
+
+    if (ownedPackages.length === 0) {
+      return 'Chua mua goi';
+    }
+
+    const packageNames = ownedPackages
+      .map((item) => servicePackages.find((pkg) => pkg.id === item.servicePackageId)?.name)
+      .filter(Boolean);
+
+    return packageNames[0] || `Da mua ${ownedPackages.length} goi`;
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -62,21 +89,26 @@ export default function ElderlyListPage() {
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm">
         <div className="relative w-full md:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search by name..." className="pl-9 bg-muted/50 border-none focus-visible:ring-sky-500" />
+          <Input
+            placeholder="Search by name..."
+            className="pl-9 bg-muted/50 border-none focus-visible:ring-sky-500"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
         </div>
         <div className="flex items-center gap-2 w-full md:w-auto">
           <Button variant="outline" size="sm" className="flex-1 md:flex-none">
             <Filter className="mr-2 h-4 w-4" /> Filters
           </Button>
           <div className="text-sm text-muted-foreground">
-             Total: <span className="font-bold text-foreground">{elderlyList.length}</span> members
+             Total: <span className="font-bold text-foreground">{filteredElderlies.length}</span> members
           </div>
         </div>
       </div>
 
-      {elderlyList.length > 0 ? (
+      {filteredElderlies.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {elderlyList.map((elderly) => (
+          {filteredElderlies.map((elderly) => (
             <Card key={elderly.id} className="group border-none shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden bg-white dark:bg-slate-900">
               <div className="h-1.5 w-full bg-sky-500" />
               <CardHeader className="flex flex-row items-start justify-between pb-4">
@@ -116,29 +148,51 @@ export default function ElderlyListPage() {
               
               <CardContent className="space-y-4 pt-2">
                 <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-4 border border-slate-100 dark:border-slate-800">
-                   <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-                      <Activity className="h-3 w-3" /> Health Condition
-                   </div>
-                   <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      {elderly.healthNotes || 'No specific health notes recorded.'}
-                   </p>
+                  <div className="grid gap-3 text-sm">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
+                        <Activity className="h-3 w-3" /> Health Condition
+                      </div>
+                      <p className="font-medium text-slate-700 dark:text-slate-300">
+                        {elderly.healthNotes || 'No specific health notes recorded.'}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="flex items-center gap-2 text-muted-foreground">
+                        <Package className="h-4 w-4 text-emerald-500" />
+                        Goi
+                      </span>
+                      <Badge variant={getPurchasedPackageLabel(elderly.accountId) === 'Chua mua goi' ? 'secondary' : 'outline'}>
+                        {getPurchasedPackageLabel(elderly.accountId)}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="flex items-center gap-2 text-muted-foreground">
+                        <MapPin className="h-4 w-4 text-amber-500" />
+                        Phong
+                      </span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300">
+                        {elderly.roomId ? roomNames[elderly.roomId] || `Room ${elderly.roomId}` : 'Chua co phong'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between text-sm">
-                   <div className="flex items-center gap-2 text-muted-foreground">
-                      <HeartPulse className="h-4 w-4 text-rose-500" />
-                      Risk Level: <span className="font-bold text-emerald-600 uppercase">Low</span>
-                   </div>
-                   <div className="text-muted-foreground">
-                      Language: <span className="font-bold uppercase text-foreground">{elderly.preferredLanguage}</span>
-                   </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <HeartPulse className="h-4 w-4 text-rose-500" />
+                    DOB: <span className="font-bold text-foreground">{new Date(elderly.dateOfBirth).toLocaleDateString()}</span>
+                  </div>
+                  <div className="text-muted-foreground">
+                    Language: <span className="font-bold uppercase text-foreground">{elderly.preferredLanguage}</span>
+                  </div>
                 </div>
               </CardContent>
 
               <CardFooter className="pt-2 border-t border-slate-50 dark:border-slate-800/50">
                 <Button variant="outline" className="w-full text-sky-600 border-sky-100 hover:bg-sky-50 group-hover:bg-sky-600 group-hover:text-white transition-all duration-300" asChild>
                   <Link href={`/dashboard/family/elderly/${elderly.id}`}>
-                    Manage Care Circle
+                    Xem detail
                   </Link>
                 </Button>
               </CardFooter>

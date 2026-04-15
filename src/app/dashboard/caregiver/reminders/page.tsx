@@ -3,9 +3,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useReminderStore } from '@/store/useReminderStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useElderlyProfileStore } from '@/store/useElderlyProfileStore';
 import { useCaregiverStore } from '@/store/useCaregiverStore';
 import { useI18nStore } from '@/store/useI18nStore';
+import { roomService } from '@/services/api/roomService';
 import { toast } from 'react-toastify';
 import { 
   Plus, 
@@ -53,15 +53,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from '@/components/ui/badge';
-import { ReminderRequest, ReminderResponse } from '@/services/api/types';
+import { ReminderRequest, ReminderResponse, RoomElderlySummary } from '@/services/api/types';
 import { format } from 'date-fns';
 
 export default function CaregiverRemindersPage() {
   const { t } = useI18nStore();
   const { user } = useAuthStore();
   const { reminders, fetchReminders, createReminder, updateReminder, deleteReminder, isLoading } = useReminderStore();
-  const { profiles, fetchProfiles } = useElderlyProfileStore();
   const { currentProfile, fetchProfileByAccountId } = useCaregiverStore();
+  const [roomElderlies, setRoomElderlies] = useState<RoomElderlySummary[]>([]);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingReminder, setEditingReminder] = useState<ReminderResponse | null>(null);
@@ -84,10 +84,27 @@ export default function CaregiverRemindersPage() {
     if (user?.id) {
       const accountId = Number(user.id);
       fetchReminders(accountId);
-      fetchProfiles();
       fetchProfileByAccountId(accountId);
     }
-  }, [user?.id, fetchReminders, fetchProfiles, fetchProfileByAccountId]);
+  }, [user?.id, fetchReminders, fetchProfileByAccountId]);
+
+  useEffect(() => {
+    const loadRoomElderlies = async () => {
+      if (!currentProfile?.roomId) {
+        setRoomElderlies([]);
+        return;
+      }
+
+      try {
+        const data = await roomService.getElderliesByRoom(currentProfile.roomId);
+        setRoomElderlies(data || []);
+      } catch {
+        setRoomElderlies([]);
+      }
+    };
+
+    loadRoomElderlies();
+  }, [currentProfile?.roomId]);
 
   const filteredReminders = useMemo(() => {
     return reminders.filter(r => {
@@ -115,7 +132,7 @@ export default function CaregiverRemindersPage() {
     } else {
       setEditingReminder(null);
       setFormData({
-        elderlyId: profiles[0]?.id || 0,
+        elderlyId: roomElderlies[0]?.id || 0,
         caregiverId: realCaregiverId,
         title: '',
         reminderType: 'medication',
@@ -428,7 +445,7 @@ export default function CaregiverRemindersPage() {
                       <SelectValue placeholder="Select elderly" />
                     </SelectTrigger>
                     <SelectContent>
-                      {profiles.map(p => (
+                      {roomElderlies.map(p => (
                         <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
                       ))}
                     </SelectContent>

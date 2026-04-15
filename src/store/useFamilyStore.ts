@@ -3,16 +3,21 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { 
   ElderlyProfileResponse, 
   ReminderResponse, 
+  ServicePackageResponse,
   UserPackageResponse 
 } from '@/services/api/types';
 import { elderlyService } from '@/services/api/elderlyService';
 import { reminderService } from '@/services/api/reminderService';
+import { roomService } from '@/services/api/roomService';
+import { servicePackageService } from '@/services/api/servicePackageService';
 import { userPackageService } from '@/services/api/userPackageService';
 
 interface FamilyState {
   elderlyList: ElderlyProfileResponse[];
   reminders: ReminderResponse[];
   userPackages: UserPackageResponse[];
+  servicePackages: ServicePackageResponse[];
+  roomNames: Record<number, string>;
   isLoading: boolean;
   error: string | null;
   isUsingMock: boolean;
@@ -30,6 +35,8 @@ export const useFamilyStore = create<FamilyState>()(
       elderlyList: [],
       reminders: [],
       userPackages: [],
+      servicePackages: [],
+      roomNames: {},
       isLoading: false,
       error: null,
       isUsingMock: false,
@@ -42,19 +49,29 @@ export const useFamilyStore = create<FamilyState>()(
 
         set({ isLoading: true, error: null });
         try {
-          // Fetch only data relevant to this account
-          const [elderly, reminders, packages] = await Promise.all([
+          const [elderly, reminders, packages, servicePackages, rooms] = await Promise.all([
             elderlyService.getByAccountId(accountId),
             reminderService.getAll(), // Currently fallback to all, will filter locally
-            userPackageService.getAll(),
+            userPackageService.getByAccountId(accountId).catch(async () => {
+              const allPackages = await userPackageService.getAll();
+              return allPackages.filter(p => p.accountId === accountId);
+            }),
+            servicePackageService.getAll().catch(() => []),
+            roomService.getAllRooms().catch(() => []),
           ]);
 
           const elderlyIds = new Set(elderly.map(e => e.id));
+          const roomNames = (rooms || []).reduce<Record<number, string>>((acc, room) => {
+            acc[room.id] = room.roomName;
+            return acc;
+          }, {});
           
           set({ 
             elderlyList: elderly,
             reminders: reminders.filter(r => elderlyIds.has(r.elderlyId)), 
-            userPackages: packages.filter(p => p.accountId === accountId),
+            userPackages: packages,
+            servicePackages: servicePackages || [],
+            roomNames,
             isLoading: false 
           });
         } catch (error: any) {
@@ -80,10 +97,18 @@ export const useFamilyStore = create<FamilyState>()(
           { id: 1, accountId, servicePackageId: 3, assignedAt: new Date(Date.now() - 86400000 * 15).toISOString(), expiredAt: new Date(Date.now() + 86400000 * 15).toISOString() },
         ];
 
+        const mockServicePackages: ServicePackageResponse[] = [
+          { id: 1, name: 'Basic Care', description: 'Goi co ban', level: 'BASIC', price: 29, active: true },
+          { id: 2, name: 'Standard Care', description: 'Goi tieu chuan', level: 'STANDARD', price: 59, active: true },
+          { id: 3, name: 'Premium Care', description: 'Goi nang cao', level: 'PREMIUM', price: 99, active: true },
+        ];
+
         set({
           elderlyList: mockElderly,
           reminders: mockReminders,
           userPackages: mockPackages,
+          servicePackages: mockServicePackages,
+          roomNames: { 1: 'Room 1' },
           isUsingMock: true,
           error: null
         });
@@ -110,8 +135,11 @@ export const useFamilyStore = create<FamilyState>()(
             assignedAt: new Date().toISOString(),
             expiredAt: new Date(Date.now() + 86400000 * 30).toISOString(),
           });
-          const packages = await userPackageService.getAll();
-          set({ userPackages: packages.filter(p => p.accountId === accountId), isLoading: false });
+          const packages = await userPackageService.getByAccountId(accountId).catch(async () => {
+            const allPackages = await userPackageService.getAll();
+            return allPackages.filter(p => p.accountId === accountId);
+          });
+          set({ userPackages: packages, isLoading: false });
         } catch (error: any) {
           set({ error: 'Failed to purchase package', isLoading: false });
           throw error;
@@ -126,6 +154,8 @@ export const useFamilyStore = create<FamilyState>()(
         elderlyList: state.isUsingMock ? state.elderlyList : [],
         reminders: state.isUsingMock ? state.reminders : [],
         userPackages: state.isUsingMock ? state.userPackages : [],
+        servicePackages: state.isUsingMock ? state.servicePackages : [],
+        roomNames: state.isUsingMock ? state.roomNames : {},
       }),
     }
   )

@@ -42,6 +42,7 @@ const elderlyFormSchema = z.object({
   healthNotes: z.string().min(1, 'Please provide some health background'),
   preferredLanguage: z.string().min(1, 'Language preference is required'),
   speakingSpeed: z.string().min(1, 'Speaking speed is required'),
+  roomId: z.string().optional(),
 });
 
 type ElderlyFormValues = z.infer<typeof elderlyFormSchema>;
@@ -75,6 +76,7 @@ export default function CreateElderlyPage() {
         healthNotes: data.healthNotes,
         preferredLanguage: data.preferredLanguage,
         speakingSpeed: data.speakingSpeed,
+        roomId: data.roomId && data.roomId.trim() ? Number(data.roomId) : null,
       });
 
       toast.success(`Success! ${data.name}'s profile has been created.`);
@@ -147,6 +149,26 @@ export default function CreateElderlyPage() {
                           {...field} 
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="roomId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Room Id</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="Optional room id"
+                          className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500"
+                          {...field}
+                          value={field.value || ''}
+                        />
+                      </FormControl>
+                      <FormDescription className="text-[10px] italic">Gui vao POST /api/elderly-profile/{'{'}accountId{'}'} neu da co phong.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

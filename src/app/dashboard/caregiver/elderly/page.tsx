@@ -20,9 +20,12 @@ import { elderlyService } from '@/services/api/elderlyService';
 import { reminderService } from '@/services/api/reminderService';
 import { interactionLogService } from '@/services/api/interactionLogService';
 import { alertService } from '@/services/api/alertService';
+import { robotService } from '@/services/api/robotService';
 import { userPackageService } from '@/services/api/userPackageService';
 import { servicePackageService } from '@/services/api/servicePackageService';
 import { exerciseService } from '@/services/api/exerciseService';
+import { Textarea } from '@/components/ui/textarea';
+import { filterScriptsByQuota } from '@/utils/privilegeEngine';
 import type {
   AlertNotificationResponse,
   CaregiverProfileResponse,
@@ -33,16 +36,24 @@ import type {
   ReminderLogResponse,
   ReminderRequest,
   ReminderResponse,
+  RobotDTO,
+  RobotResponse,
+  RobotStatusLogResponse,
   RoomElderlySummary,
   ServicePackageResponse,
   UserPackageResponse,
 } from '@/services/api/types';
 import {
   AlertTriangle,
+  Bot,
+  CheckCircle2,
   Clock,
+  Dumbbell,
   Link2,
   Loader2,
+  MessageSquare,
   Package,
+  Play,
   Plus,
   RefreshCw,
   UserRound,
@@ -90,14 +101,30 @@ export default function CaregiverElderlyPage() {
   const [userPackages, setUserPackages] = useState<UserPackageResponse[]>([]);
   const [servicePackages, setServicePackages] = useState<Record<number, ServicePackageResponse>>({});
   const [isPackageMockMode, setIsPackageMockMode] = useState(false);
+  const [roomRobot, setRoomRobot] = useState<RobotDTO | null>(null);
+  const [availableRobots, setAvailableRobots] = useState<RobotResponse[]>([]);
+  const [selectedRobotId, setSelectedRobotId] = useState<number | null>(null);
+  const [robotStatusLogs, setRobotStatusLogs] = useState<RobotStatusLogResponse[]>([]);
+  const [loadingRobot, setLoadingRobot] = useState(false);
+  const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'info'; text: string } | null>(null);
 
   const [creatingReminder, setCreatingReminder] = useState(false);
+  const [simulatingReminderId, setSimulatingReminderId] = useState<number | null>(null);
+  const [escalatingReminderId, setEscalatingReminderId] = useState<number | null>(null);
+  const [startingConversation, setStartingConversation] = useState(false);
+  const [runningExerciseId, setRunningExerciseId] = useState<number | null>(null);
   const [reminderForm, setReminderForm] = useState<Omit<ReminderRequest, 'elderlyId' | 'caregiverId'>>({
     title: '',
     reminderType: 'medication',
     scheduleTime: new Date().toISOString(),
     repeatPattern: 'daily',
     active: true,
+  });
+  const [interactionForm, setInteractionForm] = useState({
+    interactionType: 'qa',
+    userInputText: 'Bac oi, hom nay con nen uong thuoc luc nao?',
+    robotResponseText: 'Bac vui long uong thuoc theo lich da cai dat vao 20:00 toi nay.',
+    emotionDetected: 'calm',
   });
 
   useEffect(() => {
@@ -162,6 +189,71 @@ export default function CaregiverElderlyPage() {
 
     loadElderliesByRoom();
   }, [resolvedRoomId]);
+
+  const refreshRobotContext = async (preferredRobotId?: number) => {
+    if (!resolvedRoomId && !preferredRobotId && !selectedElderlyId) {
+      setRoomRobot(null);
+      setAvailableRobots([]);
+      setRobotStatusLogs([]);
+      return;
+    }
+
+    setLoadingRobot(true);
+
+    try {
+      const robots = await robotService.getAll().catch(() => [] as RobotResponse[]);
+      setAvailableRobots(robots);
+
+      let robotSummary: RobotDTO | null = null;
+
+      if (resolvedRoomId) {
+        try {
+          robotSummary = await roomService.getRobotByRoom(resolvedRoomId);
+        } catch {
+          robotSummary = null;
+        }
+      }
+
+      if (!robotSummary) {
+        const fallbackRobot =
+          (preferredRobotId ? robots.find((item) => item.id === preferredRobotId) : undefined) ||
+          (selectedRobotId ? robots.find((item) => item.id === selectedRobotId) : undefined) ||
+          robots.find((item) => String(item.status || '').toUpperCase() === 'ACTIVE') ||
+          robots.find((item) => String(item.status || '').toUpperCase() === 'ONLINE') ||
+          robots[0];
+
+        if (fallbackRobot) {
+          robotSummary = {
+            id: fallbackRobot.id,
+            robotName: fallbackRobot.robotName,
+            model: fallbackRobot.model,
+          };
+        }
+      }
+
+      setRoomRobot(robotSummary);
+      setSelectedRobotId(robotSummary?.id ?? null);
+
+      if (!robotSummary) {
+        setRobotStatusLogs([]);
+        return;
+      }
+
+      const logs = await robotService.getStatusLogsByRobot(robotSummary.id).catch(async () => {
+        const allLogs = await robotService.getAllStatusLogs().catch(() => [] as RobotStatusLogResponse[]);
+        return allLogs.filter((item) => item.robotId === robotSummary.id);
+      });
+
+      setRobotStatusLogs(
+        [...logs].sort(
+          (left, right) =>
+            new Date(right.reportedAt).getTime() - new Date(left.reportedAt).getTime()
+        )
+      );
+    } finally {
+      setLoadingRobot(false);
+    }
+  };
 
   const refreshSelectedElderlyData = async (elderlyId: number) => {
     setLoadingDetail(true);
@@ -251,35 +343,93 @@ export default function CaregiverElderlyPage() {
     refreshSelectedElderlyData(selectedElderlyId);
   }, [selectedElderlyId]);
 
+  useEffect(() => {
+    refreshRobotContext();
+  }, [resolvedRoomId, selectedElderlyId]);
+
+  const handleSelectRobot = async (robotId: number) => {
+    setSelectedRobotId(robotId);
+    setGlobalError(null);
+    setActionMessage(null);
+    await refreshRobotContext(robotId);
+  };
+
   const selectedElderlyName = useMemo(() => {
     const match = elderliesByRoom.find((item) => item.id === selectedElderlyId);
     return match?.name || elderlyDetail?.name || 'Unknown';
   }, [elderliesByRoom, selectedElderlyId, elderlyDetail?.name]);
 
+  const activeUserPackages = useMemo(
+    () =>
+      userPackages.filter((item) => {
+        const expiredAt = Date.parse(item.expiredAt);
+        return Number.isNaN(expiredAt) || expiredAt >= Date.now();
+      }),
+    [userPackages]
+  );
+
+  const eligibleExercises = useMemo(() => {
+    const mappedScripts = new Map<number, { script: ExerciseScriptResponse; packageNames: string[] }>();
+
+    activeUserPackages.forEach((item) => {
+      const matchedPackage = servicePackages[item.servicePackageId];
+
+      if (!matchedPackage) {
+        return;
+      }
+
+      const packageScripts = matchedPackage.exerciseIds?.length
+        ? exerciseScripts.filter((script) => matchedPackage.exerciseIds?.includes(script.id))
+        : filterScriptsByQuota(exerciseScripts, matchedPackage.level);
+
+      packageScripts.forEach((script) => {
+        const existing = mappedScripts.get(script.id);
+        if (existing) {
+          if (!existing.packageNames.includes(matchedPackage.name)) {
+            existing.packageNames.push(matchedPackage.name);
+          }
+          return;
+        }
+
+        mappedScripts.set(script.id, {
+          script,
+          packageNames: [matchedPackage.name],
+        });
+      });
+    });
+
+    return Array.from(mappedScripts.values());
+  }, [activeUserPackages, exerciseScripts, servicePackages]);
+
   const handleApplyRoomId = () => {
     const next = Number(roomInput);
     if (!Number.isInteger(next) || next <= 0) {
       setGlobalError('Room ID phai la so nguyen duong.');
+      setActionMessage(null);
       return;
     }
 
     setGlobalError(null);
+    setActionMessage(null);
     setResolvedRoomId(next);
   };
 
   const handleCreateReminder = async () => {
     if (!selectedElderlyId || !caregiverProfile?.id) {
       setGlobalError('Thieu elderlyId hoac caregiverProfileId de tao reminder.');
+      setActionMessage(null);
       return;
     }
 
     if (!reminderForm.title.trim()) {
       setGlobalError('Vui long nhap tieu de reminder.');
+      setActionMessage(null);
       return;
     }
 
     setCreatingReminder(true);
     setGlobalError(null);
+    setActionMessage(null);
 
     try {
       await reminderService.create({
@@ -294,8 +444,13 @@ export default function CaregiverElderlyPage() {
 
       await refreshSelectedElderlyData(selectedElderlyId);
       setReminderForm((prev) => ({ ...prev, title: '' }));
+      setActionMessage({
+        type: 'success',
+        text: 'Reminder da duoc tao. Ban co the chay Flow 1 hoac Flow 2 ngay trong danh sach ben duoi.',
+      });
     } catch {
       setGlobalError('Tao reminder that bai.');
+      setActionMessage(null);
     } finally {
       setCreatingReminder(false);
     }
@@ -307,8 +462,10 @@ export default function CaregiverElderlyPage() {
     try {
       await reminderService.delete(id);
       await refreshSelectedElderlyData(selectedElderlyId);
+      setActionMessage({ type: 'info', text: 'Reminder da duoc xoa khoi workflow hien tai.' });
     } catch {
       setGlobalError('Xoa reminder that bai.');
+      setActionMessage(null);
     }
   };
 
@@ -318,8 +475,168 @@ export default function CaregiverElderlyPage() {
     try {
       await reminderService.confirmLog(id);
       await refreshSelectedElderlyData(selectedElderlyId);
+      setActionMessage({ type: 'success', text: 'Reminder log da duoc confirm thanh cong.' });
     } catch {
       setGlobalError('Confirm reminder log that bai.');
+      setActionMessage(null);
+    }
+  };
+
+  const handleCompleteReminderFlow = async (reminder: ReminderResponse) => {
+    if (!selectedElderlyId || !roomRobot) {
+      setGlobalError('Can robot trong room de chay Flow 1.');
+      setActionMessage(null);
+      return;
+    }
+
+    setSimulatingReminderId(reminder.id);
+    setGlobalError(null);
+    setActionMessage(null);
+
+    try {
+      const reminderLog = await reminderService.createLog({
+        reminderId: reminder.id,
+        robotId: roomRobot.id,
+        elderlyId: selectedElderlyId,
+        triggeredTime: new Date().toISOString(),
+      });
+
+      await reminderService.confirmLog(reminderLog.id);
+      await refreshSelectedElderlyData(selectedElderlyId);
+      setActionMessage({
+        type: 'success',
+        text: `Flow 1 complete: ${roomRobot.robotName} da nhac "${reminder.title}" va elderly da phan hoi.`,
+      });
+    } catch {
+      setGlobalError('Flow 1 that bai khi tao/confirm reminder log.');
+      setActionMessage(null);
+    } finally {
+      setSimulatingReminderId(null);
+    }
+  };
+
+  const handleEscalateReminderFlow = async (reminder: ReminderResponse) => {
+    if (!selectedElderlyId || !roomRobot) {
+      setGlobalError('Can robot trong room de chay Flow 2.');
+      setActionMessage(null);
+      return;
+    }
+
+    setEscalatingReminderId(reminder.id);
+    setGlobalError(null);
+    setActionMessage(null);
+
+    try {
+      await reminderService.createLog({
+        reminderId: reminder.id,
+        robotId: roomRobot.id,
+        elderlyId: selectedElderlyId,
+        triggeredTime: new Date().toISOString(),
+      });
+
+      await alertService.create({
+        elderlyId: selectedElderlyId,
+        alertType: 'medication_non_response',
+        message: `${selectedElderlyName} khong phan hoi reminder "${reminder.title}". Da escalate cho caregiver ${caregiverProfile?.name || caregiverProfile?.id || ''}.`,
+        resolved: false,
+      });
+
+      await refreshSelectedElderlyData(selectedElderlyId);
+      setActionMessage({
+        type: 'success',
+        text: `Flow 2 complete: ${roomRobot.robotName} da thong bao, elderly khong phan hoi, alert da duoc tao cho caregiver.`,
+      });
+    } catch {
+      setGlobalError('Flow 2 that bai khi tao alert hoac reminder log.');
+      setActionMessage(null);
+    } finally {
+      setEscalatingReminderId(null);
+    }
+  };
+
+  const handleStartRobotConversation = async () => {
+    if (!selectedElderlyId || !roomRobot) {
+      setGlobalError('Can robot trong room de chay Flow 3.');
+      setActionMessage(null);
+      return;
+    }
+
+    if (!interactionForm.userInputText.trim() || !interactionForm.robotResponseText.trim()) {
+      setGlobalError('Can nhap cau hoi cua elderly va cau tra loi cua robot.');
+      setActionMessage(null);
+      return;
+    }
+
+    setStartingConversation(true);
+    setGlobalError(null);
+    setActionMessage(null);
+
+    try {
+      await robotService.createStatusLog({
+        robotId: roomRobot.id,
+        status: 'STARTED',
+      });
+
+      await interactionLogService.create({
+        elderlyId: selectedElderlyId,
+        robotId: roomRobot.id,
+        interactionType: interactionForm.interactionType,
+        userInputText: interactionForm.userInputText.trim(),
+        robotResponseText: interactionForm.robotResponseText.trim(),
+        emotionDetected: interactionForm.emotionDetected.trim() || undefined,
+      });
+
+      await Promise.all([
+        refreshSelectedElderlyData(selectedElderlyId),
+        refreshRobotContext(roomRobot.id),
+      ]);
+
+      setActionMessage({
+        type: 'success',
+        text: `Flow 3 complete: robot ${roomRobot.robotName} da start va interaction log da duoc luu.`,
+      });
+    } catch {
+      setGlobalError('Flow 3 that bai khi ghi robot status log hoac interaction log.');
+      setActionMessage(null);
+    } finally {
+      setStartingConversation(false);
+    }
+  };
+
+  const handleRunExerciseFlow = async (script: ExerciseScriptResponse) => {
+    if (!selectedElderlyId || !roomRobot) {
+      setGlobalError('Can robot trong room de chay Flow 4.');
+      setActionMessage(null);
+      return;
+    }
+
+    setRunningExerciseId(script.id);
+    setGlobalError(null);
+    setActionMessage(null);
+
+    const startedAt = new Date();
+    const completedAt = new Date(startedAt.getTime() + script.durationMinutes * 60_000);
+
+    try {
+      await exerciseService.createSession({
+        exerciseId: script.id,
+        elderlyId: selectedElderlyId,
+        robotId: roomRobot.id,
+        startedAt: startedAt.toISOString(),
+        completedAt: completedAt.toISOString(),
+        feedback: `Executed via caregiver workflow for ${selectedElderlyName}`,
+      });
+
+      await refreshSelectedElderlyData(selectedElderlyId);
+      setActionMessage({
+        type: 'success',
+        text: `Flow 4 complete: bai tap "${script.name}" da duoc thuc thi cho ${selectedElderlyName}.`,
+      });
+    } catch {
+      setGlobalError('Flow 4 that bai khi tao exercise session.');
+      setActionMessage(null);
+    } finally {
+      setRunningExerciseId(null);
     }
   };
 
@@ -335,6 +652,15 @@ export default function CaregiverElderlyPage() {
       {globalError && (
         <Card className="border-rose-200 bg-rose-50">
           <CardContent className="py-4 text-sm text-rose-700">{globalError}</CardContent>
+        </Card>
+      )}
+
+      {actionMessage && (
+        <Card className={actionMessage.type === 'success' ? 'border-emerald-200 bg-emerald-50' : 'border-sky-200 bg-sky-50'}>
+          <CardContent className="flex items-center gap-2 py-4 text-sm text-slate-700">
+            <CheckCircle2 className={`h-4 w-4 ${actionMessage.type === 'success' ? 'text-emerald-600' : 'text-sky-600'}`} />
+            {actionMessage.text}
+          </CardContent>
         </Card>
       )}
 
@@ -490,6 +816,142 @@ export default function CaregiverElderlyPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
+              <Bot className="h-4 w-4" /> Room Robot Context
+            </CardTitle>
+            <CardDescription>GET /api/robots la nguon chinh; neu co thi uu tien room robot va sau do load robot status logs.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {loadingRobot ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Dang tai robot trong room...
+              </div>
+            ) : !roomRobot ? (
+              <p className="text-sm text-muted-foreground">Chua resolve duoc robot cho room hien tai. Flow 1-4 se bi khoa.</p>
+            ) : (
+              <>
+                <div className="rounded-lg border p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="font-semibold">{roomRobot.robotName}</div>
+                      <div className="text-xs text-muted-foreground">Robot ID: {roomRobot.id} | Model: {roomRobot.model}</div>
+                    </div>
+                    <Badge variant="outline">Room #{resolvedRoomId || 'N/A'}</Badge>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Available robots from GET /api/robots</div>
+                  {availableRobots.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Backend chua tra robot nao.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {availableRobots.map((item) => (
+                        <Button
+                          key={item.id}
+                          type="button"
+                          size="sm"
+                          variant={roomRobot?.id === item.id ? 'default' : 'outline'}
+                          onClick={() => handleSelectRobot(item.id)}
+                        >
+                          {item.robotName} ({item.status})
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Recent status logs</div>
+                  {robotStatusLogs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Chua co robot status log.</p>
+                  ) : (
+                    robotStatusLogs.slice(0, 4).map((item) => (
+                      <div key={item.id} className="rounded-lg border p-3 text-sm">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold">{item.status}</span>
+                          <Badge variant="secondary">Log #{item.id}</Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Reported: {new Date(item.reportedAt).toLocaleString()}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" /> Flow 3: Start Robot And Save Interaction
+            </CardTitle>
+            <CardDescription>POST robot status log + POST interaction log khi elderly hoi va robot tra loi.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="interactionType">Interaction Type</Label>
+                <Input
+                  id="interactionType"
+                  value={interactionForm.interactionType}
+                  onChange={(e) =>
+                    setInteractionForm((prev) => ({ ...prev, interactionType: e.target.value }))
+                  }
+                  placeholder="qa"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="userInputText">Elderly Question</Label>
+                <Textarea
+                  id="userInputText"
+                  value={interactionForm.userInputText}
+                  onChange={(e) =>
+                    setInteractionForm((prev) => ({ ...prev, userInputText: e.target.value }))
+                  }
+                  placeholder="Nhap cau hoi cua elderly"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="robotResponseText">Robot Response</Label>
+                <Textarea
+                  id="robotResponseText"
+                  value={interactionForm.robotResponseText}
+                  onChange={(e) =>
+                    setInteractionForm((prev) => ({ ...prev, robotResponseText: e.target.value }))
+                  }
+                  placeholder="Nhap cau tra loi cua robot"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="emotionDetected">Emotion Detected</Label>
+                <Input
+                  id="emotionDetected"
+                  value={interactionForm.emotionDetected}
+                  onChange={(e) =>
+                    setInteractionForm((prev) => ({ ...prev, emotionDetected: e.target.value }))
+                  }
+                  placeholder="calm"
+                />
+              </div>
+            </div>
+
+            <Button onClick={handleStartRobotConversation} disabled={startingConversation || !selectedElderlyId || !roomRobot}>
+              {startingConversation ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Play className="h-4 w-4 mr-2" />
+              )}
+              Start robot va luu hoi dap
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
               <Package className="h-4 w-4" /> User Packages
             </CardTitle>
             <CardDescription>
@@ -526,24 +988,89 @@ export default function CaregiverElderlyPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Exercise Context</CardTitle>
-            <CardDescription>Session theo elderly va script thu vien.</CardDescription>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Dumbbell className="h-4 w-4" /> Flow 4: Package Matched Exercise
+            </CardTitle>
+            <CardDescription>Loc exercise theo package cua elderly, sau do tao exercise session khi su dung.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-4">
             <div className="text-sm">
               Sessions cua {selectedElderlyName}: <span className="font-semibold">{exerciseSessions.length}</span>
             </div>
             <div className="text-sm">
               Tong script he thong: <span className="font-semibold">{exerciseScripts.length}</span>
             </div>
-            {exerciseSessions.slice(0, 5).map((session) => (
-              <div key={session.id} className="rounded-lg border p-3 text-sm">
-                <div className="font-semibold">{session.exerciseName || `Exercise #${session.exerciseId}`}</div>
-                <div className="text-muted-foreground">
-                  Robot: {session.robotName || session.robotId} | Started: {new Date(session.startedAt).toLocaleString()}
-                </div>
-              </div>
-            ))}
+
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Active packages</div>
+              {activeUserPackages.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Khong co package con han de match exercise.</p>
+              ) : (
+                activeUserPackages.map((item) => {
+                  const matchedPackage = servicePackages[item.servicePackageId];
+                  return (
+                    <div key={item.id} className="rounded-lg border p-3 text-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold">{matchedPackage?.name || `Service #${item.servicePackageId}`}</span>
+                        <Badge variant="outline">{matchedPackage?.level || 'Unknown level'}</Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Hieu luc den {new Date(item.expiredAt).toLocaleString()}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Eligible exercises for selected elderly</div>
+              {eligibleExercises.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Chua co exercise nao phu hop voi package hien tai.</p>
+              ) : (
+                eligibleExercises.map(({ script, packageNames }) => (
+                  <div key={script.id} className="rounded-lg border p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-semibold">{script.name}</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Package match: {packageNames.join(', ')} | Duration: {script.durationMinutes} phut | Difficulty: {script.difficultyLevel}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleRunExerciseFlow(script)}
+                        disabled={runningExerciseId === script.id || !roomRobot}
+                      >
+                        {runningExerciseId === script.id ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Play className="h-4 w-4 mr-2" />
+                        )}
+                        Use exercise
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Recent exercise sessions</div>
+              {exerciseSessions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Chua co exercise session.</p>
+              ) : (
+                exerciseSessions.slice(0, 5).map((session) => (
+                  <div key={session.id} className="rounded-lg border p-3 text-sm">
+                    <div className="font-semibold">{session.exerciseName || `Exercise #${session.exerciseId}`}</div>
+                    <div className="text-muted-foreground">
+                      Robot: {session.robotName || session.robotId} | Started: {new Date(session.startedAt).toLocaleString()}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -611,14 +1138,37 @@ export default function CaregiverElderlyPage() {
                     <div className="text-xs text-muted-foreground mt-1">
                       {item.reminderType} | {new Date(item.scheduleTime).toLocaleString()} | {item.repeatPattern}
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="mt-2"
-                      onClick={() => handleDeleteReminder(item.id)}
-                    >
-                      Xoa
-                    </Button>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCompleteReminderFlow(item)}
+                        disabled={simulatingReminderId === item.id || escalatingReminderId === item.id || !roomRobot}
+                      >
+                        {simulatingReminderId === item.id ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                        )}
+                        Flow 1: notify + confirm
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEscalateReminderFlow(item)}
+                        disabled={escalatingReminderId === item.id || simulatingReminderId === item.id || !roomRobot}
+                      >
+                        {escalatingReminderId === item.id ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <AlertTriangle className="h-4 w-4 mr-2" />
+                        )}
+                        Flow 2: no response + alert
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => handleDeleteReminder(item.id)}>
+                        Xoa
+                      </Button>
+                    </div>
                   </div>
                 ))
               )}

@@ -205,6 +205,7 @@ export interface ElderlyProfileRequest {
   healthNotes: string;
   preferredLanguage: string;
   speakingSpeed: string;
+  roomId?: number | null;
 }
 
 export interface ElderlyProfileResponse extends ElderlyProfileRequest {

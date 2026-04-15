@@ -20,12 +20,14 @@ import {
   Cpu,
   History,
   Bell,
-  Home
+  Home,
+  FileText,
+  HeartPulse
 } from 'lucide-react';
 import { Role } from '@/types';
 
 interface NavItem {
-  i18nKey: string;
+  label: string;
   href: string;
   icon: any;
   roles: Role[];
@@ -33,43 +35,45 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   // Admin Routes (System & Platform Administration)
-  { i18nKey: 'sidebar.overview', href: '/dashboard/admin', icon: LayoutDashboard, roles: ['ADMIN'] },
-  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/admin/users', icon: Users, roles: ['ADMIN'] },
-  { i18nKey: 'sidebar.data_security', href: '/dashboard/admin/security', icon: ShieldCheck, roles: ['ADMIN'] },
-  { i18nKey: 'sidebar.robot_mgt', href: '/dashboard/admin/fleet', icon: Cpu, roles: ['ADMIN'] },
-  { i18nKey: 'wellness.sidebar_label', href: '/dashboard/admin/wellness', icon: Smile, roles: ['ADMIN'] },
-  { i18nKey: 'sidebar.settings', href: '/dashboard/admin/settings', icon: Settings, roles: ['ADMIN'] },
+  { label: 'Overview', href: '/dashboard/admin', icon: LayoutDashboard, roles: ['ADMIN'] },
+  { label: 'User Management', href: '/dashboard/admin/users', icon: Users, roles: ['ADMIN'] },
+  { label: 'Data Security', href: '/dashboard/admin/security', icon: ShieldCheck, roles: ['ADMIN'] },
+  { label: 'Robot Management', href: '/dashboard/admin/fleet', icon: Cpu, roles: ['ADMIN'] },
+  { label: 'Wellness Hub', href: '/dashboard/admin/wellness', icon: Smile, roles: ['ADMIN'] },
+  { label: 'Settings', href: '/dashboard/admin/settings', icon: Settings, roles: ['ADMIN'] },
 
   // Manager Routes (Operational Hub)
-  { i18nKey: 'sidebar.overview', href: '/dashboard/manager', icon: LayoutDashboard, roles: ['MANAGER'] },
-  { i18nKey: 'sidebar.rooms', href: '/dashboard/manager/rooms', icon: Home, roles: ['MANAGER'] },
-  { i18nKey: 'sidebar.staff_mgt', href: '/dashboard/manager/users', icon: Users, roles: ['MANAGER'] },
-  { i18nKey: 'sidebar.robot_fleet', href: '/dashboard/manager/robots', icon: Bot, roles: ['MANAGER'] },
-  { i18nKey: 'sidebar.subscriptions', href: '/dashboard/manager/subscriptions', icon: Package, roles: ['MANAGER'] },
-  { i18nKey: 'wellness.sidebar_label', href: '/dashboard/manager/wellness', icon: Smile, roles: ['MANAGER'] },
-  { i18nKey: 'sidebar.settings', href: '/dashboard/manager/settings', icon: Settings, roles: ['MANAGER'] },
+  { label: 'Overview', href: '/dashboard/manager', icon: LayoutDashboard, roles: ['MANAGER'] },
+  { label: 'Room Management', href: '/dashboard/manager/rooms', icon: Home, roles: ['MANAGER'] },
+  { label: 'Staff Management', href: '/dashboard/manager/users', icon: Users, roles: ['MANAGER'] },
+  { label: 'Robot Fleet', href: '/dashboard/manager/robots', icon: Bot, roles: ['MANAGER'] },
+  { label: 'Subscriptions', href: '/dashboard/manager/subscriptions', icon: Package, roles: ['MANAGER'] },
+  { label: 'Wellness Hub', href: '/dashboard/manager/wellness', icon: Smile, roles: ['MANAGER'] },
+  { label: 'Settings', href: '/dashboard/manager/settings', icon: Settings, roles: ['MANAGER'] },
 
 
   // Family / Elderly Routes (from tu2)
-  { i18nKey: 'sidebar.overview', href: '/dashboard/family', icon: LayoutDashboard, roles: ['ELDERLY'] },
-  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/family/elderly', icon: Users, roles: ['ELDERLY'] },
-  { i18nKey: 'sidebar.reminders', href: '/dashboard/family/reminders', icon: Bell, roles: ['ELDERLY'] },
-  { i18nKey: 'sidebar.service_plans', href: '/dashboard/family/packages', icon: Package, roles: ['ELDERLY'] },
-  { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['ELDERLY'] },
+  { label: 'Overview', href: '/dashboard/family', icon: LayoutDashboard, roles: ['ELDERLY', 'FAMILYMEMBER'] },
+  { label: 'My Elderly', href: '/dashboard/family/elderly', icon: HeartPulse, roles: ['ELDERLY', 'FAMILYMEMBER'] },
+  { label: 'Health & Activity', href: '/dashboard/family/health-activity', icon: Activity, roles: ['ELDERLY', 'FAMILYMEMBER'] },
+  { label: 'Alerts', href: '/dashboard/family/alerts', icon: Bell, roles: ['ELDERLY', 'FAMILYMEMBER'] },
+  { label: 'Service Plans', href: '/dashboard/family/packages', icon: Package, roles: ['ELDERLY', 'FAMILYMEMBER'] },
+  { label: 'Settings', href: '/dashboard/family/settings', icon: Settings, roles: ['ELDERLY', 'FAMILYMEMBER'] },
 
   // Caregiver Routes
-  { i18nKey: 'sidebar.overview', href: '/dashboard/caregiver', icon: LayoutDashboard, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/caregiver/elderly', icon: Users, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.reminders', href: '/dashboard/caregiver/reminders', icon: Bell, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.exercises', href: '/dashboard/caregiver/exercises', icon: Activity, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.robot_fleet', href: '/dashboard/caregiver/robot', icon: Bot, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['CAREGIVER'] },
+  { label: 'Dashboard', href: '/dashboard/caregiver', icon: LayoutDashboard, roles: ['CAREGIVER'] },
+  { label: 'Elderly', href: '/dashboard/caregiver/elderly', icon: Users, roles: ['CAREGIVER'] },
+  { label: 'Care Tasks', href: '/dashboard/caregiver/care-tasks', icon: Activity, roles: ['CAREGIVER'] },
+  { label: 'Robot Interaction', href: '/dashboard/caregiver/robot', icon: Bot, roles: ['CAREGIVER'] },
+  { label: 'Alerts', href: '/dashboard/caregiver/alerts', icon: Bell, roles: ['CAREGIVER'] },
+  { label: 'Reports', href: '/dashboard/caregiver/reports', icon: FileText, roles: ['CAREGIVER'] },
+  { label: 'Settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['CAREGIVER'] },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
-  const { t } = useI18nStore();
+  useI18nStore();
 
   const filteredItems = navItems.filter((item) => {
     if (!user) return false;
@@ -94,7 +98,10 @@ export function Sidebar() {
       <div className="flex-1 overflow-y-auto py-6 px-4 space-y-8 scrollbar-hide">
         <nav className="space-y-1">
           {filteredItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isRootDashboard = ['/dashboard/admin', '/dashboard/manager', '/dashboard/family', '/dashboard/caregiver'].includes(item.href);
+            const isActive = isRootDashboard
+              ? pathname === item.href
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
             return (
               <Link
@@ -109,7 +116,7 @@ export function Sidebar() {
               >
                 <Icon className={cn('h-5 w-5 transition-transform group-hover:scale-110', 
                   isActive ? 'text-white' : 'text-slate-400 group-hover:text-primary')} />
-                {t(item.i18nKey)}
+                {item.label}
               </Link>
             );
           })}
@@ -122,7 +129,7 @@ export function Sidebar() {
           className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-rose-600 transition-all duration-200 hover:bg-rose-50 hover:translate-x-1"
         >
           <LogOut className="h-5 w-5 transition-transform group-hover:scale-110" />
-          {t('sidebar.logout')}
+          Log Out
         </button>
       </div>
     </aside>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useFamilyStore } from '@/store/useFamilyStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { 
@@ -23,8 +24,7 @@ import {
   HeartPulse, 
   Activity,
   ChevronRight,
-  User,
-  Plus
+  User
 } from 'lucide-react';
 import { 
   Select, 
@@ -136,11 +136,11 @@ export default function RemindersPage() {
     <div className="space-y-8 pb-10 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Care Reminders</h1>
-          <p className="text-muted-foreground mt-1">Track medication and physical therapy schedules.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Health &amp; Activity</h1>
+          <p className="text-muted-foreground mt-1">Read-only timeline of medication reminders and activity support for your elderly family members.</p>
         </div>
-        <Button variant="outline" className="h-11 px-6 shadow-sm">
-           <Plus className="mr-2 h-5 w-5" /> Schedule New
+        <Button asChild variant="outline" className="h-11 px-6 shadow-sm">
+           <Link href="/dashboard/family/elderly">Go To My Elderly</Link>
         </Button>
       </div>
 
@@ -149,7 +149,7 @@ export default function RemindersPage() {
         <div className="relative md:col-span-1">
            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
            <Input 
-             placeholder="Search reminders..." 
+             placeholder="Search schedules and activities..." 
              className="pl-9 bg-muted/50 border-none px-4 h-11"
              value={searchQuery}
              onChange={(e) => setSearchQuery(e.target.value)}
@@ -158,10 +158,10 @@ export default function RemindersPage() {
         
         <Select value={filterElderly} onValueChange={setFilterElderly}>
            <SelectTrigger className="bg-muted/50 border-none h-11">
-              <SelectValue placeholder="All Members" />
+              <SelectValue placeholder="All Elderly" />
            </SelectTrigger>
            <SelectContent>
-              <SelectItem value="ALL">All Members</SelectItem>
+              <SelectItem value="ALL">All Elderly</SelectItem>
               {elderlyList.map(e => (
                  <SelectItem key={e.id} value={e.id.toString()}>{e.name}</SelectItem>
               ))}
@@ -243,12 +243,12 @@ export default function RemindersPage() {
       ) : (
         <div className="flex flex-col items-center justify-center p-16 text-center border-2 border-dashed border-slate-200 bg-slate-50/50 rounded-3xl">
           <Bell className="h-16 w-16 text-slate-300 mb-6 animate-bounce duration-1000" />
-          <h2 className="text-2xl font-bold text-slate-700 mb-2">No reminders available</h2>
+          <h2 className="text-2xl font-bold text-slate-700 mb-2">No health or activity schedules yet</h2>
           <p className="text-muted-foreground max-w-sm mb-8">
-            You haven&apos;t scheduled any medication or exercise reminders for your family members yet.
+            There are no medication reminders or exercise activities available for the selected elderly profiles yet.
           </p>
-          <Button className="bg-sky-600 hover:bg-sky-700 h-12 px-8 rounded-xl font-bold shadow-xl shadow-sky-100">
-             Create First Reminder
+          <Button asChild className="bg-sky-600 hover:bg-sky-700 h-12 px-8 rounded-xl font-bold shadow-xl shadow-sky-100">
+             <Link href="/dashboard/family/packages">Review Service Plans</Link>
           </Button>
         </div>
       )}

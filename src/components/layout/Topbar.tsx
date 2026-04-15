@@ -39,7 +39,7 @@ export function Topbar() {
         return 'Family Member';
       case 'ELDERLY':
       case 'ELDERLYUSER':
-        return 'Elderly User';
+        return 'Family Member';
       default:
         return String(currentUser.role || 'User')
           .toLowerCase()

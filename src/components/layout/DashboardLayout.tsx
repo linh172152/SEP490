@@ -35,6 +35,8 @@ if (pathname.startsWith('/dashboard/admin') && !currentUser.role?.toLowerCase().
           router.push('/unauthorized');
       } else if (pathname.startsWith('/dashboard/caregiver') && !currentUser.role?.toLowerCase().includes('caregiver')) {
           router.push('/unauthorized');
+        } else if (pathname.startsWith('/dashboard/family') && !currentUser.role?.toLowerCase().includes('family') && !currentUser.role?.toLowerCase().includes('elderly')) {
+          router.push('/unauthorized');
       } else if (pathname.startsWith('/dashboard/elderly') && !currentUser.role?.toLowerCase().includes('elderly')) {
           router.push('/unauthorized');
       }

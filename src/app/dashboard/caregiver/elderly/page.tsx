@@ -643,9 +643,9 @@ export default function CaregiverElderlyPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Caregiver Elderly Workflow</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Elderly</h1>
         <p className="text-muted-foreground">
-          Luong du lieu: Account -&gt; Caregiver Profile -&gt; Room -&gt; Elderly -&gt; Reminder/Logs/Alerts/Exercise.
+          Select an elderly profile in your assigned room, review status, perform care actions, and follow logs in one place.
         </p>
       </div>
 
@@ -733,7 +733,7 @@ export default function CaregiverElderlyPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="text-base">Elderlies In Room</CardTitle>
+            <CardTitle className="text-base">Elderly In Room</CardTitle>
             <CardDescription>GET /api/rooms/{'{'}roomId{'}'}/elderlies</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">

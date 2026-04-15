@@ -62,8 +62,8 @@ export default function CaregiverRobotPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Robot Control Panel</h1>
-        <p className="text-muted-foreground">Real-time status, telemetry, and remote commands for CareBot units.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Robot Interaction</h1>
+        <p className="text-muted-foreground">Send commands, review robot status, and support chat and emotion-aware interaction flows.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -194,9 +194,9 @@ export default function CaregiverRobotPage() {
                <CardHeader className="pb-3 px-6">
                  <CardTitle className="text-lg flex items-center gap-2">
                    <Zap className="h-4 w-4 text-sky-500" />
-                   Quick Commands
+                   Send Commands
                  </CardTitle>
-                 <CardDescription>Send remote mock instructions</CardDescription>
+                 <CardDescription>Command flows for reminders, movement, and emergency support.</CardDescription>
                </CardHeader>
                <CardContent className="px-6 pb-6 w-full space-y-3">
                   <Button 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useFamilyStore } from '@/store/useFamilyStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { 
@@ -25,7 +25,6 @@ import {
   Plus
 } from 'lucide-react';
 import Link from 'next/link';
-import { formatDate } from '@/lib/utils'; // I will check if this exists or create it
 
 export function FamilyOverview() {
   const { user } = useAuthStore();
@@ -33,6 +32,7 @@ export function FamilyOverview() {
     elderlyList, 
     reminders, 
     userPackages, 
+    servicePackages,
     isLoading, 
     error, 
     isUsingMock,
@@ -70,7 +70,18 @@ export function FamilyOverview() {
     );
   }
 
-  const activePackage = userPackages.length > 0 ? userPackages[0] : null;
+  const activePackage = useMemo(() => {
+    const now = Date.now();
+    return userPackages.find((item) => {
+      const expiry = Date.parse(item.expiredAt);
+      return Number.isNaN(expiry) || expiry >= now;
+    }) || null;
+  }, [userPackages]);
+
+  const activePackageInfo = useMemo(
+    () => servicePackages.find((item) => item.id === activePackage?.servicePackageId) || null,
+    [activePackage?.servicePackageId, servicePackages]
+  );
 
   // Next 5 upcoming reminders
   const upcomingReminders = [...reminders]
@@ -82,8 +93,8 @@ export function FamilyOverview() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Family Welcome Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Snapshot of your care circle status.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
+          <p className="text-muted-foreground mt-1">General status, key alerts, and recent care activity for your elderly profiles.</p>
         </div>
         {elderlyList.length === 0 && !isUsingMock && (
           <Button onClick={() => user?.id && generateDemoData(Number(user.id))} variant="outline" className="border-sky-200 text-sky-700 hover:bg-sky-50">
@@ -96,23 +107,23 @@ export function FamilyOverview() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-none shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase">Managed Members</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase">My Elderly</CardTitle>
             <Users className="h-4 w-4 text-sky-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{elderlyList.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">Registered family members</p>
+            <p className="text-xs text-muted-foreground mt-1">Profiles you are currently following</p>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase">Active Reminders</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase">Health &amp; Activity</CardTitle>
             <Bell className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{reminders.filter(r => r.active).length}</div>
-            <p className="text-xs text-muted-foreground mt-1">Daily tasks scheduled</p>
+            <p className="text-xs text-muted-foreground mt-1">Upcoming schedules and support activities</p>
           </CardContent>
         </Card>
 
@@ -124,12 +135,12 @@ export function FamilyOverview() {
           <CardContent className="flex justify-between items-end">
             <div>
               <div className="text-2xl font-bold">
-                {activePackage ? `Tier ${activePackage.servicePackageId}` : 'None Active'}
+                {activePackageInfo?.name || (activePackage ? `Package #${activePackage.servicePackageId}` : 'None Active')}
               </div>
               {activePackage && (
                 <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  Expires: {new Date(activePackage.expiredAt).toLocaleDateString()}
+                  {activePackageInfo?.level ? `${activePackageInfo.level} • ` : ''}Expires: {new Date(activePackage.expiredAt).toLocaleDateString()}
                 </p>
               )}
             </div>
@@ -147,11 +158,11 @@ export function FamilyOverview() {
         <Card className="md:col-span-4 border-none shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Upcoming Reminders</CardTitle>
-              <CardDescription>Next items in the care schedule.</CardDescription>
+              <CardTitle>Health &amp; Activity</CardTitle>
+              <CardDescription>Medication reminders and planned activities coming up next.</CardDescription>
             </div>
             <Button asChild variant="ghost" size="sm" className="text-sky-600">
-               <Link href="/dashboard/family/reminders" className="flex items-center">
+               <Link href="/dashboard/family/health-activity" className="flex items-center">
                   View All <TrendingUp className="ml-2 h-4 w-4" />
                </Link>
             </Button>
@@ -197,7 +208,7 @@ export function FamilyOverview() {
         <Card className="md:col-span-3 border-none shadow-sm">
           <CardHeader>
             <CardTitle>Recent Care Insights</CardTitle>
-            <CardDescription>Highlights from the last 24h.</CardDescription>
+            <CardDescription>Summary for alerts, support progress, and family visibility.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
              <div className="flex items-start gap-4">
@@ -205,9 +216,9 @@ export function FamilyOverview() {
                    <Users className="h-5 w-5" />
                 </div>
                 <div>
-                   <p className="text-sm font-medium">Care Circle Status</p>
+                   <p className="text-sm font-medium">My Elderly Status</p>
                    <p className="text-xs text-muted-foreground mt-1">
-                      All {elderlyList.length} members are currently monitored by assigned caregivers.
+                     All {elderlyList.length} elderly profiles are currently visible in your family dashboard.
                    </p>
                 </div>
              </div>
@@ -226,7 +237,7 @@ export function FamilyOverview() {
 
              <Button asChild className="w-full mt-4" variant="outline">
                 <Link href="/dashboard/family/elderly">
-                   <Plus className="mr-2 h-4 w-4" /> Add New Family Member
+                 <Plus className="mr-2 h-4 w-4" /> Open My Elderly
                 </Link>
              </Button>
           </CardContent>

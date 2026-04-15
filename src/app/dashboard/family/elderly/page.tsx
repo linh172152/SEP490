@@ -76,12 +76,12 @@ export default function ElderlyListPage() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Elderly Management</h1>
-          <p className="text-muted-foreground mt-1">Manage profiles and care circles for your loved ones.</p>
+          <h1 className="text-3xl font-bold tracking-tight">My Elderly</h1>
+          <p className="text-muted-foreground mt-1">View profile, room, service plan, and care status for each elderly family member.</p>
         </div>
         <Button asChild className="bg-sky-600 hover:bg-sky-700">
           <Link href="/dashboard/family/elderly/create">
-            <Plus className="mr-2 h-4 w-4" /> Add New Member
+            <Plus className="mr-2 h-4 w-4" /> Add Elderly Profile
           </Link>
         </Button>
       </div>
@@ -101,7 +101,7 @@ export default function ElderlyListPage() {
             <Filter className="mr-2 h-4 w-4" /> Filters
           </Button>
           <div className="text-sm text-muted-foreground">
-             Total: <span className="font-bold text-foreground">{filteredElderlies.length}</span> members
+             Total: <span className="font-bold text-foreground">{filteredElderlies.length}</span> elderly
           </div>
         </div>
       </div>
@@ -204,14 +204,14 @@ export default function ElderlyListPage() {
           <div className="h-24 w-24 rounded-full bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center mb-6 shadow-sm border border-sky-100">
             <Users className="h-12 w-12 text-sky-500" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">Build Your Care Circle</h2>
+           <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">Add Your First Elderly Profile</h2>
           <p className="text-muted-foreground max-w-sm mb-8 text-lg">
-            Add your elderly family members to start monitoring their health and coordinating care.
+            Create an elderly profile to start following alerts, health activity, room assignment, and service plan information.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
              <Button asChild className="bg-sky-600 hover:bg-sky-700 min-w-[200px] h-12 text-lg">
                 <Link href="/dashboard/family/elderly/create">
-                   Add First Member
+                 Add First Elderly
                 </Link>
              </Button>
              {!isUsingMock && (

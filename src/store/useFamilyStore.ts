@@ -45,33 +45,34 @@ export const useFamilyStore = create<FamilyState>()(
       clearError: () => set({ error: null }),
 
       fetchDashboardData: async (accountId) => {
-        if (get().isUsingMock) return;
-
         set({ isLoading: true, error: null });
         try {
-          const [elderly, reminders, packages, servicePackages, rooms] = await Promise.all([
-            elderlyService.getByAccountId(accountId),
-            reminderService.getAll(), // Currently fallback to all, will filter locally
+          const elderly = await elderlyService.getByAccountId(accountId);
+
+          const [reminders, packages, servicePackages, rooms] = await Promise.all([
+            reminderService.getAll().catch(() => []),
             userPackageService.getByAccountId(accountId).catch(async () => {
-              const allPackages = await userPackageService.getAll();
+              const allPackages = await userPackageService.getAll().catch(() => []);
               return allPackages.filter(p => p.accountId === accountId);
             }),
             servicePackageService.getAll().catch(() => []),
             roomService.getAllRooms().catch(() => []),
           ]);
 
-          const elderlyIds = new Set(elderly.map(e => e.id));
+          const activeElderly = elderly.filter((item) => !item.deleted);
+          const elderlyIds = new Set(activeElderly.map(e => e.id));
           const roomNames = (rooms || []).reduce<Record<number, string>>((acc, room) => {
             acc[room.id] = room.roomName;
             return acc;
           }, {});
           
           set({ 
-            elderlyList: elderly,
+            elderlyList: activeElderly,
             reminders: reminders.filter(r => elderlyIds.has(r.elderlyId)), 
             userPackages: packages,
             servicePackages: servicePackages || [],
             roomNames,
+            isUsingMock: false,
             isLoading: false 
           });
         } catch (error: any) {

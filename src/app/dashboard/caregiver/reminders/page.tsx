@@ -233,10 +233,10 @@ export default function CaregiverRemindersPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent">
-            {t('caregiver.reminders.title')}
+            Care Tasks
           </h1>
           <p className="text-muted-foreground mt-1">
-            {t('caregiver.reminders.subtitle')}
+            Manage reminder schedules for your elderly and coordinate the next care action.
           </p>
         </div>
         <Button 
@@ -244,7 +244,7 @@ export default function CaregiverRemindersPage() {
           className="bg-sky-600 hover:bg-sky-700 text-white shadow-lg shadow-sky-100 dark:shadow-none transition-all active:scale-95 flex items-center gap-2 h-11 px-6 rounded-xl"
         >
           <Plus className="h-5 w-5" />
-          {t('caregiver.reminders.create')}
+          Add Reminder Task
         </Button>
       </div>
 

@@ -50,7 +50,7 @@ export const useFamilyStore = create<FamilyState>()(
           const elderly = await elderlyService.getByAccountId(accountId);
 
           const [reminders, packages, servicePackages, rooms] = await Promise.all([
-            reminderService.getAll().catch(() => []),
+            reminderService.getByAccountId(accountId).catch(() => []),
             userPackageService.getByAccountId(accountId).catch(async () => {
               const allPackages = await userPackageService.getAll().catch(() => []);
               return allPackages.filter(p => p.accountId === accountId);
@@ -60,7 +60,6 @@ export const useFamilyStore = create<FamilyState>()(
           ]);
 
           const activeElderly = elderly.filter((item) => !item.deleted);
-          const elderlyIds = new Set(activeElderly.map(e => e.id));
           const roomNames = (rooms || []).reduce<Record<number, string>>((acc, room) => {
             acc[room.id] = room.roomName;
             return acc;
@@ -68,7 +67,7 @@ export const useFamilyStore = create<FamilyState>()(
           
           set({ 
             elderlyList: activeElderly,
-            reminders: reminders.filter(r => elderlyIds.has(r.elderlyId)), 
+            reminders,
             userPackages: packages,
             servicePackages: servicePackages || [],
             roomNames,

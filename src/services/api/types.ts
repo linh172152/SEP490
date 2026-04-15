@@ -143,6 +143,7 @@ export interface ReminderRequest {
 
 export interface ReminderResponse extends ReminderRequest {
   id: number;
+  accountId?: number;
   elderlyName: string;
   caregiverName: string;
 }

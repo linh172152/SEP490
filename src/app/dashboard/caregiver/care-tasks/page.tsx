@@ -33,13 +33,20 @@ export default function CaregiverCareTasksPage() {
         const currentProfile = profiles[0] ?? null;
         setProfile(currentProfile);
 
-        const [reminderData, scriptData, elderlyData] = await Promise.all([
-          currentProfile ? reminderService.getByCaregiverId(currentProfile.id).catch(() => [] as ReminderResponse[]) : Promise.resolve([] as ReminderResponse[]),
+        const [allReminders, scriptData, elderlyData] = await Promise.all([
+          reminderService.getAll().catch(() => [] as ReminderResponse[]),
           exerciseService.getAllScripts().catch(() => [] as ExerciseScriptResponse[]),
           currentProfile?.roomId ? roomService.getElderliesByRoom(currentProfile.roomId).catch(() => [] as RoomElderlySummary[]) : Promise.resolve([] as RoomElderlySummary[]),
         ]);
 
-        setReminders(reminderData);
+        const elderlyIds = new Set(elderlyData.map((item) => item.id));
+        setReminders(
+          currentProfile
+            ? allReminders.filter(
+                (item) => item.caregiverId === currentProfile.id && elderlyIds.has(item.elderlyId)
+              )
+            : []
+        );
         setScripts(scriptData);
         setElderlies(elderlyData);
       } finally {

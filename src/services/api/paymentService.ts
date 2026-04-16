@@ -15,7 +15,12 @@ class PaymentService {
   }
 
   async confirm(payload: PaymentConfirmRequest): Promise<PaymentConfirmResponse> {
-    return apiClient.post<PaymentConfirmResponse>('/api/payments/confirm', payload);
+    return apiClient.post<PaymentConfirmResponse>('/api/payments/confirm', null, {
+      params: {
+        description: payload.description,
+        amount: payload.amount,
+      },
+    });
   }
 }
 

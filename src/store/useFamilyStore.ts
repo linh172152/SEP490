@@ -61,13 +61,9 @@ export const useFamilyStore = create<FamilyState>()(
             })
           );
 
-          const [accountReminders, allReminders, accountPackages, servicePackages, rooms] = await Promise.all([
+          const [accountReminders, allReminders, servicePackages, rooms] = await Promise.all([
             reminderService.getByAccountId(accountId).catch(() => []),
             reminderService.getAll().catch(() => []),
-            userPackageService.getByAccountId(accountId).catch(async () => {
-              const allPackages = await userPackageService.getAll().catch(() => []);
-              return allPackages.filter(p => p.accountId === accountId);
-            }),
             servicePackageService.getAll().catch(() => []),
             roomService.getAllRooms().catch(() => []),
           ]);
@@ -86,7 +82,7 @@ export const useFamilyStore = create<FamilyState>()(
             return acc;
           }, {});
 
-          const mergedPackages = [...elderlyPackages.flat(), ...accountPackages].reduce<UserPackageResponse[]>((acc, userPackage) => {
+          const mergedPackages = elderlyPackages.flat().reduce<UserPackageResponse[]>((acc, userPackage) => {
             if (!acc.some((item) => item.id === userPackage.id)) {
               acc.push(userPackage);
             }
@@ -164,11 +160,13 @@ export const useFamilyStore = create<FamilyState>()(
             assignedAt: new Date().toISOString(),
             expiredAt: new Date(Date.now() + 86400000 * 30).toISOString(),
           });
-          const packages = await userPackageService.getByAccountId(accountId).catch(async () => {
-            const allPackages = await userPackageService.getAll();
-            return allPackages.filter(p => p.accountId === accountId);
-          });
-          set({ userPackages: packages, isLoading: false });
+          const elderly = await elderlyService.getByAccountId(accountId).catch(() => [] as ElderlyProfileResponse[]);
+          const packagesByElderly = await Promise.all(
+            elderly
+              .filter((item) => !item.deleted)
+              .map((item) => userPackageService.getByElderlyId(item.id).catch(() => [] as UserPackageResponse[]))
+          );
+          set({ userPackages: packagesByElderly.flat(), isLoading: false });
         } catch (error: unknown) {
           set({ error: 'Failed to purchase package', isLoading: false });
           throw error;

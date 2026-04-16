@@ -78,10 +78,7 @@ export default function FamilyElderlyDetailPage() {
 
         const [packages, userPackages, roomData] = await Promise.all([
           servicePackageService.getAll().catch(() => [] as ServicePackageResponse[]),
-          userPackageService.getByElderlyId(detail.id).catch(async () => {
-            const all = await userPackageService.getAll().catch(() => [] as UserPackageResponse[]);
-            return all.filter((item) => item.elderlyProfileId === detail.id);
-          }),
+          userPackageService.getByElderlyId(detail.id).catch(() => [] as UserPackageResponse[]),
           detail.roomId ? roomService.getRoomById(detail.roomId).catch(() => null) : Promise.resolve(null),
         ]);
 

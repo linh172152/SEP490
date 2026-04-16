@@ -11,7 +11,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useI18nStore } from "@/store/useI18nStore";
 import { ExerciseLibrary } from "./ExerciseLibrary";
-import { ExerciseHistory } from "./ExerciseHistory";
+
 
 export function WellnessHub({ readOnly = false }: { readOnly?: boolean }) {
   const { t } = useI18nStore();
@@ -25,7 +25,7 @@ export function WellnessHub({ readOnly = false }: { readOnly?: boolean }) {
         <div className="relative space-y-2">
           <div className="flex items-center gap-2 text-primary font-bold tracking-widest uppercase text-[10px]">
             <Terminal className="h-4 w-4 text-indigo-500" />
-            <span>Infrastructure & Script Management</span>
+            <span>{t("wellness.headers.infra")}</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
              {t("wellness.title") || "Exercise Library"}
@@ -47,13 +47,6 @@ export function WellnessHub({ readOnly = false }: { readOnly?: boolean }) {
               <Code className={`h-4 w-4 ${activeTab === "library" ? "text-indigo-500" : "opacity-50"}`} />
               <span className="font-bold">{t("wellness.library_tab")}</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="history" 
-              className="rounded-xl px-8 h-11 data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-lg gap-2 transition-all duration-300"
-            >
-              <ShieldCheck className={`h-4 w-4 ${activeTab === "history" ? "text-indigo-500" : "opacity-50"}`} />
-              <span className="font-bold">{t("wellness.history_tab")}</span>
-            </TabsTrigger>
           </TabsList>
 
           <div className="hidden md:flex items-center gap-3">
@@ -66,11 +59,7 @@ export function WellnessHub({ readOnly = false }: { readOnly?: boolean }) {
           </div>
         </TabsContent>
 
-        <TabsContent value="history" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-          <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-            <ExerciseHistory />
-          </div>
-        </TabsContent>
+
       </Tabs>
       
       {/* Decorative background element */}

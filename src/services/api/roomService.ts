@@ -27,23 +27,23 @@ export const roomService = {
   },
 
   addElderlyToRoom: async (roomId: number, elderlyId: number): Promise<void> => {
-    await apiClient.post(`/api/rooms/${roomId}/elderly/${elderlyId}`, null);
+    await apiClient.post(`/api/rooms/${roomId}/elderlies/${elderlyId}`, null);
   },
 
   assignRobotToRoom: async (roomId: number, robotId: number): Promise<void> => {
-    await apiClient.post(`/api/rooms/${roomId}/robots/${robotId}`, null);
+    await apiClient.post(`/api/rooms/${roomId}/robot/${robotId}`, null);
   },
 
   removeCaregiverFromRoom: async (roomId: number, caregiverId: number): Promise<void> => {
-    await apiClient.delete(`/api/rooms/${roomId}/caregivers/${caregiverId}`);
+    await apiClient.delete(`/api/rooms/caregivers/${caregiverId}`);
   },
 
   removeElderlyFromRoom: async (roomId: number, elderlyId: number): Promise<void> => {
-    await apiClient.delete(`/api/rooms/${roomId}/elderly/${elderlyId}`);
+    await apiClient.delete(`/api/rooms/elderlies/${elderlyId}`);
   },
 
   unassignRobotFromRoom: async (roomId: number, robotId: number): Promise<void> => {
-    await apiClient.delete(`/api/rooms/${roomId}/robots/${robotId}`);
+    await apiClient.delete(`/api/rooms/${roomId}/robot`);
   },
 
   getCaregiversByRoom: async (roomId: number): Promise<CaregiverDTO[]> => {

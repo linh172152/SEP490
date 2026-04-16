@@ -20,9 +20,11 @@ import {
   Cpu,
   History,
   Bell,
-  Home
+  Home,
+  X
 } from 'lucide-react';
 import { Role } from '@/types';
+import { Button } from '../ui/button';
 
 interface NavItem {
   i18nKey: string;
@@ -35,7 +37,6 @@ const navItems: NavItem[] = [
   // Admin Routes (System & Platform Administration)
   { i18nKey: 'sidebar.overview', href: '/dashboard/admin', icon: LayoutDashboard, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.user_mgt', href: '/dashboard/admin/users', icon: Users, roles: ['ADMIN'] },
-  { i18nKey: 'sidebar.data_security', href: '/dashboard/admin/security', icon: ShieldCheck, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.robot_mgt', href: '/dashboard/admin/fleet', icon: Cpu, roles: ['ADMIN'] },
   { i18nKey: 'wellness.sidebar_label', href: '/dashboard/admin/wellness', icon: Smile, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.settings', href: '/dashboard/admin/settings', icon: Settings, roles: ['ADMIN'] },
@@ -66,7 +67,13 @@ const navItems: NavItem[] = [
   { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['CAREGIVER'] },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  isCollapsed: boolean;
+  isMobileOpen: boolean;
+  onCloseMobile: () => void;
+}
+
+export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
   const { t } = useI18nStore();
@@ -79,20 +86,35 @@ export function Sidebar() {
   const logout = useAuthStore((state) => state.logout);
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-72 border-r bg-white flex flex-col shadow-sm">
-      <div className="flex h-20 items-center border-b px-8 bg-slate-50/50">
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="p-2 bg-primary rounded-xl shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
+    <aside className={cn(
+      "fixed left-0 top-0 z-40 h-screen transition-all duration-300 ease-in-out border-r bg-white flex flex-col shadow-sm",
+      isCollapsed ? "w-20" : "w-72",
+      isMobileOpen ? "translate-x-0" : "-translate-x-full sm:translate-x-0"
+    )}>
+      {/* Brand Logo Header */}
+      <div className={cn(
+        "flex h-20 items-center justify-between px-6 bg-slate-50/50 border-b",
+        isCollapsed ? "justify-center px-2" : ""
+      )}>
+        <Link href="/" className="flex items-center gap-3 group overflow-hidden">
+          <div className="p-2 bg-primary rounded-xl shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform shrink-0">
             <Bot className="h-6 w-6 text-white" />
           </div>
-          <span className="text-xl font-black tracking-tighter text-slate-900">
-            CAREBOT<span className="text-primary font-light">MH</span>
-          </span>
+          {!isCollapsed && (
+            <span className="text-xl font-black tracking-tighter text-slate-900 whitespace-nowrap animate-in fade-in slide-in-from-left-2">
+              CAREBOT<span className="text-primary font-light">MH</span>
+            </span>
+          )}
         </Link>
+        {isMobileOpen && (
+           <Button variant="ghost" size="icon" onClick={onCloseMobile} className="sm:hidden">
+              <X className="h-5 w-5" />
+           </Button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto py-6 px-4 space-y-8 scrollbar-hide">
-        <nav className="space-y-1">
+        <nav className="space-y-1.5">
           {filteredItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
@@ -100,29 +122,45 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={onCloseMobile}
                 className={cn(
-                  'group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-200',
+                  'group flex items-center transition-all duration-200 rounded-xl',
+                  isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3 text-sm font-bold',
                   isActive
-                    ? 'bg-primary text-white shadow-lg shadow-primary/25 translate-x-1'
+                    ? 'bg-primary text-white shadow-md shadow-primary/20 translate-x-1'
                     : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 hover:translate-x-1'
                 )}
+                title={isCollapsed ? t(item.i18nKey) : ""}
               >
-                <Icon className={cn('h-5 w-5 transition-transform group-hover:scale-110', 
+                <Icon className={cn('h-5 w-5 transition-transform group-hover:scale-110 shrink-0', 
                   isActive ? 'text-white' : 'text-slate-400 group-hover:text-primary')} />
-                {t(item.i18nKey)}
+                
+                {!isCollapsed && (
+                  <span className="whitespace-nowrap animate-in fade-in slide-in-from-left-2">
+                    {t(item.i18nKey)}
+                  </span>
+                )}
+                
+                {isActive && !isCollapsed && (
+                   <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white opacity-50" />
+                )}
               </Link>
             );
           })}
         </nav>
       </div>
 
-      <div className="p-4 border-t bg-slate-50/30">
+      <div className={cn("p-4 border-t bg-slate-50/30", isCollapsed ? "flex justify-center" : "")}>
         <button
           onClick={() => logout()}
-          className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-rose-600 transition-all duration-200 hover:bg-rose-50 hover:translate-x-1"
+          className={cn(
+            "group flex items-center transition-all duration-200 text-rose-600 rounded-xl",
+            isCollapsed ? "p-3" : "w-full gap-3 px-4 py-3 text-sm font-bold hover:bg-rose-50 hover:translate-x-1"
+          )}
+          title={isCollapsed ? t('sidebar.logout') : ""}
         >
           <LogOut className="h-5 w-5 transition-transform group-hover:scale-110" />
-          {t('sidebar.logout')}
+          {!isCollapsed && <span>{t('sidebar.logout')}</span>}
         </button>
       </div>
     </aside>

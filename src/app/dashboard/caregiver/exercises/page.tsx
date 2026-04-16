@@ -112,7 +112,7 @@ export default function CaregiverExerciseScriptsPage() {
                       </TableCell>
                       <TableCell className="py-4 text-sm text-slate-600 dark:text-slate-300">{script.description}</TableCell>
                       <TableCell className="py-4 text-sm text-slate-600 dark:text-slate-300">{script.durationMinutes} min</TableCell>
-                      <TableCell className="py-4">{getDifficultyBadge(script.difficultyLevel)}</TableCell>
+                      <TableCell className="py-4">{getDifficultyBadge(script.level)}</TableCell>
                       <TableCell className="pr-6 py-4 text-right">
                         <Button asChild size="sm" variant="secondary">
                           <Link href={`/dashboard/caregiver/exercises/${script.id}`}>View Details</Link>

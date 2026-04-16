@@ -48,7 +48,28 @@ class ExerciseService {
   async createScript(
     data: ExerciseScriptRequest
   ): Promise<ExerciseScriptResponse> {
-    return apiClient.post<ExerciseScriptResponse>("/api/exercise-scripts", data);
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("description", data.description);
+    formData.append("durationMinutes", data.durationMinutes.toString());
+    
+    // Match the exact BE Enum name using data.difficultyLevel or data.level
+    const levelKey = (data as any).difficultyLevel || data.level || "EASY";
+    formData.append("level", levelKey);
+    
+    // Create a Blob from the script string to simulate a file upload for the backend
+    const fileBlob = new Blob([data.uploadScript], { type: "text/plain" });
+    formData.append("file", fileBlob, "script.py");
+
+    return apiClient.post<ExerciseScriptResponse>(
+      "/api/exercise-scripts", 
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      }
+    );
   }
 
   async updateScript(

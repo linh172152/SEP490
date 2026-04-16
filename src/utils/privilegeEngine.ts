@@ -48,11 +48,11 @@ export const filterScriptsByQuota = (scripts: ExerciseScript[], level: string): 
   const getNormDiff = (diff: string) => diff.toLowerCase();
   
   const easyScripts = scripts.filter(s => 
-    ['easy', '1', 'l1', 'cơ bản'].includes(getNormDiff(s.difficultyLevel))
+    ['easy', '1', 'l1', 'cơ bản'].includes(getNormDiff(s.level || ""))
   ).slice(0, config.easy);
 
   const mediumScripts = scripts.filter(s => 
-    ['medium', '2', 'l2', 'nâng cao'].includes(getNormDiff(s.difficultyLevel))
+    ['medium', '2', 'l2', 'nâng cao'].includes(getNormDiff(s.level || ""))
   ).slice(0, config.medium);
 
   return [...easyScripts, ...mediumScripts];

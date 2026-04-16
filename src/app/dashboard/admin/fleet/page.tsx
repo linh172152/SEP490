@@ -39,7 +39,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { robotService } from '@/services/api/robotService';
-import { RobotResponse } from '@/services/api/types';
+import { roomService } from '@/services/api/roomService';
+import { RobotResponse, RoomResponse } from '@/services/api/types';
 import { useI18nStore } from '@/store/useI18nStore';
 import { toast } from 'react-toastify';
 import {
@@ -57,6 +58,7 @@ import { normalizeRobotStatus } from '@/lib/utils';
 export default function AdminFleetPage() {
   const { t } = useI18nStore();
   const [robots, setRobots] = useState<RobotResponse[]>([]);
+  const [roomMap, setRoomMap] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
 
   // Dialog States
@@ -88,8 +90,21 @@ export default function AdminFleetPage() {
   const fetchRobots = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await robotService.getAll();
-      setRobots(data || []);
+      const [robotData, roomData] = await Promise.all([
+        robotService.getAll(),
+        roomService.getAllRooms()
+      ]);
+      
+      setRobots(robotData || []);
+      
+      // Build robot-to-room mapping from Room API
+      const mapping: Record<number, string> = {};
+      roomData.forEach((room: RoomResponse) => {
+        if (room.robot?.id) {
+          mapping[room.robot.id] = room.roomName;
+        }
+      });
+      setRoomMap(mapping);
     } catch (e) {
       toast.error(t('admin.fleet.toasts.connect_error'));
     } finally {
@@ -136,9 +151,9 @@ export default function AdminFleetPage() {
   const openAddDialog = () => {
     setFormData({
       robotName: '',
-      serialNumber: `CB-${Math.floor(1000 + Math.random() * 9000)}-${Date.now().toString().slice(-4)}`,
-      model: 'CareBot Standard v2',
-      firmwareVersion: '2.4.8',
+      serialNumber: '',
+      model: '',
+      firmwareVersion: '',
       status: 'ACTIVE'
     });
     setFormDialog({ open: true, mode: 'add' });
@@ -171,7 +186,8 @@ export default function AdminFleetPage() {
       const normalizedStatus = normalizeRobotStatus(robot.status);
       const matchesSearch = 
         robot.robotName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        robot.serialNumber.toLowerCase().includes(searchQuery.toLowerCase());
+        robot.serialNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (roomMap[robot.id] && roomMap[robot.id].toLowerCase().includes(searchQuery.toLowerCase()));
       
       const matchesStatus = 
         statusFilter === 'ALL' || 
@@ -297,6 +313,7 @@ export default function AdminFleetPage() {
                   <TableRow className="border-none">
                     <TableHead className="w-[250px] font-bold uppercase text-[11px] tracking-wider pl-6">{t('admin.fleet.table.robot_serial')}</TableHead>
                     <TableHead className="font-bold uppercase text-[11px] tracking-wider">{t('admin.fleet.table.config')}</TableHead>
+                    <TableHead className="font-bold uppercase text-[11px] tracking-wider">{t('admin.fleet.table.room') || 'Assigned Room'}</TableHead>
                     <TableHead className="font-bold uppercase text-[11px] tracking-wider">{t('admin.fleet.table.status')}</TableHead>
                     <TableHead className="text-right font-bold uppercase text-[11px] tracking-wider pr-6">{t('common.actions')}</TableHead>
                   </TableRow>
@@ -326,6 +343,14 @@ export default function AdminFleetPage() {
                           <Badge variant="outline" className="text-[10px] h-5 mt-1 font-bold border-indigo-200 text-indigo-600 bg-indigo-50/50">
                             FIRMWARE: v{robot.firmwareVersion}
                           </Badge>
+                       </TableCell>
+                       <TableCell>
+                          <div className="flex items-center gap-2">
+                             <div className={`h-2 w-2 rounded-full ${roomMap[robot.id] ? 'bg-indigo-500' : 'bg-slate-300'}`} />
+                             <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                               {roomMap[robot.id] || '-'}
+                             </span>
+                          </div>
                        </TableCell>
                        <TableCell>
                           <Badge className={`font-black text-[10px] uppercase px-2 py-0.5 rounded-md ${

@@ -154,9 +154,9 @@ export function AdminDashboard() {
       </div>
 
       {/* Admin Central Stats */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {loading ? (
-            Array.from({ length: 4 }).map((_, i) => (
+            Array.from({ length: 3 }).map((_, i) => (
                 <Card key={i} className="border-none shadow-lg animate-pulse">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <Skeleton className="h-4 w-24" />
@@ -172,7 +172,7 @@ export function AdminDashboard() {
           <>
             <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/10 transition-all hover:scale-[1.02]">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">{t('admin.dashboard.total_accounts') || "Infrastructure Users"}</CardTitle>
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">{t('admin.dashboard.labels.total_accounts')}</CardTitle>
                 <ShieldCheck className="h-5 w-5 text-emerald-600" />
               </CardHeader>
               <CardContent>
@@ -186,7 +186,7 @@ export function AdminDashboard() {
 
             <Card className="border-none shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/10 transition-all hover:scale-[1.02]">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-blue-800 dark:text-blue-400">{t('admin.dashboard.robots_status') || "Robot Assets"}</CardTitle>
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-blue-800 dark:text-blue-400">{t('admin.dashboard.labels.robots_status')}</CardTitle>
                 <Cpu className="h-5 w-5 text-blue-600" />
               </CardHeader>
               <CardContent>
@@ -200,22 +200,10 @@ export function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="border-none shadow-lg bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/10 transition-all hover:scale-[1.02]">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-violet-800 dark:text-violet-400">{t('admin.dashboard.security_records') || "Security Records"}</CardTitle>
-                <History className="h-5 w-5 text-violet-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-black text-violet-900 dark:text-violet-300">{stats.recentLogs.length}</div>
-                <p className="text-xs font-medium text-violet-700 dark:text-violet-500 mt-2">
-                    {t('admin.dashboard.security_records_desc') || "Recent system events"}
-                </p>
-              </CardContent>
-            </Card>
 
             <Card className="border-none shadow-lg bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/10 transition-all hover:scale-[1.02]">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-400">{t('wellness.title') || "Wellness Scripts"}</CardTitle>
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-400">{t('admin.dashboard.labels.wellness_scripts')}</CardTitle>
                 <Dumbbell className="h-5 w-5 text-amber-600" />
               </CardHeader>
               <CardContent>
@@ -335,66 +323,6 @@ export function AdminDashboard() {
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-         {/* Audit Logs Table */}
-         <Card className="lg:col-span-3 border-none shadow-sm overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between">
-               <div>
-                  <CardTitle className="flex items-center gap-2">
-                     <History className="h-5 w-5 text-indigo-500" />
-                     {t('admin.dashboard.audit_logs_title')}
-                  </CardTitle>
-               </div>
-               <Badge variant="secondary" className="font-bold text-[10px] uppercase tracking-wider px-2.5 py-1">
-                  {t('admin.dashboard.realtime_feed') || "Realtime Feed"}
-               </Badge>
-            </CardHeader>
-            <CardContent>
-               <div className="space-y-1">
-                  {loading ? (
-                      Array.from({ length: 5 }).map((_, i) => (
-                          <div key={i} className="flex items-center justify-between p-3">
-                              <div className="flex items-center gap-4 flex-1">
-                                  <Skeleton className="h-8 w-8 rounded-lg" />
-                                  <div className="flex-1 space-y-2">
-                                      <Skeleton className="h-4 w-3/4" />
-                                      <Skeleton className="h-3 w-1/2" />
-                                  </div>
-                              </div>
-                              <Skeleton className="h-5 w-16" />
-                          </div>
-                      ))
-                  ) : stats.recentLogs.length === 0 ? (
-                      <div className="py-20 text-center text-muted-foreground italic text-sm">
-                          {t('admin.dashboard.no_recent_activity') || "No recent system activity."}
-                      </div>
-                  ) : (
-                    stats.recentLogs.map((log) => (
-                        <div key={log.id} className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-xl transition-colors group">
-                           <div className="flex items-center gap-4">
-                              <div className="p-2 rounded-lg bg-indigo-100 text-indigo-600">
-                                 <Settings className="h-4 w-4" />
-                              </div>
-                              <div>
-                                 <p className="text-sm font-bold text-foreground leading-none">{log.action}</p>
-                                 <p className="text-xs text-muted-foreground mt-1">
-                                    By <span className="font-semibold text-slate-700 dark:text-slate-300">Account #{log.accountId}</span> • {log.createdAt ? formatDistanceToNow(new Date(log.createdAt), { addSuffix: true }) : "Unknown time"}
-                                 </p>
-                              </div>
-                           </div>
-                           <Badge 
-                              variant="outline" 
-                              className="text-[10px] font-black uppercase border-emerald-200 text-emerald-600 bg-emerald-50/50"
-                            >
-                              {t('common.status_labels.success') || "Success"}
-                           </Badge>
-                        </div>
-                      ))
-                  )}
-               </div>
-            </CardContent>
-         </Card>
-      </div>
     </div>
   );
 }

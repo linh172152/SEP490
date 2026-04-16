@@ -20,7 +20,7 @@ import { elderlyService } from '@/services/api/elderlyService';
 import { robotService } from '@/services/api/robotService';
 import { caregiverService } from '@/services/api/caregiverService';
 import { toast } from 'react-toastify';
-import { Loader2, Plus, Bot, Home, Check, Users, Trash2, X } from 'lucide-react';
+import { Loader2, Plus, Bot, Home, Check, Users, Trash2, X, Search } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -48,14 +48,25 @@ export function RoomModal({ isOpen, onClose, room, onRefresh, managerId }: RoomM
   const [occupiedCaregiverIds, setOccupiedCaregiverIds] = useState<Set<number>>(new Set());
   const [loadingLists, setLoadingLists] = useState(false);
 
+  // Search states
+  const [searchStaff, setSearchStaff] = useState('');
+  const [searchElderly, setSearchElderly] = useState('');
+  const [searchRobot, setSearchRobot] = useState('');
+
   useEffect(() => {
-    if (room) {
-      setRoomName(room.roomName || '');
-    } else {
-      setRoomName('');
+    if (isOpen) {
+      if (room) {
+        setRoomName(room.roomName || '');
+      } else {
+        setRoomName('');
+      }
+      setActiveTab('basic');
+      // Reset search fields when opening
+      setSearchStaff('');
+      setSearchElderly('');
+      setSearchRobot('');
     }
-    setActiveTab('basic');
-  }, [room, isOpen]);
+  }, [isOpen, room?.id]);
 
   const loadSelectionLists = async () => {
     setLoadingLists(true);
@@ -235,110 +246,292 @@ export function RoomModal({ isOpen, onClose, room, onRefresh, managerId }: RoomM
           </TabsContent>
 
           <TabsContent value="caregivers" className="space-y-4">
-            <div className="text-sm font-medium text-muted-foreground pb-2 flex items-center gap-2">
-              <Users className="h-4 w-4" /> {t('manager.rooms.modal.staff_desc')}
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-3">
+              <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Users className="h-4 w-4" /> {t('manager.rooms.modal.staff_desc')}
+              </div>
+              <Badge variant={room && room.caregivers?.length >= 2 ? "destructive" : "secondary"} className="rounded-xl font-black text-[10px] tracking-wider uppercase">
+                {room?.caregivers?.length || 0} / 2 
+              </Badge>
             </div>
-            <ScrollArea className="h-[300px] border border-slate-100 rounded-xl p-2 bg-slate-50/30">
+            
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder={t('common.search', 'Search...')} 
+                value={searchStaff}
+                onChange={(e) => setSearchStaff(e.target.value)}
+                className="pl-9 h-10 rounded-xl bg-white shadow-sm border-slate-200 focus-visible:ring-primary/20"
+              />
+            </div>
+
+            <ScrollArea className="h-[280px] border border-slate-100 rounded-xl p-2 bg-slate-50/30">
               {loadingLists ? (
                 <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary/40 h-10 w-10" /></div>
               ) : (
-                <div className="space-y-2">
-                  {caregivers.filter(cg => !occupiedCaregiverIds.has(cg.id)).map(cg => {
-                    const isAssigned = room?.caregivers.some((rc: CaregiverDTO) => rc.id === cg.id);
-                    return (
-                      <div key={cg.id} className="flex items-center justify-between p-4 rounded-xl border bg-white shadow-sm transition-all hover:border-primary/20">
-                        <div>
-                          <p className="font-bold text-sm text-slate-900">{cg.name || cg.accountEmail}</p>
-                          <p className="text-[10px] uppercase font-black tracking-wider text-slate-400">{cg.accountEmail}</p>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          variant={isAssigned ? "destructive" : "default"}
-                          className={cn("rounded-lg font-bold min-w-[100px]", isAssigned && "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100")}
-                          onClick={() => isAssigned ? handleRemoveCaregiver(cg.id) : handleAssignCaregiver(cg.id)}
-                        >
-                          {isAssigned ? <Trash2 className="h-4 w-4 mr-1"/> : <Plus className="h-4 w-4 mr-1"/>}
-                          {isAssigned ? t('manager.rooms.modal.btn_remove') || "Remove" : t('manager.rooms.modal.btn_add')}
-                        </Button>
-                      </div>
+                <div className="space-y-4">
+                  {(() => {
+                    const availableCaregivers = caregivers.filter(cg => !occupiedCaregiverIds.has(cg.id));
+                    const filteredCaregivers = availableCaregivers.filter(cg => 
+                      (cg.name || cg.accountEmail || '').toLowerCase().includes(searchStaff.toLowerCase())
                     );
-                  })}
+                    const assignedList = filteredCaregivers.filter(cg => room?.caregivers.some((rc: CaregiverDTO) => rc.id === cg.id));
+                    const unassignedList = filteredCaregivers.filter(cg => !room?.caregivers.some((rc: CaregiverDTO) => rc.id === cg.id));
+
+                    return (
+                      <>
+                        {assignedList.length > 0 && (
+                          <div className="space-y-2">
+                            <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">{t('common.assigned', 'Assigned')}</h5>
+                            {assignedList.map(cg => (
+                              <div key={cg.id} className="flex items-center justify-between p-3 rounded-xl border bg-indigo-50/30 shadow-sm border-indigo-100 transition-all hover:border-indigo-300">
+                                <div>
+                                  <p className="font-bold text-sm text-indigo-900">{cg.name || cg.accountEmail}</p>
+                                  <p className="text-[10px] uppercase font-black tracking-wider text-indigo-400">{cg.accountEmail}</p>
+                                </div>
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive"
+                                  className="rounded-lg font-bold min-w-[100px] bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100 h-8"
+                                  onClick={() => handleRemoveCaregiver(cg.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1"/> {t('manager.rooms.modal.btn_remove') || "Remove"}
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {unassignedList.length > 0 && (
+                          <div className="space-y-2">
+                            <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2 pt-2">{t('common.available', 'Available')}</h5>
+                            {unassignedList.map(cg => {
+                              const limitReached = (room?.caregivers?.length || 0) >= 2;
+                              return (
+                                <div key={cg.id} className="flex items-center justify-between p-3 rounded-xl border bg-white shadow-sm border-slate-100 transition-all hover:border-primary/20 hover:shadow-md">
+                                  <div>
+                                    <p className="font-bold text-sm text-slate-900">{cg.name || cg.accountEmail}</p>
+                                    <p className="text-[10px] uppercase font-black tracking-wider text-slate-400">{cg.accountEmail}</p>
+                                  </div>
+                                  <Button 
+                                    size="sm" 
+                                    variant="default"
+                                    disabled={limitReached}
+                                    className={cn("rounded-lg font-bold min-w-[100px] shadow-sm h-8", limitReached && "opacity-50")}
+                                    onClick={() => handleAssignCaregiver(cg.id)}
+                                  >
+                                    <Plus className="h-4 w-4 mr-1"/> {t('manager.rooms.modal.btn_add')}
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {assignedList.length === 0 && unassignedList.length === 0 && (
+                          <div className="text-center py-10 text-sm font-medium text-slate-400 italic">
+                            {t('common.no_results', 'No results found.')}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </ScrollArea>
           </TabsContent>
 
           <TabsContent value="elderlies" className="space-y-4">
-            <div className="text-sm font-medium text-muted-foreground pb-2 flex items-center gap-2">
-              <Users className="h-4 w-4" /> {t('manager.rooms.modal.elderly_desc')}
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-3">
+              <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Users className="h-4 w-4" /> {t('manager.rooms.modal.elderly_desc')}
+              </div>
+              <Badge variant={room && room.elderlies?.length >= 4 ? "destructive" : "secondary"} className="rounded-xl font-black text-[10px] tracking-wider uppercase">
+                {room?.elderlies?.length || 0} / 4 
+              </Badge>
             </div>
-            <ScrollArea className="h-[300px] border border-slate-100 rounded-xl p-2 bg-slate-50/30">
+
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder={t('common.search', 'Search...')} 
+                value={searchElderly}
+                onChange={(e) => setSearchElderly(e.target.value)}
+                className="pl-9 h-10 rounded-xl bg-white shadow-sm border-slate-200 focus-visible:ring-primary/20"
+              />
+            </div>
+
+            <ScrollArea className="h-[280px] border border-slate-100 rounded-xl p-2 bg-slate-50/30">
               {loadingLists ? (
                 <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary/40 h-10 w-10" /></div>
               ) : (
-                <div className="space-y-2">
-                  {elderlies.filter(el => {
-                    const isAlreadyInAnotherRoom = occupiedElderlyIds.has(el.id);
-                    return !isAlreadyInAnotherRoom;
-                  }).map(el => {
-                    const isAssigned = room?.elderlies.some((re: ElderlyDTO) => re.id === el.id);
-                    return (
-                      <div key={el.id} className="flex items-center justify-between p-4 rounded-xl border bg-white shadow-sm transition-all hover:border-primary/20">
-                        <div>
-                          <p className="font-bold text-sm text-slate-900">{el.name}</p>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          variant={isAssigned ? "destructive" : "default"}
-                          className={cn("rounded-lg font-bold min-w-[100px]", isAssigned && "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100")}
-                          onClick={() => isAssigned ? handleRemoveElderly(el.id) : handleAssignElderly(el.id)}
-                        >
-                          {isAssigned ? <Trash2 className="h-4 w-4 mr-1"/> : <Plus className="h-4 w-4 mr-1"/>}
-                          {isAssigned ? t('manager.rooms.modal.btn_remove') || "Remove" : t('manager.rooms.modal.btn_add')}
-                        </Button>
-                      </div>
+                <div className="space-y-4">
+                  {(() => {
+                    const availableElderlies = elderlies.filter(el => !occupiedElderlyIds.has(el.id));
+                    const filteredElderlies = availableElderlies.filter(el => 
+                      (el.name || '').toLowerCase().includes(searchElderly.toLowerCase())
                     );
-                  })}
+                    const assignedList = filteredElderlies.filter(el => room?.elderlies.some((re: ElderlyDTO) => re.id === el.id));
+                    const unassignedList = filteredElderlies.filter(el => !room?.elderlies.some((re: ElderlyDTO) => re.id === el.id));
+
+                    return (
+                      <>
+                        {assignedList.length > 0 && (
+                          <div className="space-y-2">
+                            <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">{t('common.assigned', 'Assigned')}</h5>
+                            {assignedList.map(el => (
+                              <div key={el.id} className="flex items-center justify-between p-3 rounded-xl border bg-emerald-50/30 shadow-sm border-emerald-100 transition-all hover:border-emerald-300">
+                                <div>
+                                  <p className="font-bold text-sm text-emerald-900">{el.name}</p>
+                                </div>
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive"
+                                  className="rounded-lg font-bold min-w-[100px] bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100 h-8"
+                                  onClick={() => handleRemoveElderly(el.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1"/> {t('manager.rooms.modal.btn_remove') || "Remove"}
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {unassignedList.length > 0 && (
+                          <div className="space-y-2">
+                            <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2 pt-2">{t('common.available', 'Available')}</h5>
+                            {unassignedList.map(el => {
+                              const limitReached = (room?.elderlies?.length || 0) >= 4;
+                              return (
+                                <div key={el.id} className="flex items-center justify-between p-3 rounded-xl border bg-white shadow-sm border-slate-100 transition-all hover:border-primary/20 hover:shadow-md">
+                                  <div>
+                                    <p className="font-bold text-sm text-slate-900">{el.name}</p>
+                                  </div>
+                                  <Button 
+                                    size="sm" 
+                                    variant="default"
+                                    disabled={limitReached}
+                                    className={cn("rounded-lg font-bold min-w-[100px] shadow-sm h-8", limitReached && "opacity-50")}
+                                    onClick={() => handleAssignElderly(el.id)}
+                                  >
+                                    <Plus className="h-4 w-4 mr-1"/> {t('manager.rooms.modal.btn_add')}
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {assignedList.length === 0 && unassignedList.length === 0 && (
+                          <div className="text-center py-10 text-sm font-medium text-slate-400 italic">
+                            {t('common.no_results', 'No results found.')}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </ScrollArea>
           </TabsContent>
 
           <TabsContent value="robot" className="space-y-4">
-            <div className="text-sm font-medium text-muted-foreground pb-2 flex items-center gap-2">
-              <Bot className="h-4 w-4" /> {t('manager.rooms.modal.robot_desc')}
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-3">
+              <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Bot className="h-4 w-4" /> {t('manager.rooms.modal.robot_desc')}
+              </div>
+              <Badge variant={room && room.robot ? "destructive" : "secondary"} className="rounded-xl font-black text-[10px] tracking-wider uppercase">
+                {room?.robot ? 1 : 0} / 1 
+              </Badge>
             </div>
-            <ScrollArea className="h-[300px] border border-slate-100 rounded-xl p-2 bg-slate-50/30">
+
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder={t('common.search', 'Search...')} 
+                value={searchRobot}
+                onChange={(e) => setSearchRobot(e.target.value)}
+                className="pl-9 h-10 rounded-xl bg-white shadow-sm border-slate-200 focus-visible:ring-primary/20"
+              />
+            </div>
+
+            <ScrollArea className="h-[280px] border border-slate-100 rounded-xl p-2 bg-slate-50/30">
               {loadingLists ? (
                 <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary/40 h-10 w-10" /></div>
               ) : (
-                <div className="space-y-2">
-                  {robots.filter(rb => {
-                    const isAlreadyInAnotherRoom = occupiedRobotIds.has(rb.id);
-                    return !isAlreadyInAnotherRoom;
-                  }).map(rb => {
-                    const isAssigned = room?.robot?.id === rb.id;
-                    return (
-                      <div key={rb.id} className="flex items-center justify-between p-4 rounded-xl border bg-white shadow-sm transition-all hover:border-primary/20">
-                        <div className="flex items-center gap-3">
-                          <Bot className="h-8 w-8 text-primary opacity-20" />
-                          <div>
-                            <p className="font-bold text-sm text-slate-900">{rb.robotName}</p>
-                            <p className="text-[10px] uppercase font-black tracking-wider text-slate-400">{rb.model} | {rb.serialNumber}</p>
-                          </div>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          variant={isAssigned ? "destructive" : "default"}
-                          className={cn("rounded-lg font-bold min-w-[100px]", isAssigned && "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100")}
-                          onClick={() => isAssigned ? handleUnassignRobot(rb.id) : handleAssignRobot(rb.id)}
-                        >
-                          {isAssigned ? <Trash2 className="h-4 w-4 mr-1"/> : <Bot className="h-4 w-4 mr-1"/>}
-                          {isAssigned ? t('manager.rooms.modal.btn_remove') || "Remove" : t('manager.rooms.modal.btn_assign')}
-                        </Button>
-                      </div>
+                <div className="space-y-4">
+                  {(() => {
+                    const availableRobots = robots.filter(rb => !occupiedRobotIds.has(rb.id));
+                    const filteredRobots = availableRobots.filter(rb => 
+                      (rb.robotName || rb.serialNumber || '').toLowerCase().includes(searchRobot.toLowerCase())
                     );
-                  })}
+                    const assignedList = filteredRobots.filter(rb => room?.robot?.id === rb.id);
+                    const unassignedList = filteredRobots.filter(rb => room?.robot?.id !== rb.id);
+
+                    return (
+                      <>
+                        {assignedList.length > 0 && (
+                          <div className="space-y-2">
+                            <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">{t('common.assigned', 'Assigned')}</h5>
+                            {assignedList.map(rb => (
+                              <div key={rb.id} className="flex items-center justify-between p-3 rounded-xl border bg-amber-50/30 shadow-sm border-amber-100 transition-all hover:border-amber-300">
+                                <div className="flex items-center gap-3">
+                                  <Bot className="h-8 w-8 text-amber-500 opacity-60" />
+                                  <div>
+                                    <p className="font-bold text-sm text-amber-900">{rb.robotName}</p>
+                                    <p className="text-[10px] uppercase font-black tracking-wider text-amber-600/70">{rb.model} | {rb.serialNumber}</p>
+                                  </div>
+                                </div>
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive"
+                                  className="rounded-lg font-bold min-w-[100px] bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100 h-8"
+                                  onClick={() => handleUnassignRobot(rb.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1"/> {t('manager.rooms.modal.btn_remove') || "Remove"}
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {unassignedList.length > 0 && (
+                          <div className="space-y-2">
+                            <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2 pt-2">{t('common.available', 'Available')}</h5>
+                            {unassignedList.map(rb => {
+                              const limitReached = !!room?.robot;
+                              return (
+                                <div key={rb.id} className="flex items-center justify-between p-3 rounded-xl border bg-white shadow-sm border-slate-100 transition-all hover:border-primary/20 hover:shadow-md">
+                                  <div className="flex items-center gap-3">
+                                    <Bot className="h-8 w-8 text-primary opacity-20" />
+                                    <div>
+                                      <p className="font-bold text-sm text-slate-900">{rb.robotName}</p>
+                                      <p className="text-[10px] uppercase font-black tracking-wider text-slate-400">{rb.model} | {rb.serialNumber}</p>
+                                    </div>
+                                  </div>
+                                  <Button 
+                                    size="sm" 
+                                    variant="default"
+                                    disabled={limitReached}
+                                    className={cn("rounded-lg font-bold min-w-[100px] shadow-sm h-8", limitReached && "opacity-50")}
+                                    onClick={() => handleAssignRobot(rb.id)}
+                                  >
+                                    <Bot className="h-4 w-4 mr-1"/> {t('manager.rooms.modal.btn_assign')}
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {assignedList.length === 0 && unassignedList.length === 0 && (
+                          <div className="text-center py-10 text-sm font-medium text-slate-400 italic">
+                            {t('common.no_results', 'No results found.')}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </ScrollArea>

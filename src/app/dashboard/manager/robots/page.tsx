@@ -12,9 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Bot, LayoutDashboard, Settings2, Info, Search, Filter, X } from 'lucide-react';
+import { Loader2, Bot, LayoutDashboard, Settings2, Info, Search, Filter, X, MapPin } from 'lucide-react';
 import { robotService } from '@/services/api/robotService';
-import { RobotResponse } from '@/services/api/types';
+import { roomService } from '@/services/api/roomService';
+import { RobotResponse, RoomResponse } from '@/services/api/types';
 import { useI18nStore } from '@/store/useI18nStore';
 import Link from 'next/link';
 import { normalizeRobotStatus } from '@/lib/utils';
@@ -23,6 +24,7 @@ import { normalizeRobotStatus } from '@/lib/utils';
 export default function RobotsManagePage() {
   const { t } = useI18nStore();
   const [robots, setRobots] = useState<RobotResponse[]>([]);
+  const [roomMap, setRoomMap] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   
   // States for search and filter
@@ -32,8 +34,21 @@ export default function RobotsManagePage() {
   const fetchRobots = async () => {
     setLoading(true);
     try {
-      const data = await robotService.getAll();
-      setRobots(data || []);
+      const [robotData, roomData] = await Promise.all([
+        robotService.getAll(),
+        roomService.getAllRooms()
+      ]);
+      
+      setRobots(robotData || []);
+      
+      // Build robot-to-room mapping
+      const mapping: Record<number, string> = {};
+      roomData.forEach((room: RoomResponse) => {
+        if (room.robot?.id) {
+          mapping[room.robot.id] = room.roomName;
+        }
+      });
+      setRoomMap(mapping);
     } catch (e) {
       console.error(e);
     } finally {
@@ -51,7 +66,8 @@ export default function RobotsManagePage() {
       const normalizedStatus = normalizeRobotStatus(robot.status);
       const matchesSearch = 
         robot.robotName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        robot.serialNumber.toLowerCase().includes(searchQuery.toLowerCase());
+        robot.serialNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (roomMap[robot.id] && roomMap[robot.id].toLowerCase().includes(searchQuery.toLowerCase()));
       
       const matchesStatus = 
         statusFilter === 'ALL' || 
@@ -213,25 +229,31 @@ export default function RobotsManagePage() {
                         v{robot.firmwareVersion}
                       </span>
                     </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-muted-foreground font-medium uppercase tracking-tighter">{t('admin.robots.card.room') || 'Room'}:</span>
+                      <span className="font-bold text-foreground">
+                        {roomMap[robot.id] || '-'}
+                      </span>
+                    </div>
                   </div>
 
                   <div>
                     <h5 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5">
                       <Info className="h-3 w-3" /> {t('admin.robots.card.assignment') || 'Deployment Status'}
                     </h5>
-                    {isUnassigned ? (
-                      <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500 bg-amber-500/5 px-3 py-2.5 rounded-xl border border-amber-500/10">
-                        <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                        <span className="font-bold text-xs uppercase">{t('admin.robots.card.unassigned') || 'Ready for Assignment'}</span>
-                      </div>
-                    ) : (
+                    {robot.assignedElderlyName ? (
                       <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-400 bg-indigo-500/5 px-3 py-2.5 rounded-xl border border-indigo-500/10">
                         <span className="h-2 w-2 rounded-full bg-indigo-500 shadow-sm" />
                         <span className="font-bold text-xs truncate">
-                           {robot.assignedElderlyName}
+                           {robot.assignedElderlyName} {roomMap[robot.id] ? `(${roomMap[robot.id]})` : ''}
                         </span>
                       </div>
-                    )}
+                    ) : roomMap[robot.id] ? (
+                      <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 bg-indigo-500/5 px-3 py-2.5 rounded-xl border border-indigo-500/10">
+                        <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                        <span className="font-bold text-xs uppercase">{t('admin.robots.card.room') || 'Room'}: {roomMap[robot.id]}</span>
+                      </div>
+                    ) : null}
                   </div>
                 </CardContent>
 

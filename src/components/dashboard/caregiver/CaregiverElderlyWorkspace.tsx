@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { differenceInYears } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { getReminderPatternLabel, getReminderTypeLabel, normalizeReminderPattern, normalizeReminderType, REMINDER_PATTERN_OPTIONS, REMINDER_TYPE_OPTIONS } from '@/lib/reminderOptions';
 import { useAuthStore } from '@/store/useAuthStore';
 import { caregiverService } from '@/services/api/caregiverService';
 import { roomService } from '@/services/api/roomService';
@@ -39,6 +40,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -53,16 +61,13 @@ import {
   Bot,
   CheckCircle2,
   Clock,
-  HeartPulse,
   Loader2,
   MapPin,
   MessageSquare,
   Pill,
   Plus,
   Search,
-  Settings2,
   User,
-  Wifi,
   Zap,
 } from 'lucide-react';
 
@@ -474,24 +479,6 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     }
   };
 
-  const handleReminderToggle = async (reminder: ReminderResponse) => {
-    try {
-      await reminderService.update(reminder.id, {
-        elderlyId: reminder.elderlyId,
-        caregiverId: reminder.caregiverId,
-        title: reminder.title,
-        reminderType: reminder.reminderType,
-        scheduleTime: reminder.scheduleTime,
-        repeatPattern: reminder.repeatPattern,
-        active: !reminder.active,
-      });
-      await Promise.all([loadContext(), loadSelectedElderly()]);
-      setMessage({ type: 'success', text: reminder.active ? 'Reminder marked completed.' : 'Reminder reactivated.' });
-    } catch (error: unknown) {
-      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to update reminder status.' });
-    }
-  };
-
   const handleResolveAlert = async (alert: AlertNotificationResponse) => {
     try {
       await alertService.update(alert.id, {
@@ -641,34 +628,30 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   const renderReminders = () => (
     <div className="space-y-6">
       <Card>
-        <CardContent className="space-y-4 p-5">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[420px]">
+        <CardContent className="space-y-3 p-3 sm:p-4">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="grid gap-2 sm:grid-cols-3 xl:min-w-[360px]">
               <HeaderStat icon={<Pill className="h-4 w-4 text-amber-500" />} label="Active" value={reminderGroups.active.length} />
               <HeaderStat icon={<Clock className="h-4 w-4 text-rose-500" />} label="Missed" value={reminderGroups.missed.length} />
               <HeaderStat icon={<CheckCircle2 className="h-4 w-4 text-emerald-500" />} label="Completed" value={reminderGroups.completed.length} />
             </div>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="outline" onClick={handleReminderFormToggle}>
+            <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+              <p className="text-xs text-muted-foreground xl:max-w-[380px] xl:text-right">
+                Missed = overdue reminders still active and waiting for caregiver attention.
+              </p>
+              <Button size="sm" variant="outline" onClick={handleReminderFormToggle}>
                 <Plus className="mr-2 h-4 w-4" />
                 {isReminderFormOpen ? 'Hide Form' : 'Create Reminder'}
               </Button>
             </div>
           </div>
 
-          <div className="rounded-2xl border bg-slate-50 p-4 text-sm">
-            <div className="font-semibold">Reminder Workspace</div>
-            <p className="mt-1 text-muted-foreground">
-              Elderly-specific list is loaded in this tab. `Missed` means past due reminders that are still active and need caregiver attention.
-            </p>
-          </div>
-
           {isReminderFormOpen ? (
             <div className="rounded-2xl border bg-white p-4">
-              <div className="mb-4 flex items-start justify-between gap-3">
+              <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
                   <div className="font-semibold text-foreground">{editingReminderId ? 'Edit Reminder' : 'Create Reminder'}</div>
-                  <p className="mt-1 text-sm text-muted-foreground">Add or update a reminder without losing space for the active reminder list.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Add or update a reminder without pushing the table too far down.</p>
                 </div>
                 <Button variant="ghost" size="sm" onClick={closeReminderForm}>Close</Button>
               </div>
@@ -677,10 +660,28 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                   <Input value={reminderForm.title} onChange={(event) => setReminderForm((prev) => ({ ...prev, title: event.target.value }))} placeholder="Example: Evening medication" />
                 </FormRow>
                 <FormRow label="Type">
-                  <Input value={reminderForm.reminderType} onChange={(event) => setReminderForm((prev) => ({ ...prev, reminderType: event.target.value }))} placeholder="medication" />
+                  <Select value={normalizeReminderType(reminderForm.reminderType)} onValueChange={(value) => setReminderForm((prev) => ({ ...prev, reminderType: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REMINDER_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </FormRow>
                 <FormRow label="Repeat Pattern">
-                  <Input value={reminderForm.repeatPattern} onChange={(event) => setReminderForm((prev) => ({ ...prev, repeatPattern: event.target.value }))} placeholder="daily" />
+                  <Select value={normalizeReminderPattern(reminderForm.repeatPattern)} onValueChange={(value) => setReminderForm((prev) => ({ ...prev, repeatPattern: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select pattern" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REMINDER_PATTERN_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </FormRow>
                 <FormRow label="Schedule Time">
                   <Input
@@ -735,18 +736,15 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                   return (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.title}</TableCell>
-                      <TableCell className="capitalize">{item.reminderType}</TableCell>
+                      <TableCell>{getReminderTypeLabel(item.reminderType)}</TableCell>
                       <TableCell>{new Date(item.scheduleTime).toLocaleString()}</TableCell>
-                      <TableCell>{item.repeatPattern}</TableCell>
+                      <TableCell>{getReminderPatternLabel(item.repeatPattern)}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className={statusClassName}>{statusLabel}</Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-end gap-2">
                           <Button size="sm" variant="outline" onClick={() => handleReminderEdit(item)}>Edit</Button>
-                          <Button size="sm" variant="outline" onClick={() => handleReminderToggle(item)}>
-                            {item.active ? 'Mark Completed' : 'Reactivate'}
-                          </Button>
                           <Button size="sm" variant="destructive" onClick={() => handleReminderDelete(item.id)}>Delete</Button>
                         </div>
                       </TableCell>
@@ -1091,23 +1089,9 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   };
 
   return (
-    <div className="space-y-6 pb-10">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Elderly</h1>
-        <p className="mt-1 text-muted-foreground">Choose an elderly profile, review status in Overview, take action in task tabs, and validate results in Logs.</p>
-      </div>
-
-      {message ? (
-        <Card className={cn(message.type === 'error' ? 'border-rose-200 bg-rose-50' : 'border-emerald-200 bg-emerald-50')}>
-          <CardContent className="flex items-center gap-2 py-4 text-sm">
-            {message.type === 'error' ? <AlertTriangle className="h-4 w-4 text-rose-600" /> : <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
-            <span>{message.text}</span>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <div className="grid gap-5 xl:grid-cols-[minmax(220px,1fr)_minmax(0,4fr)] 2xl:grid-cols-[240px_minmax(0,4.2fr)]">
-        <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+    <div className="space-y-4 pb-10">
+      <div className="grid gap-4 xl:grid-cols-[minmax(220px,1fr)_minmax(0,4fr)] 2xl:grid-cols-[240px_minmax(0,4.2fr)]">
+        <aside className="space-y-4 xl:sticky xl:top-20 xl:self-start">
           <Card>
             <CardHeader>
               <CardTitle>Assigned Elderly</CardTitle>
@@ -1171,28 +1155,52 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
           </Card>
         </aside>
 
-        <div className="space-y-6">
-          <Card>
-            <CardContent className="space-y-4 p-5 xl:p-6">
-              <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
-                <div className="space-y-2.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline">{selectedProfile ? `Age ${selectedAge ?? 'N/A'}` : 'Select elderly'}</Badge>
-                    <Badge variant={selectedAlertCount > 0 ? 'destructive' : 'secondary'}>{selectedAlertCount > 0 ? `${selectedAlertCount} open alerts` : 'No open alerts'}</Badge>
-                    <Badge variant="secondary">{roomInfo?.roomName || (caregiverProfile?.roomId ? `Room ${caregiverProfile.roomId}` : 'No room')}</Badge>
+        <div className="space-y-4">
+          <div className="sticky top-20 z-30 -mx-2 rounded-[24px] bg-background/98 px-2 pb-3 pt-1 shadow-[0_10px_24px_rgba(15,23,42,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/88">
+            <div className="space-y-2 rounded-2xl bg-background">
+            <div className="rounded-2xl border bg-background px-4 py-3 shadow-sm">
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                <div className="min-w-0 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium text-muted-foreground">
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1">{selectedProfile ? `Age ${selectedAge ?? 'N/A'}` : 'Select elderly'}</span>
+                    <span className={cn('rounded-full px-2.5 py-1', selectedAlertCount > 0 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700')}>
+                      {selectedAlertCount > 0 ? `${selectedAlertCount} open alerts` : 'No open alerts'}
+                    </span>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1">{roomInfo?.roomName || (caregiverProfile?.roomId ? `Room ${caregiverProfile.roomId}` : 'No room')}</span>
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-bold tracking-tight">{selectedProfile?.name || 'No elderly selected'}</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">{selectedProfile ? `${selectedProfile.preferredLanguage} • ${selectedProfile.speakingSpeed} speaking speed • caregiver ${caregiverProfile?.name || 'N/A'}` : 'Choose an elderly profile from the left list to begin.'}</p>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <h2 className="text-lg font-bold tracking-tight text-foreground">{selectedProfile?.name || 'No elderly selected'}</h2>
+                    {selectedProfile ? <span className="text-sm text-muted-foreground">{selectedProfile.preferredLanguage} • {selectedProfile.speakingSpeed}</span> : null}
+                    {caregiverProfile?.name ? <span className="text-sm text-muted-foreground">Caregiver {caregiverProfile.name}</span> : null}
                   </div>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-3 2xl:min-w-[360px]">
-                  <HeaderStat icon={<HeartPulse className="h-4 w-4 text-rose-500" />} label="Reminders" value={selectedReminders.length} />
-                  <HeaderStat icon={<Wifi className="h-4 w-4 text-sky-500" />} label="Robot" value={roomRobot?.robotName || 'N/A'} />
-                  <HeaderStat icon={<Settings2 className="h-4 w-4 text-emerald-500" />} label="Logs" value={selectedReminderLogs.length + selectedInteractions.length} />
+
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <div className="rounded-xl border bg-slate-50 px-3 py-1.5 text-right">
+                    <div className="font-bold text-slate-500">Reminders</div>
+                    <div className="text-sm font-semibold text-slate-900">{selectedReminders.length}</div>
+                  </div>
+                  <div className="rounded-xl border bg-slate-50 px-3 py-1.5 text-right">
+                    <div className="font-bold text-slate-500">Robot</div>
+                    <div className="text-sm font-semibold text-slate-900">{roomRobot?.robotName || 'N/A'}</div>
+                  </div>
+                  <div className="rounded-xl border bg-slate-50 px-3 py-1.5 text-right">
+                    <div className="font-bold text-slate-500">Logs</div>
+                    <div className="text-sm font-semibold text-slate-900">{selectedReminderLogs.length + selectedInteractions.length}</div>
+                  </div>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2 border-t pt-4">
+
+              {message ? (
+                <div className={cn('mt-3 flex items-center gap-2 rounded-xl border px-3 py-2 text-sm', message.type === 'error' ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700')}>
+                  {message.type === 'error' ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                  <span className="truncate">{message.text}</span>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="rounded-2xl border bg-background p-2 shadow-sm">
+              <div className="flex flex-wrap gap-2">
                 {workspaceTabs.map((tab) => (
                   <button
                     key={tab.key}
@@ -1200,7 +1208,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                     onClick={() => handleTabChange(tab.key)}
                     disabled={!effectiveSelectedId}
                     className={cn(
-                      'rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                      'rounded-full px-3 py-2 text-sm font-medium transition-colors',
                       activeTab === tab.key ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
                       !effectiveSelectedId && 'cursor-not-allowed opacity-50'
                     )}
@@ -1209,8 +1217,9 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                   </button>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            </div>
+          </div>
 
           {loadingSelected && effectiveSelectedId ? (
             <Card>
@@ -1250,9 +1259,9 @@ function InfoPair({ label, value }: { label: string; value: string }) {
 
 function HeaderStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border bg-slate-50 px-4 py-3 text-sm">
-      <div className="flex items-center gap-2 text-slate-500">{icon}<span className="text-xs font-bold uppercase tracking-wider">{label}</span></div>
-      <div className="mt-2 font-semibold text-slate-900">{value}</div>
+    <div className="rounded-xl border bg-slate-50 px-3 py-2 text-sm">
+      <div className="flex items-center gap-2 text-slate-500">{icon}<span className="text-[11px] font-bold uppercase tracking-wider">{label}</span></div>
+      <div className="mt-1 text-base font-semibold text-slate-900">{value}</div>
     </div>
   );
 }

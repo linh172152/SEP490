@@ -8,12 +8,11 @@ import {
   CardContent, 
   CardHeader, 
   CardTitle, 
-  CardDescription,
   CardFooter 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Plus, 
   Search, 
@@ -30,6 +29,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { getActiveUserPackageForElderly, getCatalogPackageForUserPackage, getServicePackageTheme, getUnpurchasedPackageTheme } from '@/lib/servicePackageThemes';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -39,8 +40,9 @@ import {
 
 export default function ElderlyListPage() {
   const { user } = useAuthStore();
-  const { elderlyList, userPackages, servicePackages, roomNames, fetchDashboardData, isLoading, generateDemoData, isUsingMock } = useFamilyStore();
+  const { elderlyList, userPackages, servicePackages, roomNames, fetchDashboardData, generateDemoData, isUsingMock } = useFamilyStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const unpurchasedTheme = getUnpurchasedPackageTheme();
 
   useEffect(() => {
     if (user?.id) {
@@ -53,24 +55,6 @@ export default function ElderlyListPage() {
     if (!query) return elderlyList;
     return elderlyList.filter((item) => item.name.toLowerCase().includes(query));
   }, [elderlyList, searchQuery]);
-
-  const getPurchasedPackageLabel = (accountId: number) => {
-    const now = Date.now();
-    const ownedPackages = userPackages.filter((item) => {
-      const expiry = Date.parse(item.expiredAt);
-      return item.accountId === accountId && (Number.isNaN(expiry) || expiry >= now);
-    });
-
-    if (ownedPackages.length === 0) {
-      return 'Chua mua goi';
-    }
-
-    const packageNames = ownedPackages
-      .map((item) => servicePackages.find((pkg) => pkg.id === item.servicePackageId)?.name)
-      .filter(Boolean);
-
-    return packageNames[0] || `Da mua ${ownedPackages.length} goi`;
-  };
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -108,13 +92,25 @@ export default function ElderlyListPage() {
 
       {filteredElderlies.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredElderlies.map((elderly) => (
-            <Card key={elderly.id} className="group border-none shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden bg-white dark:bg-slate-900">
-              <div className="h-1.5 w-full bg-sky-500" />
+          {filteredElderlies.map((elderly) => {
+            const activeUserPackage = getActiveUserPackageForElderly(userPackages, elderly.id);
+            const activePackage = getCatalogPackageForUserPackage(servicePackages, activeUserPackage);
+            const packageTheme = getServicePackageTheme(activePackage, servicePackages);
+            const hasPackage = Boolean(activePackage);
+
+            return (
+            <Card key={elderly.id} className={cn(
+              'group overflow-hidden border shadow-sm transition-all duration-300 hover:shadow-xl',
+              hasPackage ? packageTheme.surfaceClassName : unpurchasedTheme.surfaceClassName
+            )}>
+              <div className={cn('h-1.5 w-full', hasPackage ? packageTheme.accentClassName : unpurchasedTheme.accentClassName)} />
               <CardHeader className="flex flex-row items-start justify-between pb-4">
                 <div className="flex items-center gap-4">
-                  <Avatar className="h-14 w-14 border-2 border-sky-100 ring-2 ring-white group-hover:scale-105 transition-transform">
-                    <AvatarFallback className="bg-sky-50 text-sky-600 font-bold text-lg">
+                  <Avatar className={cn(
+                    'h-14 w-14 border-2 ring-2 ring-white transition-transform group-hover:scale-105',
+                    hasPackage ? packageTheme.ringClassName : unpurchasedTheme.ringClassName
+                  )}>
+                    <AvatarFallback className={cn('font-bold text-lg', hasPackage ? packageTheme.subtleClassName : unpurchasedTheme.subtleClassName)}>
                       {elderly.name.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
@@ -147,7 +143,10 @@ export default function ElderlyListPage() {
               </CardHeader>
               
               <CardContent className="space-y-4 pt-2">
-                <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-4 border border-slate-100 dark:border-slate-800">
+                <div className={cn(
+                  'rounded-xl border p-4',
+                  hasPackage ? 'border-white/60 bg-white/70 backdrop-blur-sm dark:bg-slate-900/40' : 'border-slate-200 bg-slate-50/90'
+                )}>
                   <div className="grid gap-3 text-sm">
                     <div>
                       <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
@@ -160,11 +159,24 @@ export default function ElderlyListPage() {
                     <div className="flex items-center justify-between gap-3">
                       <span className="flex items-center gap-2 text-muted-foreground">
                         <Package className="h-4 w-4 text-emerald-500" />
-                        Goi
+                        Service Plan
                       </span>
-                      <Badge variant={getPurchasedPackageLabel(elderly.accountId) === 'Chua mua goi' ? 'secondary' : 'outline'}>
-                        {getPurchasedPackageLabel(elderly.accountId)}
-                      </Badge>
+                      {hasPackage ? (
+                        <Badge variant="outline" className={packageTheme.badgeClassName}>
+                          {activePackage.name}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className={unpurchasedTheme.badgeClassName}>
+                          Chưa mua gói
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="flex items-center gap-2 text-muted-foreground">
+                        <Users className="h-4 w-4 text-sky-500" />
+                        Elderly ID
+                      </span>
+                      <span className="font-semibold text-foreground">#{elderly.id}</span>
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <span className="flex items-center gap-2 text-muted-foreground">
@@ -175,6 +187,17 @@ export default function ElderlyListPage() {
                         {elderly.roomId ? roomNames[elderly.roomId] || `Room ${elderly.roomId}` : 'Chua co phong'}
                       </span>
                     </div>
+                    {!hasPackage ? (
+                      <Button asChild className="mt-2 w-full bg-slate-700 hover:bg-slate-800 text-white">
+                        <Link href={`/dashboard/family/packages?elderlyId=${elderly.id}&elderlyName=${encodeURIComponent(elderly.name)}`}>
+                          Mua gói ngay !
+                        </Link>
+                      </Button>
+                    ) : (
+                      <div className={cn('rounded-xl px-3 py-2 text-xs font-semibold', packageTheme.subtleClassName)}>
+                        {activePackage.level} • {activePackage.durationDays || 30} ngày • Gắn cho {elderly.name}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -190,14 +213,23 @@ export default function ElderlyListPage() {
               </CardContent>
 
               <CardFooter className="pt-2 border-t border-slate-50 dark:border-slate-800/50">
-                <Button variant="outline" className="w-full text-sky-600 border-sky-100 hover:bg-sky-50 group-hover:bg-sky-600 group-hover:text-white transition-all duration-300" asChild>
-                  <Link href={`/dashboard/family/elderly/${elderly.id}`}>
-                    Xem detail
-                  </Link>
-                </Button>
+                <div className="flex w-full gap-2">
+                  <Button variant="outline" className="flex-1 text-sky-600 border-sky-100 hover:bg-sky-50 group-hover:bg-sky-600 group-hover:text-white transition-all duration-300" asChild>
+                    <Link href={`/dashboard/family/elderly/${elderly.id}`}>
+                      Xem detail
+                    </Link>
+                  </Button>
+                  {!hasPackage ? (
+                    <Button asChild className="bg-slate-700 hover:bg-slate-800 text-white">
+                      <Link href={`/dashboard/family/packages?elderlyId=${elderly.id}&elderlyName=${encodeURIComponent(elderly.name)}`}>
+                        Mua gói
+                      </Link>
+                    </Button>
+                  ) : null}
+                </div>
               </CardFooter>
             </Card>
-          ))}
+          );})}
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl bg-slate-50/30 backdrop-blur-sm shadow-inner">

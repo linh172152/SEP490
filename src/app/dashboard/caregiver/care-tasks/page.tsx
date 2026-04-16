@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
+import { getReminderPatternLabel, getReminderTypeLabel, normalizeReminderType, REMINDER_PATTERN_OPTIONS, REMINDER_TYPE_OPTIONS } from '@/lib/reminderOptions';
 import { caregiverService } from '@/services/api/caregiverService';
 import { reminderService } from '@/services/api/reminderService';
 import { exerciseService } from '@/services/api/exerciseService';
@@ -29,24 +30,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Activity, ArrowRight, Bell, Dumbbell, Edit, ExternalLink, Loader2, Plus, RefreshCw, Trash2, Users } from 'lucide-react';
-
-const normalizeReminderType = (value: string) => {
-  const normalized = value.trim().toLowerCase();
-
-  if (normalized === 'medicine' || normalized === 'media') {
-    return 'medication';
-  }
-
-  return normalized;
-};
-
-const reminderTypeLabelFallback: Record<string, string> = {
-  medication: 'Medication',
-  hydration: 'Hydration',
-  exercise: 'Exercise',
-  meal: 'Meal',
-  appointment: 'Appointment',
-};
 
 const getCaregiverIdentifiers = (profile: { id?: number | null; accountId?: number | null } | null, userId?: string) => {
   return Array.from(
@@ -162,8 +145,6 @@ export default function CaregiverCareTasksPage() {
     [reminders]
   );
 
-  const getReminderTypeLabel = (type: string) => reminderTypeLabelFallback[normalizeReminderType(type)] || type;
-
   const resetReminderForm = () => {
     setEditingReminder(null);
     setReminderForm(createDefaultReminderForm(profile?.accountId || (user?.id ? Number(user.id) : 0) || profile?.id || 0, elderlies[0]?.id || 0));
@@ -231,27 +212,6 @@ export default function CaregiverCareTasksPage() {
       setError(actionError instanceof Error ? actionError.message : 'Unable to save reminder.');
     } finally {
       setSavingReminder(false);
-    }
-  };
-
-  const handleToggleReminder = async (reminder: ReminderResponse) => {
-    setActioningReminderId(reminder.id);
-    setError(null);
-    try {
-      await reminderService.update(reminder.id, {
-        elderlyId: reminder.elderlyId,
-        caregiverId: reminder.caregiverId,
-        title: reminder.title,
-        reminderType: reminder.reminderType,
-        scheduleTime: reminder.scheduleTime,
-        repeatPattern: reminder.repeatPattern,
-        active: !reminder.active,
-      });
-      await load({ remindersOnly: true });
-    } catch (actionError: unknown) {
-      setError(actionError instanceof Error ? actionError.message : 'Unable to update reminder.');
-    } finally {
-      setActioningReminderId(null);
     }
   };
 
@@ -358,7 +318,7 @@ export default function CaregiverCareTasksPage() {
                                 {isOverdue ? <Badge variant="destructive">Overdue</Badge> : null}
                               </div>
                               <div className="text-sm text-muted-foreground">
-                                {reminder.elderlyName || `Elderly #${reminder.elderlyId}`} • {reminder.reminderType} • {reminder.repeatPattern}
+                                {reminder.elderlyName || `Elderly #${reminder.elderlyId}`} • {getReminderTypeLabel(reminder.reminderType)} • {getReminderPatternLabel(reminder.repeatPattern)}
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 Scheduled: {new Date(reminder.scheduleTime).toLocaleString()}
@@ -366,9 +326,6 @@ export default function CaregiverCareTasksPage() {
                             </div>
 
                             <div className="flex flex-wrap gap-2">
-                              <Button size="sm" variant="outline" onClick={() => handleToggleReminder(reminder)} disabled={isBusy}>
-                                {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : reminder.active ? 'Mark Done' : 'Reactivate'}
-                              </Button>
                               <Button size="sm" variant="outline" onClick={() => handleOpenEditReminder(reminder)} disabled={isBusy}>
                                 <Edit className="mr-2 h-4 w-4" /> Edit
                               </Button>
@@ -457,11 +414,9 @@ export default function CaregiverCareTasksPage() {
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="medication">Medication</SelectItem>
-                    <SelectItem value="hydration">Hydration</SelectItem>
-                    <SelectItem value="exercise">Exercise</SelectItem>
-                    <SelectItem value="meal">Meal</SelectItem>
-                    <SelectItem value="appointment">Appointment</SelectItem>
+                      {REMINDER_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -491,18 +446,16 @@ export default function CaregiverCareTasksPage() {
                     <SelectValue placeholder="Select pattern" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="once">Once</SelectItem>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="every_2_hours">Every 2 Hours</SelectItem>
+                      {REMINDER_PATTERN_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="rounded-xl border bg-slate-50 p-3 text-sm text-muted-foreground">
-              Current type preview: <span className="font-medium text-foreground">{getReminderTypeLabel(reminderForm.reminderType)}</span>
+              Current selection: <span className="font-medium text-foreground">{getReminderTypeLabel(reminderForm.reminderType)} • {getReminderPatternLabel(reminderForm.repeatPattern)}</span>
             </div>
           </div>
 

@@ -20,13 +20,14 @@ import {
   XAxis,
 } from 'recharts';
 import { elderlyService } from '@/services/api/elderlyService';
-import { robotService } from '@/services/api/robotService';
 import { roomService } from '@/services/api/roomService';
 import { servicePackageService } from '@/services/api/servicePackageService';
 import { userPackageService } from '@/services/api/userPackageService';
+import { cn } from '@/lib/utils';
+import { getOrderedServicePackages, getServicePackageTheme, getUnpurchasedPackageTheme } from '@/lib/servicePackageThemes';
 import type {
   ElderlyProfileResponse,
-  RobotResponse,
+  RobotDTO,
   RoomResponse,
   ServicePackageResponse,
   UserPackageResponse,
@@ -57,7 +58,7 @@ export default function FamilyElderlyDetailPage() {
 
   const [profile, setProfile] = useState<ElderlyProfileResponse | null>(null);
   const [room, setRoom] = useState<RoomResponse | null>(null);
-  const [robot, setRobot] = useState<RobotResponse | null>(null);
+  const [robot, setRobot] = useState<RobotDTO | null>(null);
   const [servicePackages, setServicePackages] = useState<ServicePackageResponse[]>([]);
   const [ownedPackages, setOwnedPackages] = useState<UserPackageResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,9 +78,9 @@ export default function FamilyElderlyDetailPage() {
 
         const [packages, userPackages, roomData] = await Promise.all([
           servicePackageService.getAll().catch(() => [] as ServicePackageResponse[]),
-          userPackageService.getByAccountId(detail.accountId).catch(async () => {
+          userPackageService.getByElderlyId(detail.id).catch(async () => {
             const all = await userPackageService.getAll().catch(() => [] as UserPackageResponse[]);
-            return all.filter((item) => item.accountId === detail.accountId);
+            return all.filter((item) => item.elderlyProfileId === detail.id);
           }),
           detail.roomId ? roomService.getRoomById(detail.roomId).catch(() => null) : Promise.resolve(null),
         ]);
@@ -87,13 +88,7 @@ export default function FamilyElderlyDetailPage() {
         setServicePackages(packages);
         setOwnedPackages(userPackages);
         setRoom(roomData);
-
-        if (roomData?.robot?.id) {
-          const robotData = await robotService.getById(roomData.robot.id).catch(() => null);
-          setRobot(robotData);
-        } else {
-          setRobot(null);
-        }
+        setRobot(roomData?.robot || null);
       } finally {
         setLoading(false);
       }
@@ -120,6 +115,8 @@ export default function FamilyElderlyDetailPage() {
   );
 
   const primaryPackage = activePackageDetails[0]?.catalog || null;
+  const packageTheme = getServicePackageTheme(primaryPackage, servicePackages);
+  const unpurchasedTheme = getUnpurchasedPackageTheme();
   const age = useMemo(() => {
     if (!profile?.dateOfBirth) return null;
     return differenceInYears(new Date(), new Date(profile.dateOfBirth));
@@ -163,7 +160,7 @@ export default function FamilyElderlyDetailPage() {
 
   const availablePackages = useMemo(
     () =>
-      servicePackages.map((pkg) => ({
+      getOrderedServicePackages(servicePackages).map((pkg) => ({
         ...pkg,
         isOwned: activeOwnedPackages.some((item) => item.servicePackageId === pkg.id),
       })),
@@ -205,13 +202,18 @@ export default function FamilyElderlyDetailPage() {
         <span className="font-medium text-foreground">{profile.name}</span>
       </div>
 
-      <Card className="overflow-hidden border-none bg-gradient-to-r from-sky-600 via-sky-600 to-cyan-500 text-white shadow-xl">
+      <Card className={cn(
+        'overflow-hidden border-none text-white shadow-xl',
+        primaryPackage ? 'bg-slate-900' : 'bg-gradient-to-r from-sky-600 via-sky-600 to-cyan-500'
+      )}>
+        {primaryPackage ? <div className={cn('h-2 w-full', packageTheme.accentClassName)} /> : null}
         <CardContent className="grid gap-6 p-6 lg:grid-cols-[1.2fr_0.8fr] lg:p-8">
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <Badge className="bg-white/15 text-white hover:bg-white/20">Family View</Badge>
               <Badge className="bg-white/15 text-white hover:bg-white/20">{room?.roomName || (profile.roomId ? `Room ${profile.roomId}` : 'No Room')}</Badge>
               <Badge className="bg-white/15 text-white hover:bg-white/20">{primaryPackage?.name || 'No Active Plan'}</Badge>
+              <Badge className="bg-white/15 text-white hover:bg-white/20">Elderly ID #{profile.id}</Badge>
             </div>
             <div>
               <h1 className="text-3xl font-bold tracking-tight">{profile.name}</h1>
@@ -235,7 +237,7 @@ export default function FamilyElderlyDetailPage() {
               </Link>
             </Button>
             <Button asChild variant="secondary" className="justify-start border-none bg-white/15 text-white hover:bg-white/20">
-              <Link href="/dashboard/family/packages">
+              <Link href={`/dashboard/family/packages?elderlyId=${profile.id}&elderlyName=${encodeURIComponent(profile.name)}`}>
                 <Package className="mr-2 h-4 w-4" /> Review Service Plans
               </Link>
             </Button>
@@ -290,20 +292,27 @@ export default function FamilyElderlyDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle>Owned Service Plans</CardTitle>
-              <CardDescription>Packages currently attached to the family account for this elderly profile.</CardDescription>
+              <CardDescription>Packages currently attached to elderly #{profile.id} - {profile.name}.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {activePackageDetails.length === 0 ? (
-                <div className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">No active service plan yet.</div>
+                <div className="space-y-3 rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">
+                  <div>No active service plan yet.</div>
+                  <Button asChild className="w-full bg-slate-700 hover:bg-slate-800 text-white">
+                    <Link href={`/dashboard/family/packages?elderlyId=${profile.id}&elderlyName=${encodeURIComponent(profile.name)}`}>
+                      Mua gói ngay !
+                    </Link>
+                  </Button>
+                </div>
               ) : (
                 activePackageDetails.map(({ ownership, catalog }) => (
-                  <div key={ownership.id} className="rounded-2xl border p-4">
+                  <div key={ownership.id} className={cn('rounded-2xl border p-4', getServicePackageTheme(catalog, servicePackages).surfaceClassName)}>
                     <div className="flex items-center justify-between gap-2">
                       <div className="font-semibold">{catalog?.name || `Package #${ownership.servicePackageId}`}</div>
-                      <Badge variant="outline">{catalog?.level || 'Unknown'}</Badge>
+                      <Badge variant="outline" className={getServicePackageTheme(catalog, servicePackages).badgeClassName}>{catalog?.level || 'Unknown'}</Badge>
                     </div>
                     <div className="mt-2 text-xs text-muted-foreground">
-                      Assigned {new Date(ownership.assignedAt).toLocaleDateString()} • Expires {new Date(ownership.expiredAt).toLocaleDateString()}
+                      Elderly #{ownership.elderlyProfileId || profile.id} • Assigned {new Date(ownership.assignedAt).toLocaleDateString()} • Expires {new Date(ownership.expiredAt).toLocaleDateString()}
                     </div>
                   </div>
                 ))
@@ -329,7 +338,7 @@ export default function FamilyElderlyDetailPage() {
               </div>
               <div className="grid gap-3">
                 <InsightCard title="Primary Plan" value={primaryPackage?.name || 'None'} icon={<Package className="h-4 w-4 text-emerald-500" />} />
-                <InsightCard title="Room Status" value={robot ? `${robot.status} in ${room?.roomName || 'assigned room'}` : room?.roomName || 'No room assigned'} icon={<Zap className="h-4 w-4 text-amber-500" />} />
+                <InsightCard title="Room Robot" value={robot ? `${robot.robotName} in ${room?.roomName || 'assigned room'}` : room?.roomName || 'No room assigned'} icon={<Zap className="h-4 w-4 text-amber-500" />} />
                 <InsightCard title="Communication" value={`${profile.preferredLanguage} • ${profile.speakingSpeed}`} icon={<Sparkles className="h-4 w-4 text-sky-500" />} />
               </div>
             </CardContent>
@@ -338,15 +347,13 @@ export default function FamilyElderlyDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle>Room & Robot Context</CardTitle>
-              <CardDescription>Robot detail is loaded from GET /api/robots/{'{'}id{'}'} after resolving the assigned room robot.</CardDescription>
+              <CardDescription>Robot information is rendered directly from the resolved room payload without calling GET /api/robots/{'{'}id{'}'}.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <ContextMetric label="Room" value={room?.roomName || (profile.roomId ? `Room ${profile.roomId}` : 'Unassigned')} />
               <ContextMetric label="Robot" value={robot?.robotName || 'Not assigned'} />
-              <ContextMetric label="Status" value={robot?.status || 'Unknown'} />
               <ContextMetric label="Model" value={robot?.model || 'N/A'} />
-              <ContextMetric label="Firmware" value={robot?.firmwareVersion || 'N/A'} />
-              <ContextMetric label="Serial Number" value={robot?.serialNumber || 'N/A'} />
+              <ContextMetric label="Robot ID" value={robot?.id ? `${robot.id}` : 'N/A'} />
             </CardContent>
           </Card>
 
@@ -421,18 +428,25 @@ export default function FamilyElderlyDetailPage() {
                   <div className="rounded-2xl border border-dashed p-5 text-sm text-muted-foreground">No service package catalog found.</div>
                 ) : (
                   availablePackages.map((pkg) => (
-                    <div key={pkg.id} className="rounded-2xl border p-4">
+                    <div key={pkg.id} className={cn('rounded-2xl border p-4', pkg.isOwned ? getServicePackageTheme(pkg, servicePackages).surfaceClassName : unpurchasedTheme.surfaceClassName)}>
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <div className="font-semibold">{pkg.name}</div>
                           <div className="mt-1 text-sm text-muted-foreground">{pkg.description}</div>
                         </div>
-                        <Badge variant={pkg.isOwned ? 'default' : 'secondary'}>{pkg.isOwned ? 'Active' : 'Available'}</Badge>
+                        <Badge variant={pkg.isOwned ? 'default' : 'secondary'} className={pkg.isOwned ? getServicePackageTheme(pkg, servicePackages).badgeClassName : unpurchasedTheme.badgeClassName}>{pkg.isOwned ? 'Active' : 'Available'}</Badge>
                       </div>
                       <div className="mt-3 flex items-center justify-between gap-3 text-sm">
-                        <span className="text-muted-foreground">{pkg.level}</span>
+                        <span className="text-muted-foreground">{pkg.level} • {pkg.durationDays || 30} days</span>
                         <span className="font-semibold">{pkg.price.toLocaleString()}</span>
                       </div>
+                      {!pkg.isOwned ? (
+                        <Button asChild size="sm" className="mt-3 bg-slate-700 hover:bg-slate-800 text-white">
+                          <Link href={`/dashboard/family/packages?elderlyId=${profile.id}&elderlyName=${encodeURIComponent(profile.name)}`}>
+                            Mua gói ngay !
+                          </Link>
+                        </Button>
+                      ) : null}
                     </div>
                   ))
                 )}

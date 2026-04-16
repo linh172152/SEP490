@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { getReminderPatternLabel, getReminderTypeLabel, normalizeReminderPattern, normalizeReminderType, REMINDER_PATTERN_OPTIONS, REMINDER_TYPE_OPTIONS } from '@/lib/reminderOptions';
 import { useReminderStore } from '@/store/useReminderStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCaregiverStore } from '@/store/useCaregiverStore';
@@ -55,24 +56,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ReminderRequest, ReminderResponse, RoomElderlySummary } from '@/services/api/types';
 import { format } from 'date-fns';
-
-const normalizeReminderType = (value: string) => {
-  const normalized = value.trim().toLowerCase();
-
-  if (normalized === 'medicine' || normalized === 'media') {
-    return 'medication';
-  }
-
-  return normalized;
-};
-
-const reminderTypeLabelFallback: Record<string, string> = {
-  medication: 'Medication',
-  hydration: 'Hydration',
-  exercise: 'Exercise',
-  meal: 'Meal',
-  appointment: 'Appointment',
-};
 
 const getCaregiverIdentifiers = (profile: { id?: number | null; accountId?: number | null } | null, userId?: string) => {
   return Array.from(
@@ -156,7 +139,7 @@ export default function CaregiverRemindersPage() {
     });
   };
 
-  const getReminderTypeLabel = (type: string) => {
+  const getTranslatedReminderTypeLabel = (type: string) => {
     const normalizedType = normalizeReminderType(type);
     const translated = t(`caregiver.reminders.types.${normalizedType}`);
 
@@ -164,7 +147,18 @@ export default function CaregiverRemindersPage() {
       return translated;
     }
 
-    return reminderTypeLabelFallback[normalizedType] || type;
+    return getReminderTypeLabel(type);
+  };
+
+  const getTranslatedReminderPatternLabel = (pattern: string) => {
+    const normalizedPattern = normalizeReminderPattern(pattern);
+    const translated = t(`caregiver.reminders.patterns.${normalizedPattern}`);
+
+    if (translated && translated !== `caregiver.reminders.patterns.${normalizedPattern}`) {
+      return translated;
+    }
+
+    return getReminderPatternLabel(pattern);
   };
 
   const filteredReminders = useMemo(() => {
@@ -231,23 +225,6 @@ export default function CaregiverRemindersPage() {
       }
       await refreshCaregiverReminders();
       setIsModalOpen(false);
-    } catch {
-      toast.error(t('common.error'));
-    }
-  };
-
-  const handleToggleActive = async (reminder: ReminderResponse) => {
-    const realCaregiverId = effectiveCaregiverId;
-    if (!realCaregiverId) return;
-
-    try {
-      await updateReminder(reminder.id, {
-        ...reminder,
-        caregiverId: realCaregiverId,
-        active: !reminder.active
-      });
-      await refreshCaregiverReminders();
-      toast.success(t('common.update_success'));
     } catch {
       toast.error(t('common.error'));
     }
@@ -331,11 +308,9 @@ export default function CaregiverRemindersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="medication">Medication</SelectItem>
-                  <SelectItem value="hydration">Hydration</SelectItem>
-                  <SelectItem value="exercise">Exercise</SelectItem>
-                  <SelectItem value="meal">Meal</SelectItem>
-                  <SelectItem value="appointment">Appointment</SelectItem>
+                  {REMINDER_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -391,25 +366,19 @@ export default function CaregiverRemindersPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={`capitalize rounded-lg px-2.5 py-1 border font-medium ${getTypeBadgeColor(reminder.reminderType)}`}>
-                          {getReminderTypeLabel(reminder.reminderType)}
+                          {getTranslatedReminderTypeLabel(reminder.reminderType)}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center text-sm text-slate-600 dark:text-slate-400 font-medium">
                           {getPatternIcon(reminder.repeatPattern)}
-                          <span className="capitalize">{t(`caregiver.reminders.patterns.${reminder.repeatPattern}`)}</span>
+                          <span>{getTranslatedReminderPatternLabel(reminder.repeatPattern)}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <Button 
-                          variant="ghost" 
-                          className="p-0 hover:bg-transparent" 
-                          onClick={() => handleToggleActive(reminder)}
-                        >
-                          <Badge variant={reminder.active ? "default" : "secondary"} className={`rounded-full px-3.5 py-1 font-bold tracking-wide cursor-pointer transition-all active:scale-90 ${reminder.active ? 'bg-emerald-500 hover:bg-emerald-600 shadow-sm shadow-emerald-100' : ''}`}>
-                            {reminder.active ? t('caregiver.reminders.status.active') : t('caregiver.reminders.status.inactive')}
-                          </Badge>
-                        </Button>
+                        <Badge variant={reminder.active ? "default" : "secondary"} className={`rounded-full px-3.5 py-1 font-bold tracking-wide ${reminder.active ? 'bg-emerald-500 shadow-sm shadow-emerald-100' : ''}`}>
+                          {reminder.active ? t('caregiver.reminders.status.active') : t('caregiver.reminders.status.inactive')}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right pr-8">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
@@ -491,11 +460,9 @@ export default function CaregiverRemindersPage() {
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="medication">{t('caregiver.reminders.types.medication')}</SelectItem>
-                      <SelectItem value="hydration">{t('caregiver.reminders.types.hydration')}</SelectItem>
-                      <SelectItem value="exercise">{t('caregiver.reminders.types.exercise')}</SelectItem>
-                      <SelectItem value="meal">{t('caregiver.reminders.types.meal')}</SelectItem>
-                      <SelectItem value="appointment">{t('caregiver.reminders.types.appointment')}</SelectItem>
+                      {REMINDER_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>{getTranslatedReminderTypeLabel(option.value)}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -539,11 +506,9 @@ export default function CaregiverRemindersPage() {
                       <SelectValue placeholder="Select frequency" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="once">{t('caregiver.reminders.patterns.once')}</SelectItem>
-                      <SelectItem value="daily">{t('caregiver.reminders.patterns.daily')}</SelectItem>
-                      <SelectItem value="weekly">{t('caregiver.reminders.patterns.weekly')}</SelectItem>
-                      <SelectItem value="monthly">{t('caregiver.reminders.patterns.monthly')}</SelectItem>
-                      <SelectItem value="every_2_hours">{t('caregiver.reminders.patterns.every_2_hours')}</SelectItem>
+                      {REMINDER_PATTERN_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>{getTranslatedReminderPatternLabel(option.value)}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -598,7 +563,7 @@ export default function CaregiverRemindersPage() {
                   {viewingReminder?.title}
                 </DialogTitle>
                 <DialogDescription className="text-slate-500">
-                  {viewingReminder ? getReminderTypeLabel(viewingReminder.reminderType) : ''}
+                  {viewingReminder ? getTranslatedReminderTypeLabel(viewingReminder.reminderType) : ''}
                 </DialogDescription>
               </div>
             </div>
@@ -623,7 +588,7 @@ export default function CaregiverRemindersPage() {
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('caregiver.reminders.table.pattern')}</span>
                 <div className="flex items-center font-semibold text-slate-700 dark:text-slate-300">
                   {viewingReminder && getPatternIcon(viewingReminder.repeatPattern)}
-                  <span className="capitalize">{viewingReminder ? t(`caregiver.reminders.patterns.${viewingReminder.repeatPattern}`) : ''}</span>
+                  <span>{viewingReminder ? getTranslatedReminderPatternLabel(viewingReminder.repeatPattern) : ''}</span>
                 </div>
               </div>
               <div className="space-y-1">

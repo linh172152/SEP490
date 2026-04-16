@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useFamilyStore } from '@/store/useFamilyStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { paymentService } from '@/services/api/paymentService';
 import { 
   Card, 
   CardContent, 
@@ -13,6 +15,8 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { getActiveUserPackageForElderly, getCatalogPackageForUserPackage, getOrderedServicePackages, getServicePackageTheme, getUnpurchasedPackageTheme } from '@/lib/servicePackageThemes';
 import { 
   Package, 
   Check, 
@@ -23,14 +27,24 @@ import {
   Crown,
   Info,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Loader2,
+  UserRound,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
+const SELECTED_ELDERLY_STORAGE_KEY = 'family-selected-elderly-package-context';
+const FAMILY_PAYMENT_STORAGE_KEY = 'family-payment-preview';
+
 export default function PackagesPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuthStore();
-  const { userPackages, servicePackages, purchasePackage, fetchDashboardData, isLoading, isUsingMock } = useFamilyStore();
+  const { elderlyList, userPackages, servicePackages, fetchDashboardData, isUsingMock } = useFamilyStore();
   const [purchasingId, setPurchasingId] = useState<number | null>(null);
+  const [selectedElderlyId, setSelectedElderlyId] = useState<number | null>(null);
+  const [selectedElderlyName, setSelectedElderlyName] = useState('');
 
   useEffect(() => {
     if (user?.id) {
@@ -38,27 +52,111 @@ export default function PackagesPage() {
     }
   }, [user?.id, fetchDashboardData]);
 
+  useEffect(() => {
+    const queryElderlyId = Number(searchParams.get('elderlyId'));
+    const queryElderlyName = searchParams.get('elderlyName');
+
+    if (Number.isFinite(queryElderlyId) && queryElderlyId > 0) {
+      setSelectedElderlyId(queryElderlyId);
+      setSelectedElderlyName(queryElderlyName || '');
+
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem(
+          SELECTED_ELDERLY_STORAGE_KEY,
+          JSON.stringify({ elderlyId: queryElderlyId, elderlyName: queryElderlyName || '' })
+        );
+      }
+      return;
+    }
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const savedValue = window.sessionStorage.getItem(SELECTED_ELDERLY_STORAGE_KEY);
+    if (!savedValue) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(savedValue) as { elderlyId?: number; elderlyName?: string };
+      if (parsed.elderlyId) {
+        setSelectedElderlyId(parsed.elderlyId);
+        setSelectedElderlyName(parsed.elderlyName || '');
+      }
+    } catch {
+      window.sessionStorage.removeItem(SELECTED_ELDERLY_STORAGE_KEY);
+    }
+  }, [searchParams]);
+
+  const selectedElderly = useMemo(() => {
+    if (!selectedElderlyId) {
+      return null;
+    }
+
+    return elderlyList.find((item) => item.id === selectedElderlyId) || null;
+  }, [elderlyList, selectedElderlyId]);
+
+  const effectiveElderlyName = selectedElderly?.name || selectedElderlyName;
+
   const activePackage = useMemo(() => {
-    const now = Date.now();
-    return userPackages.find((item) => {
-      const expiry = Date.parse(item.expiredAt);
-      return Number.isNaN(expiry) || expiry >= now;
-    }) || null;
-  }, [userPackages]);
+    if (!selectedElderlyId) {
+      return null;
+    }
+
+    return getActiveUserPackageForElderly(userPackages, selectedElderlyId);
+  }, [selectedElderlyId, userPackages]);
+
+  const activePackageInfo = useMemo(
+    () => getCatalogPackageForUserPackage(servicePackages, activePackage),
+    [activePackage, servicePackages]
+  );
+
+  const activePackageTheme = getServicePackageTheme(activePackageInfo, servicePackages);
+  const unpurchasedTheme = getUnpurchasedPackageTheme();
 
   const handlePurchase = async (packageId: number) => {
-    if (!user?.id) return;
+    if (!selectedElderlyId) {
+      toast.error('Vui lòng chọn một elderly profile trước khi thanh toán.');
+      return;
+    }
     
     setPurchasingId(packageId);
     try {
-      await purchasePackage(Number(user.id), packageId);
-      toast.success('Gói dịch vụ đã được kích hoạt thành công!');
-    } catch (error) {
-      toast.error('Lỗi khi mua gói dịch vụ. Vui lòng thử lại.');
+      const payment = await paymentService.create(packageId, selectedElderlyId);
+      const selectedPackage = servicePackages.find((item) => item.id === packageId) || null;
+
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem(
+          FAMILY_PAYMENT_STORAGE_KEY,
+          JSON.stringify({
+            ...payment,
+            elderlyId: selectedElderlyId,
+            elderlyName: effectiveElderlyName,
+            servicePackageId: packageId,
+            servicePackageName: selectedPackage?.name || `Package #${packageId}`,
+            servicePackageLevel: selectedPackage?.level || '',
+          })
+        );
+      }
+
+      toast.success(`Đã tạo thanh toán cho EL #${selectedElderlyId}. Chuyển sang trang payment...`);
+      router.push('/dashboard/family/payment');
+    } catch {
+      toast.error('Lỗi khi tạo thanh toán. Vui lòng thử lại.');
     } finally {
       setPurchasingId(null);
     }
   };
+
+  const availablePackages = useMemo(() => {
+    return getOrderedServicePackages(servicePackages)
+      .filter((item) => item.active)
+      .map((pkg) => ({
+        ...pkg,
+        isCurrent: activePackage?.servicePackageId === pkg.id,
+      }));
+  }, [activePackage?.servicePackageId, servicePackages]);
 
   return (
     <div className="space-y-10 pb-20 animate-in fade-in slide-in-from-top-4 duration-700">
@@ -67,23 +165,108 @@ export default function PackagesPage() {
           <h1 className="text-3xl font-bold tracking-tight">Service Plans</h1>
           <p className="text-muted-foreground mt-1">Review, purchase, and manage the plans attached to your elderly care journey.</p>
         </div>
+        <Button variant="outline" onClick={() => user?.id && fetchDashboardData(Number(user.id))}>
+          <RefreshCw className="mr-2 h-4 w-4" /> Refresh plan status
+        </Button>
       </div>
+
+      <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+        <Card className={cn(
+          'border shadow-sm',
+          selectedElderlyId ? 'border-sky-200 bg-gradient-to-br from-sky-50 via-white to-cyan-50' : 'border-dashed border-slate-200 bg-slate-50/60'
+        )}>
+          <CardHeader>
+            <CardTitle>Selected Elderly For Payment</CardTitle>
+            <CardDescription>
+              Lưu ý: phải lưu Elderly ID và hiện ra bên ngoài tên của Elderly đó vì khi thanh toán sẽ dùng EL ID đó.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {selectedElderlyId ? (
+              <div className="rounded-2xl border border-sky-200 bg-white p-5 shadow-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="bg-sky-600 text-white hover:bg-sky-700">EL ID #{selectedElderlyId}</Badge>
+                  {effectiveElderlyName ? <Badge variant="outline">{effectiveElderlyName}</Badge> : null}
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl bg-sky-50 p-4">
+                    <div className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">Elderly Name</div>
+                    <div className="mt-2 font-semibold text-slate-900">{effectiveElderlyName || 'Unknown elderly profile'}</div>
+                  </div>
+                  <div className="rounded-xl bg-sky-50 p-4">
+                    <div className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">Current Plan Status</div>
+                    <div className="mt-2 font-semibold text-slate-900">{activePackageInfo?.name || 'Chưa mua gói'}</div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">
+                Chưa chọn elderly profile. Hãy chọn từ danh sách bên phải hoặc bấm “Mua gói ngay !” từ trang chi tiết của từng EL.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Choose An Elderly Profile</CardTitle>
+            <CardDescription>Trang này có thể mở trực tiếp từ từng EL hoặc chọn nhanh một EL tại đây.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {elderlyList.length === 0 ? (
+              <div className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">No elderly profile found for this family account.</div>
+            ) : elderlyList.map((elderly) => {
+              const pkg = getCatalogPackageForUserPackage(servicePackages, getActiveUserPackageForElderly(userPackages, elderly.id));
+              return (
+                <button
+                  key={elderly.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedElderlyId(elderly.id);
+                    setSelectedElderlyName(elderly.name);
+                    if (typeof window !== 'undefined') {
+                      window.sessionStorage.setItem(
+                        SELECTED_ELDERLY_STORAGE_KEY,
+                        JSON.stringify({ elderlyId: elderly.id, elderlyName: elderly.name })
+                      );
+                    }
+                  }}
+                  className={cn(
+                    'w-full rounded-2xl border px-4 py-3 text-left transition-colors',
+                    selectedElderlyId === elderly.id ? 'border-sky-500 bg-sky-50' : 'border-slate-200 hover:border-sky-200 hover:bg-slate-50'
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="font-semibold text-foreground">{elderly.name}</div>
+                      <div className="text-xs text-muted-foreground">EL #{elderly.id}</div>
+                    </div>
+                    <Badge variant={pkg ? 'outline' : 'secondary'} className={pkg ? getServicePackageTheme(pkg, servicePackages).badgeClassName : unpurchasedTheme.badgeClassName}>
+                      {pkg?.name || 'Chưa mua gói'}
+                    </Badge>
+                  </div>
+                </button>
+              );
+            })}
+          </CardContent>
+        </Card>
+      </section>
 
       {/* Current Active Package Section */}
       <section className="space-y-4">
         <h3 className="text-xl font-bold flex items-center gap-2">
             <ShieldCheck className="h-6 w-6 text-emerald-500" /> Current Plan
         </h3>
-        {activePackage ? (
-           <Card className="border-none shadow-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white overflow-hidden relative group">
+        {selectedElderlyId && activePackage ? (
+           <Card className={cn('border-none shadow-xl text-white overflow-hidden relative group', activePackageTheme.accentClassName)}>
               <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl group-hover:bg-white/20 transition-all duration-700" />
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                  <div className="space-y-1">
                     <CardTitle className="text-2xl">
-                        {servicePackages.find(p => p.id === activePackage.servicePackageId)?.name || 'Active Subscription'}
+                        {activePackageInfo?.name || 'Active Subscription'}
                     </CardTitle>
                     <CardDescription className="text-emerald-50 font-medium">
-                        {servicePackages.find(p => p.id === activePackage.servicePackageId)?.level || `Membership Level ${activePackage.servicePackageId}`}
+                        {activePackageInfo?.level || `Membership Level ${activePackage.servicePackageId}`} • {effectiveElderlyName || `EL #${selectedElderlyId}`}
                     </CardDescription>
                  </div>
                  <Badge className="bg-white/20 hover:bg-white/30 text-white border-none px-4 py-1 text-sm font-bold">
@@ -112,20 +295,29 @@ export default function PackagesPage() {
                  <div className="sm:col-span-2 lg:col-span-1 flex items-center gap-4 bg-black/20 p-4 rounded-2xl backdrop-blur-md border border-white/10 shadow-lg">
                     <Info className="h-8 w-8 text-white/80" />
                     <p className="text-xs font-medium leading-relaxed">
-                       You have full access to all features in this tier. 
-                       Expiry status is monitored automatically.
+                      EL #{selectedElderlyId} đang gắn với gói này. Sau khi manager xác nhận thanh toán, trạng thái sẽ hiện tại đây.
                     </p>
                  </div>
               </CardContent>
            </Card>
+            ) : !selectedElderlyId ? (
+              <Card className="border-2 border-dashed border-slate-200 bg-slate-50/50 p-8 text-center rounded-3xl">
+                <div className="mx-auto h-20 w-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-6">
+                  <UserRound className="h-10 w-10 text-slate-300" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-700 mb-2">Choose An Elderly Profile First</h3>
+                <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                  Payment needs the exact elderly profile id. Select one elderly above before choosing a plan.
+                </p>
+              </Card>
         ) : (
-           <Card className="border-2 border-dashed border-slate-200 bg-slate-50/50 p-8 text-center rounded-3xl">
-              <div className="mx-auto h-20 w-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-6">
-                 <Package className="h-10 w-10 text-slate-300" />
+           <Card className={cn('border-2 border-dashed p-8 text-center rounded-3xl', unpurchasedTheme.surfaceClassName)}>
+                <div className="mx-auto h-20 w-20 rounded-3xl bg-slate-200/90 flex items-center justify-center mb-6">
+                  <Package className="h-10 w-10 text-slate-500" />
               </div>
-              <h3 className="text-xl font-bold text-slate-700 mb-2">No Active Service Plan</h3>
-              <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                 You are currently on the free trial limited plan. Upgrade to a premium package to unlock full care features.
+                <h3 className="text-xl font-bold text-slate-700 mb-2">No Active Service Plan</h3>
+                <p className="text-slate-600 mb-6 max-w-sm mx-auto">
+                  {effectiveElderlyName || `EL #${selectedElderlyId}`} has not purchased a plan yet. Continue below to create a payment QR for this elderly profile.
               </p>
               <Button onClick={() => document.getElementById('purchase-grid')?.scrollIntoView({ behavior: 'smooth' })} className="bg-primary hover:bg-primary/90 px-8 rounded-xl font-bold">
                  View Upgrade Options
@@ -148,36 +340,40 @@ export default function PackagesPage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
-          {servicePackages.map((pkg) => {
-            const isCurrent = activePackage?.servicePackageId === pkg.id;
+          {availablePackages.map((pkg) => {
+            const isCurrent = pkg.isCurrent;
             const Icon = pkg.id === 1 ? Zap : pkg.id === 2 ? Crown : ShieldCheck;
+            const pkgTheme = getServicePackageTheme(pkg, servicePackages);
 
             return (
-              <Card key={pkg.id} className={`group relative border-2 transition-all duration-300 rounded-3xl overflow-hidden flex flex-col ${
-                isCurrent 
-                  ? 'border-emerald-500 shadow-xl scale-[1.02]' 
-                  : 'border-slate-100 hover:border-sky-500 hover:shadow-2xl hover:-translate-y-2'
-              }`}>
+              <Card key={pkg.id} className={cn(
+                'group relative flex flex-col overflow-hidden rounded-3xl border-2 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl',
+                pkgTheme.surfaceClassName,
+                isCurrent ? 'scale-[1.02] shadow-xl' : 'hover:brightness-[1.02]'
+              )}>
+                <div className={cn('h-2 w-full', pkgTheme.accentClassName)} />
                 {isCurrent && (
-                  <div className="absolute top-0 right-0 p-2 bg-emerald-500 text-white rounded-bl-2xl font-bold flex items-center gap-1 text-[10px] z-10">
+                  <div className="absolute right-0 top-0 z-10 flex items-center gap-1 rounded-bl-2xl bg-slate-900 px-3 py-2 text-[10px] font-bold text-white shadow-lg">
                     <Check className="h-3 w-3" /> CURRENT PLAN
                   </div>
                 )}
                 
                 <CardHeader className="pb-4">
-                  <div className={`h-12 w-12 rounded-2xl flex items-center justify-center mb-4 transition-colors ${
-                    isCurrent ? 'bg-emerald-50 text-emerald-500' : 'bg-sky-50 text-sky-500 group-hover:bg-sky-500 group-hover:text-white'
-                  }`}>
+                  <div className={cn(
+                    'mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border transition-colors',
+                    pkgTheme.badgeClassName,
+                    isCurrent ? 'shadow-md' : 'group-hover:scale-105'
+                  )}>
                     <Icon className="h-6 w-6" />
                   </div>
                   <CardTitle className="text-2xl font-black tracking-tight">{pkg.name}</CardTitle>
-                  <CardDescription className="font-semibold text-sky-600 text-lg">
-                    {pkg.price.toLocaleString()} <span className="text-xs text-muted-foreground font-normal"> / {pkg.level}</span>
+                  <CardDescription className="text-lg font-semibold text-foreground/85">
+                    {pkg.price.toLocaleString()} <span className="text-xs font-normal text-foreground/65"> / {pkg.level}</span>
                   </CardDescription>
                 </CardHeader>
                 
                 <CardContent className="space-y-6 flex-grow">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <p className="text-sm leading-relaxed text-foreground/70">
                     {pkg.description}
                   </p>
                   
@@ -186,9 +382,11 @@ export default function PackagesPage() {
                       `Level: ${pkg.level}`,
                       pkg.active ? 'Dang mo ban' : 'Tam dong',
                       `Package ID: ${pkg.id}`,
+                      `Duration: ${pkg.durationDays || 30} days`,
+                      selectedElderlyId ? `Apply to EL #${selectedElderlyId}` : 'Select elderly first',
                     ].map((feat, idx) => (
                       <li key={idx} className="flex items-start gap-3 text-sm font-medium">
-                        <div className="h-5 w-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                        <div className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full border', pkgTheme.badgeClassName)}>
                            <Check className="h-3 w-3" strokeWidth={3} />
                         </div>
                         {feat}
@@ -202,17 +400,17 @@ export default function PackagesPage() {
                     variant={isCurrent ? 'outline' : 'default'}
                     className={`w-full h-12 rounded-2xl font-bold shadow-lg transition-all ${
                       isCurrent 
-                        ? 'border-emerald-200 text-emerald-700 bg-emerald-50 scale-95 opacity-50 cursor-default' 
-                        : 'bg-primary hover:bg-primary/90 shadow-sky-100 hover:shadow-sky-200'
+                        ? `${pkgTheme.badgeClassName} scale-95 opacity-50 cursor-default` 
+                        : 'bg-slate-900 text-white hover:bg-slate-800 shadow-slate-200'
                     }`}
-                    disabled={isCurrent || (purchasingId !== null)}
+                    disabled={isCurrent || purchasingId !== null || !selectedElderlyId}
                     onClick={() => handlePurchase(pkg.id)}
                   >
                     {purchasingId === pkg.id ? (
                       <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 animate-spin" /> Processing...
+                        <Loader2 className="h-4 w-4 animate-spin" /> Processing...
                       </div>
-                    ) : isCurrent ? 'Already Active' : 'Upgrade Now'}
+                    ) : isCurrent ? 'Already Active' : !selectedElderlyId ? 'Select Elderly First' : 'Mua gói ngay !'}
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 </CardFooter>

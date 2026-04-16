@@ -51,7 +51,17 @@ export const useFamilyStore = create<FamilyState>()(
           const activeElderly = elderly.filter((item) => !item.deleted);
           const activeElderlyIds = new Set(activeElderly.map((item) => item.id));
 
-          const [accountReminders, allReminders, packages, servicePackages, rooms] = await Promise.all([
+          const elderlyPackages = await Promise.all(
+            activeElderly.map(async (item) => {
+              try {
+                return await userPackageService.getByElderlyId(item.id);
+              } catch {
+                return [] as UserPackageResponse[];
+              }
+            })
+          );
+
+          const [accountReminders, allReminders, accountPackages, servicePackages, rooms] = await Promise.all([
             reminderService.getByAccountId(accountId).catch(() => []),
             reminderService.getAll().catch(() => []),
             userPackageService.getByAccountId(accountId).catch(async () => {
@@ -75,11 +85,19 @@ export const useFamilyStore = create<FamilyState>()(
             acc[room.id] = room.roomName;
             return acc;
           }, {});
+
+          const mergedPackages = [...elderlyPackages.flat(), ...accountPackages].reduce<UserPackageResponse[]>((acc, userPackage) => {
+            if (!acc.some((item) => item.id === userPackage.id)) {
+              acc.push(userPackage);
+            }
+
+            return acc;
+          }, []);
           
           set({ 
             elderlyList: activeElderly,
             reminders: mergedReminders,
-            userPackages: packages,
+            userPackages: mergedPackages,
             servicePackages: servicePackages || [],
             roomNames,
             isUsingMock: false,
@@ -105,13 +123,13 @@ export const useFamilyStore = create<FamilyState>()(
         ];
 
         const mockPackages: UserPackageResponse[] = [
-          { id: 1, accountId, servicePackageId: 3, assignedAt: new Date(Date.now() - 86400000 * 15).toISOString(), expiredAt: new Date(Date.now() + 86400000 * 15).toISOString() },
+          { id: 1, accountId, servicePackageId: 3, elderlyProfileId: 101, assignedAt: new Date(Date.now() - 86400000 * 15).toISOString(), expiredAt: new Date(Date.now() + 86400000 * 15).toISOString() },
         ];
 
         const mockServicePackages: ServicePackageResponse[] = [
-          { id: 1, name: 'Basic Care', description: 'Goi co ban', level: 'BASIC', price: 29, active: true },
-          { id: 2, name: 'Standard Care', description: 'Goi tieu chuan', level: 'STANDARD', price: 59, active: true },
-          { id: 3, name: 'Premium Care', description: 'Goi nang cao', level: 'PREMIUM', price: 99, active: true },
+          { id: 1, name: 'Basic Care', description: 'Goi co ban', level: 'BASIC', price: 29, active: true, durationDays: 30 },
+          { id: 2, name: 'Standard Care', description: 'Goi tieu chuan', level: 'STANDARD', price: 59, active: true, durationDays: 30 },
+          { id: 3, name: 'Premium Care', description: 'Goi nang cao', level: 'PREMIUM', price: 99, active: true, durationDays: 30 },
         ];
 
         set({

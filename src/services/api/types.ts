@@ -57,6 +57,7 @@ export interface VoiceCommandResponse extends VoiceCommandRequest {
 export interface UserPackageRequest {
   accountId: number;
   servicePackageId: number;
+  elderlyProfileId?: number;
   assignedAt: string;
   expiredAt: string;
 }
@@ -90,12 +91,31 @@ export interface ServicePackageRequest {
   level: string;
   price: number;
   active: boolean;
+  durationDays?: number;
   exerciseIds?: number[];
 }
 
 export interface ServicePackageResponse extends ServicePackageRequest {
   id: number;
 }
+
+export interface PaymentCreateResponse {
+  qrCodeUrl: string;
+  amount: number;
+  description: string;
+}
+
+export interface PaymentConfirmRequest {
+  description: string;
+  amount: number;
+}
+
+export type PaymentConfirmResponse =
+  | string
+  | {
+      message?: string;
+      status?: string;
+    };
 
 // Robot Types
 export interface RobotRequest {

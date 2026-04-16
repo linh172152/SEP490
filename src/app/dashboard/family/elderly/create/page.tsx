@@ -31,18 +31,29 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'react-toastify';
-import { ChevronLeft, UserPlus, Save, HeartPulse, MessageSquare, Volume2, Loader2 } from 'lucide-react';
+import { ChevronLeft, UserPlus, Save, HeartPulse, MessageSquare, Loader2 } from 'lucide-react';
 import { useElderlyProfileStore } from '@/store/useElderlyProfileStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import Link from 'next/link';
 
+const MAX_DATE_OF_BIRTH = '1980-12-31';
+
+const nameSuggestions = ['Nguyễn Văn A', 'Trần Thị B', 'Lê Văn C'];
+const healthNoteSuggestions = [
+  'Hypertension, needs blood pressure reminders every morning.',
+  'Type-2 diabetes, dietary monitoring and hydration prompts required.',
+  'Reduced mobility, needs slow speech guidance and walking support.',
+];
+
 const elderlyFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  dateOfBirth: z.string().min(1, 'Date of birth is required'),
+  dateOfBirth: z
+    .string()
+    .min(1, 'Date of birth is required')
+    .refine((value) => value <= MAX_DATE_OF_BIRTH, 'Year of birth must not be later than 1980'),
   healthNotes: z.string().min(1, 'Please provide some health background'),
   preferredLanguage: z.string().min(1, 'Language preference is required'),
   speakingSpeed: z.string().min(1, 'Speaking speed is required'),
-  roomId: z.string().optional(),
 });
 
 type ElderlyFormValues = z.infer<typeof elderlyFormSchema>;
@@ -53,7 +64,7 @@ export default function CreateElderlyPage() {
   const { createProfile, isLoading } = useElderlyProfileStore();
   
   const form = useForm<ElderlyFormValues>({
-    resolver: zodResolver(elderlyFormSchema) as any,
+    resolver: zodResolver(elderlyFormSchema),
     defaultValues: {
       name: '',
       dateOfBirth: '',
@@ -76,18 +87,22 @@ export default function CreateElderlyPage() {
         healthNotes: data.healthNotes,
         preferredLanguage: data.preferredLanguage,
         speakingSpeed: data.speakingSpeed,
-        roomId: data.roomId && data.roomId.trim() ? Number(data.roomId) : null,
+        roomId: null,
       });
 
       toast.success(`Success! ${data.name}'s profile has been created.`);
       router.push('/dashboard/family/elderly');
-    } catch (error) {
+    } catch {
       toast.error('Failed to create elderly profile. Please try again.');
     }
-  }
+  };
+
+  const applyHealthNoteSuggestion = (value: string) => {
+    form.setValue('healthNotes', value, { shouldDirty: true, shouldValidate: true });
+  };
 
   return (
-    <div className="space-y-8 max-w-3xl mx-auto pb-20 animate-in fade-in slide-in-from-bottom-5 duration-700">
+    <div className="mx-auto max-w-3xl space-y-5 pb-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild className="rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
@@ -107,22 +122,22 @@ export default function CreateElderlyPage() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           {/* Identity Card */}
-          <Card className="border-none shadow-2xl shadow-slate-200/50 dark:shadow-none bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl overflow-hidden">
-            <CardHeader className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 py-8 px-8">
+          <Card className="overflow-hidden rounded-2xl border-none bg-white/80 shadow-xl shadow-slate-200/40 backdrop-blur-xl dark:bg-slate-900/80 dark:shadow-none">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-5 dark:border-slate-800 dark:bg-slate-800/50">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center">
                   <UserPlus className="h-5 w-5 text-sky-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-bold">Personal Identity</CardTitle>
+                  <CardTitle className="text-lg font-bold">Personal Identity</CardTitle>
                   <CardDescription>Primary identification details for the care recipient.</CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-8 space-y-6">
-              <div className="grid gap-6 sm:grid-cols-2">
+            <CardContent className="space-y-4 p-5">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="name"
@@ -130,8 +145,9 @@ export default function CreateElderlyPage() {
                     <FormItem>
                       <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Legal Full Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. Nguyễn Văn A" className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500" {...field} />
+                        <Input list="elderly-name-suggestions" placeholder="e.g. Nguyễn Văn A" className="h-10 rounded-xl border-none bg-slate-50 focus:ring-sky-500 dark:bg-slate-800" {...field} />
                       </FormControl>
+                      <FormDescription className="text-[10px] italic">Ví dụ nhanh: Nguyễn Văn A, Trần Thị B, Lê Văn C.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -145,30 +161,12 @@ export default function CreateElderlyPage() {
                       <FormControl>
                         <Input 
                           type="date" 
-                          className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500 [color-scheme:light] dark:[color-scheme:dark]" 
+                          max={MAX_DATE_OF_BIRTH}
+                          className="h-10 rounded-xl border-none bg-slate-50 focus:ring-sky-500 [color-scheme:light] dark:bg-slate-800 dark:[color-scheme:dark]" 
                           {...field} 
                         />
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="roomId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Room Id</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Optional room id"
-                          className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500"
-                          {...field}
-                          value={field.value || ''}
-                        />
-                      </FormControl>
-                      <FormDescription className="text-[10px] italic">Gui vao POST /api/elderly-profile/{'{'}accountId{'}'} neu da co phong.</FormDescription>
+                      <FormDescription className="text-[10px] italic">Không cho nhập năm sinh sau 1980.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -178,37 +176,39 @@ export default function CreateElderlyPage() {
           </Card>
 
           {/* Voice Interaction Card */}
-          <Card className="border-none shadow-2xl shadow-slate-200/50 dark:shadow-none bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl overflow-hidden">
-            <CardHeader className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 py-8 px-8">
+          <Card className="overflow-hidden rounded-2xl border-none bg-white/80 shadow-xl shadow-slate-200/40 backdrop-blur-xl dark:bg-slate-900/80 dark:shadow-none">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-5 dark:border-slate-800 dark:bg-slate-800/50">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
                   <MessageSquare className="h-5 w-5 text-violet-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-bold">Voice & Interaction</CardTitle>
+                  <CardTitle className="text-lg font-bold">Voice & Interaction</CardTitle>
                   <CardDescription>Configure how CareBot communicates with the elderly member.</CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-8 space-y-6">
-              <div className="grid gap-6 sm:grid-cols-2">
+            <CardContent className="space-y-4 p-5">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="preferredLanguage"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Communication Language</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500">
+                          <SelectTrigger className="h-10 rounded-xl border-none bg-slate-50 focus:ring-sky-500 dark:bg-slate-800">
                             <SelectValue placeholder="Select language" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="Vietnamese">Vietnamese</SelectItem>
                           <SelectItem value="English">English</SelectItem>
+                          <SelectItem value="Japanese">Japanese</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormDescription className="text-[10px] italic">Gợi ý nhanh: Vietnamese, English, Japanese.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -219,9 +219,9 @@ export default function CreateElderlyPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Robot Speech Speed</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500">
+                          <SelectTrigger className="h-10 rounded-xl border-none bg-slate-50 focus:ring-sky-500 dark:bg-slate-800">
                             <SelectValue placeholder="Select speed" />
                           </SelectTrigger>
                         </FormControl>
@@ -231,6 +231,7 @@ export default function CreateElderlyPage() {
                           <SelectItem value="fast">Fast</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormDescription className="text-[10px] italic">Gợi ý nhanh: slow, normal, fast.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -240,33 +241,47 @@ export default function CreateElderlyPage() {
           </Card>
 
           {/* Medical Context Card */}
-          <Card className="border-none shadow-2xl shadow-slate-200/50 dark:shadow-none bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl overflow-hidden border-l-4 border-l-rose-500">
-            <CardHeader className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 py-8 px-8">
+          <Card className="overflow-hidden rounded-2xl border-l-4 border-l-rose-500 bg-white/80 shadow-xl shadow-slate-200/40 backdrop-blur-xl dark:bg-slate-900/80 dark:shadow-none">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-5 dark:border-slate-800 dark:bg-slate-800/50">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
                   <HeartPulse className="h-5 w-5 text-rose-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-bold">Medical Overview</CardTitle>
+                  <CardTitle className="text-lg font-bold">Medical Overview</CardTitle>
                   <CardDescription>Primary diagnosis and daily care requirements.</CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-8 space-y-4">
+            <CardContent className="space-y-3 p-5">
               <FormField
                 control={form.control}
                 name="healthNotes"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Health History & Daily Needs</FormLabel>
+                    <div className="flex flex-wrap gap-2">
+                      {healthNoteSuggestions.map((suggestion) => (
+                        <Button
+                          key={suggestion}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 rounded-full px-3 text-[11px]"
+                          onClick={() => applyHealthNoteSuggestion(suggestion)}
+                        >
+                          {suggestion}
+                        </Button>
+                      ))}
+                    </div>
                     <FormControl>
                       <Textarea 
                         placeholder="Detail chronic conditions (e.g., Hypertension, Type-2 Diabetes), recent surgeries, or specific mobility notes..." 
-                        className="min-h-[150px] bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-rose-500 p-4 resize-none leading-relaxed" 
+                        className="min-h-[110px] resize-none rounded-xl border-none bg-slate-50 p-4 leading-relaxed focus:ring-rose-500 dark:bg-slate-800" 
                         {...field} 
                       />
                     </FormControl>
-                    <FormDescription className="text-[10px] italic">This information is used by CareBot for personalized risk monitoring.</FormDescription>
+                    <FormDescription className="text-[10px] italic">Có thể bấm 1 gợi ý phía trên để điền nhanh vào ô nội dung.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -274,11 +289,17 @@ export default function CreateElderlyPage() {
             </CardContent>
           </Card>
 
-          <div className="flex gap-4 justify-end items-center pt-2">
-            <Button variant="ghost" type="button" onClick={() => router.back()} disabled={isLoading} className="h-12 px-8 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 font-bold transition-all">
+          <datalist id="elderly-name-suggestions">
+            {nameSuggestions.map((suggestion) => (
+              <option key={suggestion} value={suggestion} />
+            ))}
+          </datalist>
+
+          <div className="flex items-center justify-end gap-3 pt-1">
+            <Button variant="ghost" type="button" onClick={() => router.back()} disabled={isLoading} className="h-10 rounded-xl px-5 font-bold transition-all hover:bg-slate-100 dark:hover:bg-slate-800">
               Discard Changes
             </Button>
-            <Button type="submit" disabled={isLoading} className="bg-sky-600 hover:bg-sky-700 text-white min-w-[200px] h-12 rounded-xl shadow-xl shadow-sky-100 dark:shadow-none font-bold transition-all active:scale-95">
+            <Button type="submit" disabled={isLoading} className="min-w-[180px] h-10 rounded-xl bg-sky-600 font-bold text-white shadow-lg shadow-sky-100 transition-all active:scale-95 hover:bg-sky-700 dark:shadow-none">
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />

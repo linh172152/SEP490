@@ -26,7 +26,11 @@
     "confirm_delete": "Are you sure you want to delete this item?",
     "currency": "VNĐ",
     "units": {
-      "days": "days"
+      "days": "days",
+      "currency": "VND",
+      "million": "M",
+      "thousand": "k",
+      "minutes": "mins"
     },
     "update_success": "Updated successfully!",
     "create_success": "Created successfully!",
@@ -64,7 +68,16 @@
       "MAINTENANCE": "Maintenance",
       "OFFLINE": "Offline"
     },
-    "view_all": "View all fleet"
+    "status": {
+      "online": "Online",
+      "offline": "Offline",
+      "error": "Error",
+      "active": "Active",
+      "maintenance": "Maintenance"
+    },
+    "view_all": "View all fleet",
+    "selected": "Selected",
+    "items": "items"
   },
   "sidebar": {
     "dashboard": "Dashboard",
@@ -226,6 +239,16 @@
         "risk_error": "Failed to update risk management",
         "session_success": "Session revoked successfully",
         "session_error": "Failed to revoke session"
+      },
+      "security": {
+        "continuous_monitoring": "Continuous monitoring active",
+        "api_healthy": "API: Healthy",
+        "db_latency": "Database latency: {{ms}}ms",
+        "next_midnight": "Next: Midnight",
+        "unknown": "Unknown",
+        "actor_prefix": "Actor: User #",
+        "critical": "CRITICAL",
+        "revision": "REVISION"
       }
     }
   },
@@ -277,6 +300,12 @@
       "user_distribution_desc": "Breakdown of all active accounts in the platform.",
       "security_records_desc": "Recent system security events",
       "no_recent_activity": "No recent system activity.",
+      "charts": {
+        "user_distribution_title": "User Role Distribution",
+        "user_distribution_desc": "Breakdown of all active accounts in the platform.",
+        "fleet_status_title": "Robot Fleet Status",
+        "fleet_status_desc": "Technical health across the entire CareBot ecosystem."
+      },
       "labels": {
         "total_accounts": "Infrastructure Users",
         "robots_status": "Robot Assets",
@@ -594,23 +623,46 @@
       "package_desc": "Usage rates of available service tiers.",
       "elderly_label": "Elderly",
       "caregiver_label": "Caregiver",
-      "analytics": {
-        "title": "Usage Analytics",
-        "subtitle": "Module is currently under development.",
-        "placeholder_desc": "Robot interaction data and performance metrics will be displayed here after Analytics API integration."
+      "revenue_monthly_details": "Monthly Income Details",
+      "month": "Month",
+      "revenue_unit": "Revenue (VND)",
+      "select_range": "Select time range",
+      "months_6": "6 months",
+      "months_12": "12 months",
+      "package_popularity": {
+        "summary": "Accounts for {{percentage}}% of total packages",
+        "no_data": "No service packages activated yet"
       }
+    },
+    "analytics": {
+      "title": "Usage Analytics",
+      "subtitle": "Module is currently under development.",
+      "placeholder_desc": "Robot interaction data and performance metrics will be displayed here after Analytics API integration."
     },
     "subscriptions": {
       "title": "Subscription Management",
       "subtitle": "Define package tiers and map specialized exercises to each level.",
       "tab_packages": "Package Levels",
       "tab_sessions": "Exercise Mapping",
+      "tab_payments": "Payment Confirmation",
       "assign_exercises": "Configure Exercises",
       "no_exercises": "No exercises assigned to this package.",
       "package_select": "Select a package to configure",
       "exercises_title": "Assigned Exercises",
       "add_exercise": "Add Exercise",
-      "remove_exercise": "Remove"
+      "remove_exercise": "Remove",
+      "quota_hint": "Recommended exercise allocation for",
+      "payment_confirm_title": "Manual Transaction Verification",
+      "payment_confirm_desc": "Enter details from the bank transfer receipt to activate service packages for the elderly.",
+      "field_description": "Transaction Description Code",
+      "field_amount": "Received Amount",
+      "confirm_btn": "Confirm & Activate",
+      "description_placeholder": "e.g. PKG:1|ACC:2|ELD:3",
+      "amount_placeholder": "Enter amount in VNĐ",
+      "confirm_success": "Payment confirmed and package activated successfully!",
+      "confirm_error": "Confirmation failed. Please check the code and amount.",
+      "mock_list_title": "Pending Transactions (Demo Data)",
+      "choose_btn": "Select"
     },
     "nav": {
       "rooms": "Manage via Rooms"
@@ -739,6 +791,7 @@
         "delete_confirm": "Confirm delete room? This action cannot be undone.",
         "delete_success": "Room deleted successfully",
         "delete_error": "Error deleting room",
+        "delete_not_empty": "Room {{name}} cannot be deleted because it still has assigned devices or residents. Please unassign everything before deleting.",
         "update_success": "Room updated successfully",
         "create_success": "Room created successfully",
         "error_generic": "Operation failed",
@@ -796,9 +849,7 @@
     "desc": "Global Scripts",
     "library_tab": "Script Library",
     "exercise_tab": "Activity History",
-    "headers": {
-      "infra": "Infrastructure & Script Management"
-    },
+    "headers": {},
     "toasts": {
       "load_error": "Could not load exercise library.",
       "create_success": "Exercise script created successfully.",

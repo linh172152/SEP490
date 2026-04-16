@@ -293,6 +293,7 @@ export interface ElderlyDTO {
   id: number;
   name: string;
   accountId: number;
+  dateOfBirth?: string;
 }
 
 export interface RobotDTO {

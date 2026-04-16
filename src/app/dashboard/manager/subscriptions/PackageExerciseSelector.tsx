@@ -70,10 +70,6 @@ export function PackageExerciseSelector({
     );
   };
 
-  const handleAutoPick = () => {
-    const recommended = filterScriptsByQuota(allScripts as any, packageLevel);
-    setSelectedIds(recommended.map(s => s.id));
-  };
 
   const handleSubmit = async () => {
     setSaving(true);
@@ -118,25 +114,8 @@ export function PackageExerciseSelector({
                 className="pl-10 h-10 rounded-xl border-slate-200"
               />
             </div>
-            
-            <Button 
-                onClick={handleAutoPick}
-                variant="outline"
-                className="w-full sm:w-auto gap-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded-xl font-bold"
-            >
-                <Sparkles className="h-4 w-4" />
-                {t('manager.subscriptions.auto_pick') || 'Auto-pick Quota'}
-            </Button>
           </div>
 
-          <div className="bg-amber-50 border border-amber-100 p-3 rounded-xl flex items-center gap-3">
-             <div className="bg-amber-100 p-2 rounded-lg">
-                <Sparkles className="h-4 w-4 text-amber-600" />
-             </div>
-             <p className="text-xs font-bold text-amber-700">
-                {getQuotaDescription(packageLevel)}
-             </p>
-          </div>
 
           <ScrollArea className="flex-1 rounded-xl border border-slate-100 bg-slate-50/30">
             {loading ? (

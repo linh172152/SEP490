@@ -185,12 +185,12 @@ export function SecurityDashboard() {
                       <div>
                         <p className="text-sm font-bold text-foreground">{log.action}</p>
                         <p className="text-xs text-muted-foreground">
-                          Actor: User #{log.accountId} • {log.createdAt ? formatDistanceToNow(new Date(log.createdAt), { addSuffix: true }) : "Unknown"}
+                          {t('admin.settings.security.actor_prefix')}{log.accountId} • {log.createdAt ? formatDistanceToNow(new Date(log.createdAt), { addSuffix: true }) : t('admin.settings.security.unknown')}
                         </p>
                       </div>
                     </div>
                     <Badge variant={log.action.toLowerCase().includes('delete') ? 'destructive' : 'secondary'} className="text-[9px] font-black tracking-tighter uppercase px-2 py-0">
-                      {log.action.toLowerCase().includes('delete') ? 'CRITICAL' : 'REVISION'}
+                      {log.action.toLowerCase().includes('delete') ? t('admin.settings.security.critical') : t('admin.settings.security.revision')}
                     </Badge>
                   </div>
                 ))

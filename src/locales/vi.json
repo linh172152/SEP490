@@ -26,7 +26,11 @@
     "confirm_delete": "Bạn có chắc chắn muốn xóa bản ghi này không?",
     "currency": "VNĐ",
     "units": {
-      "days": "ngày"
+      "days": "ngày",
+      "currency": "VNĐ",
+      "million": "Tr",
+      "thousand": "k",
+      "minutes": "phút"
     },
     "update_success": "Cập nhật thành công!",
     "create_success": "Tạo mới thành công!",
@@ -57,13 +61,22 @@
       "FAMILYMEMBER": "Người nhà",
       "ELDERLYUSER": "Người cao tuổi"
     },
+    "status": {
+      "online": "Trực tuyến",
+      "offline": "Ngoại tuyến",
+      "error": "Lỗi",
+      "active": "Hoạt động",
+      "maintenance": "Bảo trì"
+    },
     "id": "Mã định danh",
     "upload_file": "Tải lên kịch bản (.py)",
     "supported_formats": "Định dạng hỗ trợ: .py (Python)",
     "click_to_change": "Nhấp để thay đổi tệp",
     "supported_python_only": "Chỉ chấp nhận tệp Python (.py)",
     "clear_all": "Xóa tất cả bộ lọc",
-    "view_all": "Xem toàn bộ đội ngũ"
+    "view_all": "Xem toàn bộ đội ngũ",
+    "selected": "Đã chọn",
+    "items": "bài tập"
   },
   "sidebar": {
     "dashboard": "Bảng điều khiển",
@@ -225,6 +238,16 @@
         "risk_error": "Lỗi khi cập nhật quản lý rủi ro",
         "session_success": "Đã thu hồi phiên đăng nhập thành công",
         "session_error": "Lỗi khi thu hồi phiên đăng nhập"
+      },
+      "security": {
+        "continuous_monitoring": "Giám sát liên tục đang hoạt động",
+        "api_healthy": "API: Khỏe mạnh",
+        "db_latency": "Độ trễ Database: {{ms}}ms",
+        "next_midnight": "Lần tới: Nửa đêm",
+        "unknown": "Không rõ",
+        "actor_prefix": "Tác nhân: Người dùng #",
+        "critical": "NGHIÊM TRỌNG",
+        "revision": "ĐIỀU CHỈNH"
       }
     }
   },
@@ -256,10 +279,16 @@
       "user_distribution_desc": "Chi tiết phân loại các tài khoản đang hoạt động trên hệ thống.",
       "no_recent_activity": "Không có hoạt động hệ thống gần đây.",
       "labels": {
-        "total_accounts": "Người dùng hệ thống",
+        "total_accounts": "Người dùng hạ tầng",
         "robots_status": "Thiết bị Robot",
         "security_records": "Bản ghi an ninh",
         "wellness_scripts": "Kịch bản sức khỏe"
+      },
+      "charts": {
+        "user_distribution_title": "Phân bổ vai trò người dùng",
+        "user_distribution_desc": "Chi tiết phân loại các tài khoản đang hoạt động trên hệ thống.",
+        "fleet_status_title": "Trạng thái kỹ thuật Robot",
+        "fleet_status_desc": "Thống kê tình trạng vận hành của toàn bộ thiết bị."
       }
     },
     "fleet": {
@@ -615,7 +644,17 @@
       "package_popularity": "Gói dịch vụ phổ biến",
       "package_desc": "Tỷ lệ sử dụng các gói dịch vụ hiện có.",
       "elderly_label": "Người cao tuổi",
-      "caregiver_label": "Người chăm sóc"
+      "caregiver_label": "Người chăm sóc",
+      "revenue_monthly_details": "Chi tiết thu nhập hàng tháng",
+      "month": "Tháng",
+      "revenue_unit": "Doanh thu (VNĐ)",
+      "select_range": "Chọn khoảng thời gian",
+      "months_6": "6 tháng",
+      "months_12": "12 tháng",
+      "package_popularity": {
+        "summary": "Chiếm {{percentage}}% tổng số gói",
+        "no_data": "Chưa có gói dịch vụ nào kích hoạt"
+      }
     },
     "analytics": {
       "title": "Phân Tích Sử Dụng",
@@ -627,12 +666,25 @@
       "subtitle": "Thiết lập cấp độ gói dịch vụ và gán danh sách bài tập chuyên sâu cho từng cấp độ.",
       "tab_packages": "Cấp độ Gói",
       "tab_sessions": "Cấu hình Bài tập",
+      "tab_payments": "Xác nhận thanh toán",
       "assign_exercises": "Thiết lập bài tập",
       "no_exercises": "Chưa có bài tập nào được gán cho gói này.",
       "package_select": "Chọn gói dịch vụ để cấu hình",
       "exercises_title": "Danh sách bài tập",
       "add_exercise": "Thêm bài tập",
-      "remove_exercise": "Gỡ bỏ"
+      "remove_exercise": "Gỡ bỏ",
+      "quota_hint": "Định mức bài tập gợi ý cho",
+      "payment_confirm_title": "Xác minh giao dịch thủ công",
+      "payment_confirm_desc": "Nhập thông tin từ biên lai chuyển khoản để kích hoạt gói dịch vụ cho người cao tuổi.",
+      "field_description": "Mã nội dung chuyển khoản",
+      "field_amount": "Số tiền thực nhận",
+      "confirm_btn": "Xác nhận & Kích hoạt",
+      "description_placeholder": "Ví dụ: PKG:1|ACC:2|ELD:3",
+      "amount_placeholder": "Nhập số tiền VNĐ",
+      "confirm_success": "Đã xác nhận thanh toán và kích hoạt gói thành công!",
+      "confirm_error": "Xác nhận thất bại. Vui lòng kiểm tra lại mã và số tiền.",
+      "mock_list_title": "Giao dịch chờ xử lý (Dữ liệu mẫu)",
+      "choose_btn": "Chọn"
     },
     "nav": {
       "rooms": "Quản lý qua Phòng"
@@ -756,10 +808,11 @@
         "none": "Chưa ghi nhận"
       },
       "toasts": {
-        "delete_confirm": "Xác nhận xóa phòng? Hành động này không thể hoàn tác.",
-        "delete_success": "Đã xóa phòng thành công",
+        "delete_confirm": "Xác nhận xóa phòng này? Hành động này không thể hoàn tác.",
+        "delete_success": "Xóa phòng thành công",
         "delete_error": "Lỗi khi xóa phòng",
-        "update_success": "Cập nhật thông tin phòng thành công",
+        "delete_not_empty": "Phòng {{name}} không thể xóa vì vẫn còn thiết bị hoặc người cư trú gắn liền. Vui lòng giải phóng phòng trước khi xóa.",
+        "update_success": "Cập nhật phòng thành công",
         "create_success": "Đã tạo phòng mới thành công",
         "error_generic": "Đã có lỗi xảy ra",
         "remove_success": "Đã gỡ bỏ thành công"
@@ -816,9 +869,12 @@
     "desc": "Quy mô kịch bản",
     "library_tab": "Thư viện kịch bản",
     "exercise_tab": "Theo dõi bài tập",
-    "headers": {
-      "infra": "Quản lý Hạ tầng & Kịch bản"
+    "difficulty": {
+      "easy": "Cơ bản",
+      "medium": "Trung bình",
+      "hard": "Chuyên sâu"
     },
+    "headers": {},
     "toasts": {
       "load_error": "Không thể tải thư viện bài tập.",
       "create_success": "Tạo kịch bản bài tập thành công.",

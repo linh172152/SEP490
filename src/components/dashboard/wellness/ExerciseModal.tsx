@@ -38,8 +38,8 @@ import { useI18nStore } from "@/store/useI18nStore";
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   description: z.string().min(5, "Description must be at least 5 characters"),
-  durationMinutes: z.number().min(1, "Duration must be at least 1 minute"),
-  difficultyLevel: z.string().min(1, "Please select a difficulty level"),
+  durationMinutes: z.coerce.number().min(1, "Duration must be at least 1 minute"),
+  level: z.string().min(1, "Please select a difficulty level"),
   uploadScript: z.string().min(1, "Script content is required"),
 });
 
@@ -67,12 +67,12 @@ export function ExerciseModal({
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       name: initialData?.name || "",
       description: initialData?.description || "",
       durationMinutes: initialData?.durationMinutes || 10,
-      difficultyLevel: initialData?.difficultyLevel || "2",
+      level: initialData?.level || "EASY",
       uploadScript: initialData?.uploadScript || "",
     },
   });
@@ -84,7 +84,7 @@ export function ExerciseModal({
         name: initialData?.name || "",
         description: initialData?.description || "",
         durationMinutes: initialData?.durationMinutes || 10,
-        difficultyLevel: initialData?.difficultyLevel || "2",
+        level: initialData?.level || "EASY",
         uploadScript: initialData?.uploadScript || "",
       });
       setFileName(initialData ? "Existing Script" : null);
@@ -168,7 +168,7 @@ export function ExerciseModal({
 
               <FormField
                 control={form.control}
-                name="difficultyLevel"
+                name="level"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("wellness.scripts.modal.difficulty_label")}</FormLabel>
@@ -179,9 +179,9 @@ export function ExerciseModal({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="1">{t("wellness.difficulty.easy")}</SelectItem>
-                        <SelectItem value="2">{t("wellness.difficulty.medium")}</SelectItem>
-                        <SelectItem value="3">{t("wellness.difficulty.hard")}</SelectItem>
+                        <SelectItem value="EASY">{t("wellness.difficulty.easy")}</SelectItem>
+                        <SelectItem value="MEDIUM">{t("wellness.difficulty.medium")}</SelectItem>
+                        <SelectItem value="HARD">{t("wellness.difficulty.hard")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

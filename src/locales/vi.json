@@ -23,11 +23,24 @@
     "deleted": "Đã Xóa (Soft)",
     "processing": "Đang xử lý...",
     "search": "Tìm kiếm...",
-    "confirm_delete": "Bạn có chắc chắn muốn xóa không?",
+    "confirm_delete": "Bạn có chắc chắn muốn xóa bản ghi này không?",
+    "currency": "VNĐ",
+    "units": {
+      "days": "ngày"
+    },
     "update_success": "Cập nhật thành công!",
     "create_success": "Tạo mới thành công!",
     "delete_success": "Xóa thành công!",
-    "error": "Đã có lỗi xảy ra. Vui lòng thử lại.",
+    "toasts": {
+      "success": "Thao tác thành công",
+      "error": "Đã xảy ra lỗi hệ thống",
+      "connect_error": "Không thể kết nối với dịch vụ kỹ thuật"
+    },
+    "robot_status": {
+      "ACTIVE": "Hoạt động",
+      "MAINTENANCE": "Bảo trì",
+      "OFFLINE": "Ngoại tuyến"
+    },
     "recent_deletions": "Khôi phục tài khoản (24h)",
     "restore_btn": "Khôi phục vừa xóa",
     "remove": "Xóa",
@@ -50,12 +63,7 @@
     "click_to_change": "Nhấp để thay đổi tệp",
     "supported_python_only": "Chỉ chấp nhận tệp Python (.py)",
     "clear_all": "Xóa tất cả bộ lọc",
-    "view_all": "Xem toàn bộ đội ngũ",
-    "robot_status": {
-      "ACTIVE": "Hoạt động",
-      "MAINTENANCE": "Bảo trì",
-      "OFFLINE": "Ngoại tuyến"
-    }
+    "view_all": "Xem toàn bộ đội ngũ"
   },
   "sidebar": {
     "dashboard": "Bảng điều khiển",
@@ -201,28 +209,24 @@
       "success_update": "Cập nhật mật khẩu thành công",
       "error_mismatch": "Mật khẩu mới không khớp nhau",
       "error_invalid": "Mật khẩu hiện tại không đúng hoặc mật khẩu mới quá ngắn",
-      "error_failed": "Lỗi khi đổi mật khẩu"
+      "error_failed": "Lỗi khi đổi mật khẩu",
+      "toasts": {
+        "load_error": "Không thể tải cài đặt",
+        "load_audit_error": "Không thể tải nhật ký hoạt động",
+        "profile_success": "Cập nhật hồ sơ thành công",
+        "profile_error": "Lỗi khi cập nhật hồ sơ",
+        "notif_success": "Đã cập nhật tùy chọn thông báo (Bản thử)",
+        "notif_error": "Lỗi khi cập nhật thông báo",
+        "pref_success": "Đã lưu tùy chọn (Bản thử)",
+        "pref_error": "Lỗi khi cập nhật tùy chọn",
+        "security_success": "Đã cập nhật cài đặt bảo mật",
+        "security_error": "Lỗi khi cập nhật bảo mật",
+        "risk_success": "Đã cập nhật quản lý rủi ro (Bản thử)",
+        "risk_error": "Lỗi khi cập nhật quản lý rủi ro",
+        "session_success": "Đã thu hồi phiên đăng nhập thành công",
+        "session_error": "Lỗi khi thu hồi phiên đăng nhập"
+      }
     }
-  },
-  "sidebar": {
-    "overview": "Tổng quan",
-    "staff_mgt": "Quản lý người dùng",
-    "robot_mgt": "Quản lý Robot",
-    "robot_fleet": "Đội hình Robot",
-    "service_plans": "Gói dịch vụ",
-    "user_mgt": "Quản lý người dùng",
-    "reminders": "Lịch nhắc nhở",
-    "system_logs": "Nhật ký hệ thống",
-    "usage_analytics": "Phân tích sử dụng",
-    "ops_insights": "Phân tích vận hành",
-    "data_security": "Dữ liệu & Bảo mật",
-    "audit_logs": "Nhật ký hành động",
-    "settings": "Cài đặt",
-    "subscriptions": "Quản lý đăng ký",
-    "exercises": "Thư viện bài tập",
-    "rooms": "Quản lý phòng",
-    "residents": "Danh sách người cao tuổi",
-    "logout": "Đăng xuất"
   },
   "admin": {
     "dashboard": {
@@ -250,9 +254,13 @@
       "audit_logs_title": "Nhật ký hệ thống",
       "user_distribution_title": "Phân bổ vai trò người dùng",
       "user_distribution_desc": "Chi tiết phân loại các tài khoản đang hoạt động trên hệ thống.",
-      "security_records_desc": "Các sự kiện an ninh hệ thống gần đây",
-      "realtime_feed": "Dữ liệu thời gian thực",
-      "no_recent_activity": "Không có hoạt động hệ thống gần đây."
+      "no_recent_activity": "Không có hoạt động hệ thống gần đây.",
+      "labels": {
+        "total_accounts": "Người dùng hệ thống",
+        "robots_status": "Thiết bị Robot",
+        "security_records": "Bản ghi an ninh",
+        "wellness_scripts": "Kịch bản sức khỏe"
+      }
     },
     "fleet": {
       "title": "Hệ thống Robot",
@@ -276,9 +284,9 @@
       "important_note_desc": "Các hành động thay đổi trạng thái phần cứng và Firmware sẽ ảnh hưởng trực tiếp đến trải nghiệm thực tế của người cao tuổi.",
       "manager_note": "Việc gán phòng được quản lý bởi Role Manager.",
       "table": {
-        "robot_serial": "Robot & Serial",
-        "config": "Cấu Hình",
-        "location": "Room (Vị Trí)",
+        "robot_serial": "Serial & Tên Robot",
+        "config": "Cấu hình Kỹ thuật",
+        "room": "Phòng phụ trách",
         "status": "Trạng Thái"
       },
       "ota": {
@@ -350,14 +358,65 @@
         "assignment": "Phân bổ",
         "assigned_to": "Gán cho",
         "unassigned": "Sẵn sàng để bàn giao",
+        "room": "Phòng",
         "battery": "Pin",
         "last_ping": "Tín hiệu cuối"
+      },
+      "backup": {
+        "info": "Tính năng khôi phục đang được phát triển (Backend chưa hỗ trợ)",
+        "error": "Lỗi khi khôi phục tài khoản",
+        "restore_success": "Đã khôi phục thành công"
       },
       "delete_btn": "Xóa hệ thống",
       "confirm_delete": "Bạn có chắc chắn muốn xóa robot này không?"
     },
     "security": {
-      "title": "An ninh & Tính toàn vẹn",
+      "title": "Cài đặt & Quyền truy cập",
+      "family": {
+        "elderly": {
+          "create": {
+            "title": "Hồ sơ Chăm sóc Mới",
+            "sections": {
+              "identity": {
+                "title": "Định danh Cá nhân",
+                "desc": "Chi tiết định danh cơ bản của người nhận chăm sóc."
+              },
+              "voice": {
+                "title": "Giọng nói & Tương tác",
+                "desc": "Cấu hình cách CareBot giao tiếp với người cao tuổi."
+              },
+              "medical": {
+                "title": "Tổng quan Y tế",
+                "desc": "Chẩn đoán chính và các yêu cầu chăm sóc hàng ngày."
+              }
+            },
+            "fields": {
+              "name": {
+                "label": "Họ và Tên khai sinh",
+                "placeholder": "Ví dụ: Nguyễn Văn A"
+              },
+              "dob": {
+                "label": "Ngày sinh"
+              },
+              "language": {
+                "label": "Ngôn ngữ giao tiếp"
+              },
+              "speed": {
+                "label": "Tốc độ nói của Robot"
+              },
+              "notes": {
+                "label": "Tiền sử Sức khỏe & Nhu cầu hàng ngày",
+                "placeholder": "Chi tiết các bệnh mãn tính (ví dụ: Cao huyết áp, Tiểu đường), phẫu thuật gần đây hoặc lưu ý về vận động..."
+              }
+            },
+            "buttons": {
+              "discard": "Hủy bỏ thay đổi",
+              "submit": "Hoàn tất & Khởi tạo",
+              "submitting": "Đang khởi tạo hồ sơ..."
+            }
+          }
+        }
+      },
       "subtitle": "Giám sát quyền truy cập, truy vết hệ thống và tính bền vững của dữ liệu.",
       "privileged_access": "Quyền truy cập đặc biệt",
       "audit_records": "Bản ghi truy vết",
@@ -385,6 +444,7 @@
         "name": "Tên gói",
         "desc": "Mô tả",
         "price": "Giá (VNĐ)",
+        "duration": "Thời hạn",
         "status": "Trạng thái",
         "actions": "Thao tác",
         "active": "Hoạt động",
@@ -400,6 +460,7 @@
           "description": "Mô tả chi tiết",
           "level": "Cấp độ (VD: Cơ bản, Pro)",
           "price": "Giá cơ bản (VNĐ)",
+          "duration": "Thời hạn (Số ngày)",
           "status_active": "Kích hoạt gói dịch vụ"
         }
       },
@@ -753,8 +814,20 @@
     "sidebar_label": "Kế hoạch bài tập",
     "subtitle": "Quản lý kịch bản điều khiển Robot và giám sát nhật ký thực thi trên toàn hệ thống.",
     "desc": "Quy mô kịch bản",
-    "library_tab": "Kho kịch bản",
-    "history_tab": "Nhật ký hệ thống",
+    "library_tab": "Thư viện kịch bản",
+    "exercise_tab": "Theo dõi bài tập",
+    "headers": {
+      "infra": "Quản lý Hạ tầng & Kịch bản"
+    },
+    "toasts": {
+      "load_error": "Không thể tải thư viện bài tập.",
+      "create_success": "Tạo kịch bản bài tập thành công.",
+      "create_error": "Lỗi khi tạo kịch bản bài tập.",
+      "update_success": "Cập nhật kịch bản thành công.",
+      "update_error": "Lỗi khi cập nhật kịch bản.",
+      "delete_success": "Đã xóa kịch bản bài tập.",
+      "delete_error": "Lỗi khi xóa kịch bản."
+    },
     "library": {
       "add_btn": "Khởi tạo kịch bản mới",
       "edit_btn": "Cấu hình kịch bản",
@@ -773,6 +846,7 @@
         "name": "Tên kịch bản",
         "duration": "Thời lượng dự kiến",
         "difficulty": "Mức độ phức tạp",
+        "level": "Cấp độ",
         "actions": "Quản lý"
       },
       "modal": {
@@ -914,6 +988,51 @@
         "privacy": "Chính sách Bảo mật",
         "terms": "Điều khoản Dịch vụ",
         "contact": "Hỗ trợ liên hệ"
+      }
+    }
+  },
+  "family": {
+    "elderly": {
+      "create": {
+        "title": "Hồ sơ Chăm sóc Mới",
+        "sections": {
+          "identity": {
+            "title": "Định danh Cá nhân",
+            "desc": "Chi tiết định danh cơ bản của người nhận chăm sóc."
+          },
+          "voice": {
+            "title": "Giọng nói & Tương tác",
+            "desc": "Cấu hình cách CareBot giao tiếp với người cao tuổi."
+          },
+          "medical": {
+            "title": "Tổng quan Y tế",
+            "desc": "Chẩn đoán chính và các yêu cầu chăm sóc hàng ngày."
+          }
+        },
+        "fields": {
+          "name": {
+            "label": "Họ và Tên khai sinh",
+            "placeholder": "Ví dụ: Nguyễn Văn A"
+          },
+          "dob": {
+            "label": "Ngày sinh"
+          },
+          "language": {
+            "label": "Ngôn ngữ giao tiếp"
+          },
+          "speed": {
+            "label": "Tốc độ nói của Robot"
+          },
+          "notes": {
+            "label": "Tiền sử Sức khỏe & Nhu cầu hàng ngày",
+            "placeholder": "Chi tiết các bệnh mãn tính (ví dụ: Cao huyết áp, Tiểu đường), phẫu thuật gần đây hoặc lưu ý về vận động..."
+          }
+        },
+        "buttons": {
+          "discard": "Hủy bỏ thay đổi",
+          "submit": "Hoàn tất & Khởi tạo",
+          "submitting": "Đang khởi tạo hồ sơ..."
+        }
       }
     }
   }

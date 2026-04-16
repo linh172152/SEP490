@@ -18,9 +18,13 @@ import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { ServicePackageRequest, ServicePackageResponse, ExerciseScriptResponse } from '@/services/api/types';
-import { exerciseService } from '@/services/api/exerciseService';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 
   interface ServicePackageModalProps {
     isOpen: boolean;
@@ -44,23 +48,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
     const [formData, setFormData] = useState<ServicePackageRequest>({
       name: '',
       description: '',
-      level: '',
+      level: 'BASIC',
       price: 0,
       active: true,
-      exerciseIds: []
+      durationDays: 30,
     });
 
-    useEffect(() => {
-      const fetchScripts = async () => {
-        try {
-          const data = await exerciseService.getAllScripts();
-          setScripts(data || []);
-        } catch (e) {
-          console.error(e);
-        }
-      };
-      if (isOpen) fetchScripts();
-    }, [isOpen]);
+    // No longer fetching scripts here as exercise assignment is separated
 
     useEffect(() => {
       if (initialData) {
@@ -70,27 +64,21 @@ import { ScrollArea } from '@/components/ui/scroll-area';
           level: initialData.level,
           price: initialData.price,
           active: initialData.active,
-          exerciseIds: initialData.exerciseIds || []
+          durationDays: initialData.durationDays || 30,
         });
       } else {
         setFormData({
           name: '',
           description: '',
-          level: '',
+          level: 'BASIC',
           price: 0,
           active: true,
-          exerciseIds: []
+          durationDays: 30,
         });
       }
     }, [initialData, isOpen]);
 
-    const toggleExercise = (id: number) => {
-      const current = formData.exerciseIds || [];
-      const updated = current.includes(id) 
-        ? current.filter(x => x !== id)
-        : [...current, id];
-      setFormData({ ...formData, exerciseIds: updated });
-    };
+    // toggleExercise removed as it moved to exercise selector
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -130,15 +118,21 @@ import { ScrollArea } from '@/components/ui/scroll-area';
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+               <div className="space-y-2">
                 <Label htmlFor="level">{t('admin.packages.modal.fields.level')}</Label>
-                <Input
-                  id="level"
-                  value={formData.level}
-                  onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                  placeholder="e.g. PRO"
-                  required
-                />
+                <Select 
+                  value={formData.level} 
+                  onValueChange={(val) => setFormData({ ...formData, level: val })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select Level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BASIC">BASIC</SelectItem>
+                    <SelectItem value="STANDARD">STANDARD</SelectItem>
+                    <SelectItem value="PREMIUM">PREMIUM</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -156,34 +150,18 @@ import { ScrollArea } from '@/components/ui/scroll-area';
             </div>
 
             <div className="space-y-2">
-              <Label>{t('manager.subscriptions.assign_exercises')}</Label>
-              <Card className="p-0 overflow-hidden border-slate-200">
-                <ScrollArea className="h-40 p-4">
-                  <div className="space-y-3">
-                    {scripts.length === 0 ? (
-                      <p className="text-xs text-muted-foreground italic">{t('common.no_data')}</p>
-                    ) : (
-                      scripts.map((script) => (
-                        <div key={script.id} className="flex items-center space-x-3">
-                          <Checkbox 
-                            id={`ex-${script.id}`} 
-                            checked={formData.exerciseIds?.includes(script.id)}
-                            onCheckedChange={() => toggleExercise(script.id)}
-                          />
-                          <label 
-                            htmlFor={`ex-${script.id}`}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex flex-col"
-                          >
-                            <span>{script.name}</span>
-                            <span className="text-[10px] text-muted-foreground">{script.difficultyLevel} - {script.durationMinutes}m</span>
-                          </label>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </ScrollArea>
-              </Card>
+              <Label htmlFor="duration">{t('admin.packages.modal.fields.duration') || 'Duration (Days)'}</Label>
+              <Input
+                id="duration"
+                type="number"
+                value={formData.durationDays}
+                onChange={(e) => setFormData({ ...formData, durationDays: Number(e.target.value) })}
+                required
+                min="1"
+              />
             </div>
+
+            {/* Exercise Selection removed: Moved to separate component */}
 
             <div className="space-y-2">
               <Label htmlFor="description">{t('admin.packages.modal.fields.description')}</Label>

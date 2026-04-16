@@ -24,6 +24,7 @@ import { useI18nStore } from '@/store/useI18nStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-toastify';
 import { RoomModal } from './RoomModal';
+import { RoomViewModal } from './RoomViewModal';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
@@ -44,6 +45,7 @@ export default function RoomsManagerPage() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<RoomResponse | null>(null);
 
   const fetchRooms = async () => {
@@ -51,6 +53,14 @@ export default function RoomsManagerPage() {
     try {
       const data = await roomService.getAllRooms();
       setRooms(data || []);
+      
+      // Auto-update the selected room to reflect changes immediately
+      if (selectedRoom) {
+        const updatedRoom = data.find(r => r.id === selectedRoom.id);
+        if (updatedRoom) {
+          setSelectedRoom(updatedRoom);
+        }
+      }
     } catch (e) {
       console.error(e);
       toast.error(t('manager.rooms.toasts.fetch_error') || "Failed to fetch rooms");
@@ -87,6 +97,11 @@ export default function RoomsManagerPage() {
   const handleCreate = () => {
     setSelectedRoom(null);
     setIsModalOpen(true);
+  };
+
+  const handleView = (room: RoomResponse) => {
+    setSelectedRoom(room);
+    setIsViewModalOpen(true);
   };
 
   const handleEdit = (room: RoomResponse) => {
@@ -202,6 +217,9 @@ export default function RoomsManagerPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="rounded-xl p-2 border-slate-200 shadow-xl">
+                      <DropdownMenuItem onClick={() => handleView(room)} className="rounded-lg gap-2 font-medium cursor-pointer">
+                        <Home className="h-4 w-4 text-emerald-500" /> {t('common.view', 'View Details')}
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleEdit(room)} className="rounded-lg gap-2 font-medium cursor-pointer">
                         <Pencil className="h-4 w-4 text-sky-500" /> {t('manager.rooms.card.edit_info')}
                       </DropdownMenuItem>
@@ -264,6 +282,11 @@ export default function RoomsManagerPage() {
         room={selectedRoom}
         onRefresh={fetchRooms}
         managerId={Number(user?.id) || 0}
+      />
+      <RoomViewModal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        room={selectedRoom}
       />
     </div>
   );

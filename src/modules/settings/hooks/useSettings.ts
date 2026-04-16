@@ -4,6 +4,7 @@ import { SettingsData, RoleType, RoleCapabilities, AuditLogEntry } from '../type
 import { SETTINGS_CAPABILITIES } from '../constants';
 import { toast } from 'react-toastify';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useI18nStore } from '@/store/useI18nStore';
 
 interface UseSettingsReturn {
     isLoading: boolean;
@@ -28,6 +29,8 @@ export const useSettings = (role: RoleType): UseSettingsReturn => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     
+    const { t } = useI18nStore();
+    
     // Get current user from Auth Store
     const currentUser = useAuthStore((state) => state.user);
     const capabilities = SETTINGS_CAPABILITIES[role];
@@ -42,7 +45,7 @@ export const useSettings = (role: RoleType): UseSettingsReturn => {
             const data = await settingsService.getSettings(currentUser.id);
             setSettings(data);
         } catch (error) {
-            toast.error('Failed to load settings');
+            toast.error(t('settings.toasts.load_error'));
             console.error(error);
         } finally {
             setIsLoading(false);
@@ -59,9 +62,9 @@ export const useSettings = (role: RoleType): UseSettingsReturn => {
             const logs = await settingsService.getAuditLogs();
             setAuditLogs(logs);
         } catch (error) {
-            toast.error('Failed to load audit logs');
+            toast.error(t('settings.toasts.load_audit_error'));
         }
-    }, [capabilities.canAccessAuditLogs]);
+    }, [capabilities.canAccessAuditLogs, t]);
 
     const updateProfile = async (data: Partial<SettingsData['profile']>) => {
         if (!settings || !currentUser?.id) return;
@@ -69,9 +72,9 @@ export const useSettings = (role: RoleType): UseSettingsReturn => {
             setIsSaving(true);
             await settingsService.updateProfile(currentUser.id, data);
             setSettings(prev => prev ? { ...prev, profile: { ...prev.profile, ...data } } : prev);
-            toast.success('Profile updated successfully');
+            toast.success(t('settings.toasts.profile_success'));
         } catch (error) {
-            toast.error('Failed to update profile');
+            toast.error(t('settings.toasts.profile_error'));
             throw error;
         } finally {
             setIsSaving(false);
@@ -84,9 +87,9 @@ export const useSettings = (role: RoleType): UseSettingsReturn => {
             setIsSaving(true);
             // Mock update as requested (no BE support)
             setSettings(prev => prev ? { ...prev, notifications: { ...prev.notifications, ...data } } : prev);
-            toast.success('Notification preferences updated (Mock)');
+            toast.success(t('settings.toasts.notif_success'));
         } catch (error) {
-            toast.error('Failed to update notifications');
+            toast.error(t('settings.toasts.notif_error'));
             throw error;
         } finally {
             setIsSaving(false);
@@ -99,9 +102,9 @@ export const useSettings = (role: RoleType): UseSettingsReturn => {
             setIsSaving(true);
             // Mock update
             setSettings(prev => prev ? { ...prev, preferences: { ...prev.preferences, ...data } } : prev);
-            toast.success('Preferences saved (Mock)');
+            toast.success(t('settings.toasts.pref_success'));
         } catch (error) {
-            toast.error('Failed to update preferences');
+            toast.error(t('settings.toasts.pref_error'));
             throw error;
         } finally {
             setIsSaving(false);
@@ -116,9 +119,9 @@ export const useSettings = (role: RoleType): UseSettingsReturn => {
             // We'll let the security section component handle specific API calls if needed, 
             // but here we just update state or trigger a mock call.
             setSettings(prev => prev ? { ...prev, security: { ...prev.security, ...data } } : prev);
-            toast.success('Security settings updated');
+            toast.success(t('settings.toasts.security_success'));
         } catch (error) {
-            toast.error('Failed to update security');
+            toast.error(t('settings.toasts.security_error'));
             throw error;
         } finally {
             setIsSaving(false);
@@ -130,9 +133,9 @@ export const useSettings = (role: RoleType): UseSettingsReturn => {
         try {
             setIsSaving(true);
             setSettings(prev => prev ? { ...prev, riskManagement: { ...prev.riskManagement, ...data } } : prev);
-            toast.success('Risk management settings updated (Mock)');
+            toast.success(t('settings.toasts.risk_success'));
         } catch (error) {
-            toast.error('Failed to update risk management');
+            toast.error(t('settings.toasts.risk_error'));
             throw error;
         } finally {
             setIsSaving(false);
@@ -148,9 +151,9 @@ export const useSettings = (role: RoleType): UseSettingsReturn => {
                 ...prev,
                 sessions: prev.sessions.filter(s => s.id !== sessionId)
             } : prev);
-            toast.success('Session revoked successfully');
+            toast.success(t('settings.toasts.session_success'));
         } catch (error) {
-            toast.error('Failed to revoke session');
+            toast.error(t('settings.toasts.session_error'));
             throw error;
         } finally {
             setIsSaving(false);

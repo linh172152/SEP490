@@ -81,7 +81,7 @@ export default function ExerciseScriptDetailPage() {
                 </div>
                 <div className="rounded-3xl border border-slate-200/80 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950">
                   <div className="text-xs uppercase tracking-wider text-slate-500">Difficulty</div>
-                  <div className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">{script.difficultyLevel}</div>
+                  <div className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">{script.level}</div>
                 </div>
               </div>
 

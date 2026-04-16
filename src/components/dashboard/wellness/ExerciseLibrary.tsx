@@ -71,7 +71,7 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
       setScripts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch scripts:", error);
-      toast.error(t("common.error") + ": Could not load exercise library.");
+      toast.error(t("wellness.toasts.load_error"));
     } finally {
       setIsLoading(false);
     }
@@ -85,11 +85,11 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
     try {
       setIsSubmitting(true);
       await exerciseService.createScript(data);
-      toast.success("Exercise script created successfully.");
+      toast.success(t("wellness.toasts.create_success"));
       setIsModalOpen(false);
       fetchScripts();
     } catch (error) {
-      toast.error("Failed to create exercise script.");
+      toast.error(t("wellness.toasts.create_error"));
     } finally {
       setIsSubmitting(false);
     }
@@ -100,11 +100,11 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
     try {
       setIsSubmitting(true);
       await exerciseService.updateScript(selectedScript.id, data);
-      toast.success("Exercise script updated successfully.");
+      toast.success(t("wellness.toasts.update_success"));
       setIsModalOpen(false);
       fetchScripts();
     } catch (error) {
-      toast.error("Failed to update exercise script.");
+      toast.error(t("wellness.toasts.update_error"));
     } finally {
       setIsSubmitting(false);
     }
@@ -114,10 +114,10 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
     if (!confirm("Are you sure you want to delete this script?")) return;
     try {
       await exerciseService.deleteScript(id);
-      toast.success("Exercise script deleted.");
+      toast.success(t("wellness.toasts.delete_success"));
       fetchScripts();
     } catch (error) {
-      toast.error("Failed to delete exercise script.");
+      toast.error(t("wellness.toasts.delete_error"));
     }
   };
 
@@ -127,12 +127,12 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
     const matchesSearch = s.name.toLowerCase().includes(q) || 
                           s.description.toLowerCase().includes(q);
     
-    const sLevel = (s.difficultyLevel || "").toUpperCase();
+    const sLevel = (s.level || "").toUpperCase();
     const matchesDifficulty = difficultyFilter === "ALL" || 
                              sLevel === difficultyFilter || 
-                             (difficultyFilter === "EASY" && (sLevel === "1" || sLevel === "L1")) ||
-                             (difficultyFilter === "MEDIUM" && (sLevel === "2" || sLevel === "L2")) ||
-                             (difficultyFilter === "HARD" && (sLevel === "3" || sLevel === "L3"));
+                             (difficultyFilter === "EASY" && (sLevel === "1" || sLevel === "L1" || sLevel === "EASY")) ||
+                             (difficultyFilter === "MEDIUM" && (sLevel === "2" || sLevel === "L2" || sLevel === "MEDIUM")) ||
+                             (difficultyFilter === "HARD" && (sLevel === "3" || sLevel === "L3" || sLevel === "HARD"));
                              
     return matchesSearch && matchesDifficulty;
   });
@@ -179,25 +179,7 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full md:w-auto">
-             <span className="text-xs font-black text-muted-foreground uppercase tracking-widest hidden lg:inline">
-               {t("wellness.scripts.filter_level")}:
-             </span>
-             <Select value={difficultyFilter} onValueChange={(val) => { setDifficultyFilter(val); setCurrentPage(1); }}>
-                <SelectTrigger className="h-11 w-full md:w-60 rounded-xl border-slate-200 bg-white shadow-sm font-bold text-slate-700">
-                   <div className="flex items-center gap-2">
-                      <Zap className="h-3.5 w-3.5 text-amber-500" />
-                      <SelectValue placeholder={t("wellness.scripts.filter_level")} />
-                   </div>
-                </SelectTrigger>
-                <SelectContent>
-                   <SelectItem value="ALL" className="font-medium">{t("wellness.scripts.all_levels")}</SelectItem>
-                   <SelectItem value="EASY" className="font-medium">{t("wellness.scripts.difficulty_easy")}</SelectItem>
-                   <SelectItem value="MEDIUM" className="font-medium">{t("wellness.scripts.difficulty_medium")}</SelectItem>
-                   <SelectItem value="HARD" className="font-medium">{t("wellness.scripts.difficulty_hard")}</SelectItem>
-                </SelectContent>
-             </Select>
-          </div>
+           {/* Xóa bỏ Select Filter Level theo yêu cầu */}
         </div>
 
         {!readOnly && (
@@ -221,7 +203,7 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
               <TableRow className="hover:bg-transparent border-border/50">
                 <TableHead className="pl-6 py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t("wellness.scripts.table.name")}</TableHead>
                 <TableHead className="py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t("wellness.scripts.table.duration")}</TableHead>
-                <TableHead className="py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t("wellness.scripts.table.difficulty")}</TableHead>
+                <TableHead className="py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t("wellness.scripts.table.level")}</TableHead>
                 {!readOnly && (
                   <TableHead className="pr-6 py-4 text-right uppercase tracking-wider text-[11px] font-bold opacity-70">{t("wellness.scripts.table.actions")}</TableHead>
                 )}
@@ -262,7 +244,7 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {getDifficultyBadge(script.difficultyLevel)}
+                      {getDifficultyBadge(script.level)}
                     </TableCell>
                     {!readOnly && (
                       <TableCell className="pr-6 text-right">

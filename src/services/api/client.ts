@@ -77,11 +77,11 @@ export class ApiClient {
           statusText: error.response?.statusText,
           data: error.response?.data,
           message: error.message,
-          error: error // Log the full error object for better debugging
+          error: error
         });
 
-        if (isNetworkError) {
-          console.warn("💡 Gợi ý: Kiểm tra xem Server Render có đang 'ngủ' (Cold Start) không, hoặc kiểm tra cấu hình CORS tại Backend.");
+        if (error.response?.status) {
+          console.error(`🔴 STATUS CODE: ${error.response.status} | DATA:`, error.response.data);
         }
 
         // Handle specific error cases

@@ -31,9 +31,10 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'react-toastify';
-import { ChevronLeft, UserPlus, Save, HeartPulse, MessageSquare, Volume2, Loader2 } from 'lucide-react';
+import { ChevronLeft, UserPlus, Save, HeartPulse, MessageSquare, Loader2 } from 'lucide-react';
 import { useElderlyProfileStore } from '@/store/useElderlyProfileStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useI18nStore } from '@/store/useI18nStore';
 import Link from 'next/link';
 
 const elderlyFormSchema = z.object({
@@ -49,6 +50,7 @@ type ElderlyFormValues = z.infer<typeof elderlyFormSchema>;
 export default function CreateElderlyPage() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const { t } = useI18nStore();
   const { createProfile, isLoading } = useElderlyProfileStore();
   
   const form = useForm<ElderlyFormValues>({
@@ -64,7 +66,7 @@ export default function CreateElderlyPage() {
 
   const onSubmit = async (data: ElderlyFormValues) => {
     if (!user?.id) {
-      toast.error('Session expired: Please login again.');
+      toast.error(t('auth.login.error_user_not_found'));
       return;
     }
 
@@ -77,10 +79,10 @@ export default function CreateElderlyPage() {
         speakingSpeed: data.speakingSpeed,
       });
 
-      toast.success(`Success! ${data.name}'s profile has been created.`);
+      toast.success(t('family.patients.toasts.create_success'));
       router.push('/dashboard/family/elderly');
     } catch (error) {
-      toast.error('Failed to create elderly profile. Please try again.');
+      toast.error(t('common.error'));
     }
   }
 
@@ -99,7 +101,9 @@ export default function CreateElderlyPage() {
               <span className="opacity-30">/</span>
               <span className="text-slate-500">Care Circle</span>
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">New Care Profile</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">
+              {t('family.elderly.create.title')}
+            </h1>
           </div>
         </div>
       </div>
@@ -114,8 +118,8 @@ export default function CreateElderlyPage() {
                   <UserPlus className="h-5 w-5 text-sky-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-bold">Personal Identity</CardTitle>
-                  <CardDescription>Primary identification details for the care recipient.</CardDescription>
+                  <CardTitle className="text-xl font-bold">{t('family.elderly.create.sections.identity.title')}</CardTitle>
+                  <CardDescription>{t('family.elderly.create.sections.identity.desc')}</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -126,9 +130,9 @@ export default function CreateElderlyPage() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Legal Full Name</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('family.elderly.create.fields.name.label')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. Nguyễn Văn A" className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500" {...field} />
+                        <Input placeholder={t('family.elderly.create.fields.name.placeholder')} className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -139,7 +143,7 @@ export default function CreateElderlyPage() {
                   name="dateOfBirth"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Date of Birth</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('family.elderly.create.fields.dob.label')}</FormLabel>
                       <FormControl>
                         <Input 
                           type="date" 
@@ -163,8 +167,8 @@ export default function CreateElderlyPage() {
                   <MessageSquare className="h-5 w-5 text-violet-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-bold">Voice & Interaction</CardTitle>
-                  <CardDescription>Configure how CareBot communicates with the elderly member.</CardDescription>
+                  <CardTitle className="text-xl font-bold">{t('family.elderly.create.sections.voice.title')}</CardTitle>
+                  <CardDescription>{t('family.elderly.create.sections.voice.desc')}</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -175,7 +179,7 @@ export default function CreateElderlyPage() {
                   name="preferredLanguage"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Communication Language</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('family.elderly.create.fields.language.label')}</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500">
@@ -196,7 +200,7 @@ export default function CreateElderlyPage() {
                   name="speakingSpeed"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Robot Speech Speed</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('family.elderly.create.fields.speed.label')}</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger className="h-12 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500">
@@ -204,7 +208,7 @@ export default function CreateElderlyPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="slow">Slow (Recommended)</SelectItem>
+                          <SelectItem value="slow">Slow</SelectItem>
                           <SelectItem value="normal">Normal</SelectItem>
                           <SelectItem value="fast">Fast</SelectItem>
                         </SelectContent>
@@ -222,11 +226,11 @@ export default function CreateElderlyPage() {
             <CardHeader className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 py-8 px-8">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
-                  <HeartPulse className="h-5 w-5 text-rose-600" />
+                   <HeartPulse className="h-5 w-5 text-rose-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-bold">Medical Overview</CardTitle>
-                  <CardDescription>Primary diagnosis and daily care requirements.</CardDescription>
+                  <CardTitle className="text-xl font-bold">{t('family.elderly.create.sections.medical.title')}</CardTitle>
+                  <CardDescription>{t('family.elderly.create.sections.medical.desc')}</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -236,10 +240,10 @@ export default function CreateElderlyPage() {
                 name="healthNotes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Health History & Daily Needs</FormLabel>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('family.elderly.create.fields.notes.label')}</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Detail chronic conditions (e.g., Hypertension, Type-2 Diabetes), recent surgeries, or specific mobility notes..." 
+                        placeholder={t('family.elderly.create.fields.notes.placeholder')} 
                         className="min-h-[150px] bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-rose-500 p-4 resize-none leading-relaxed" 
                         {...field} 
                       />
@@ -254,18 +258,18 @@ export default function CreateElderlyPage() {
 
           <div className="flex gap-4 justify-end items-center pt-2">
             <Button variant="ghost" type="button" onClick={() => router.back()} disabled={isLoading} className="h-12 px-8 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 font-bold transition-all">
-              Discard Changes
+              {t('family.elderly.create.buttons.discard')}
             </Button>
             <Button type="submit" disabled={isLoading} className="bg-sky-600 hover:bg-sky-700 text-white min-w-[200px] h-12 rounded-xl shadow-xl shadow-sky-100 dark:shadow-none font-bold transition-all active:scale-95">
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Creating Profile...
+                  {t('family.elderly.create.buttons.submitting')}
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <Save className="h-4 w-4" />
-                  Finalize & Create
+                   <Save className="h-4 w-4" />
+                   {t('family.elderly.create.buttons.submit')}
                 </div>
               )}
             </Button>

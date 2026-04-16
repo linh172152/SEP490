@@ -13,6 +13,7 @@ import {
   ServicePackageRequest,
   ExerciseScriptResponse
 } from '@/services/api/types';
+import { PackageExerciseSelector } from './PackageExerciseSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -27,8 +28,9 @@ export default function SubscriptionsUnifiedPage() {
   
   // Data State
   const [packages, setPackages] = useState<ServicePackageResponse[]>([]);
-  const [allExercises, setAllExercises] = useState<ExerciseScriptResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [packageExercises, setPackageExercises] = useState<ExerciseScriptResponse[]>([]);
+  const [exerciseLoading, setExerciseLoading] = useState(false);
 
   // UI State
   const [activeTab, setActiveTab] = useState('definitions');
@@ -38,16 +40,13 @@ export default function SubscriptionsUnifiedPage() {
   const [isPkgModalOpen, setIsPkgModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedPackage, setSelectedPackage] = useState<ServicePackageResponse | null>(null);
+  const [isExerciseSelectorOpen, setIsExerciseSelectorOpen] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [pkgs, scripts] = await Promise.all([
-        servicePackageService.getAll(),
-        exerciseService.getAllScripts()
-      ]);
+      const pkgs = await servicePackageService.getAll();
       setPackages(pkgs || []);
-      setAllExercises(scripts || []);
       
       // Select first package by default for config tab
       if (pkgs && pkgs.length > 0 && !selectedPkgId) {
@@ -64,6 +63,25 @@ export default function SubscriptionsUnifiedPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const fetchPackageExercises = async (id: number) => {
+    setExerciseLoading(true);
+    try {
+      const data = await servicePackageService.getExercises(id);
+      setPackageExercises(data || []);
+    } catch (e) {
+      console.error(e);
+      toast.error(t('common.error'));
+    } finally {
+      setExerciseLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedPkgId) {
+      fetchPackageExercises(selectedPkgId);
+    }
+  }, [selectedPkgId]);
 
   const handleAddPackage = () => {
     setModalMode('create');
@@ -105,16 +123,28 @@ export default function SubscriptionsUnifiedPage() {
     }
   };
 
-  const handleRemoveExerciseFromPkg = async (pkg: ServicePackageResponse, exerciseId: number) => {
-    if (!confirm(t('common.confirm_delete'))) return;
+  const handleUpdateExercises = async (exerciseIds: number[]) => {
+    if (!selectedPkgId) return;
     try {
-      const updatedExerciseIds = (pkg.exerciseIds || []).filter(id => id !== exerciseId);
-      await servicePackageService.update(pkg.id, {
-        ...pkg,
-        exerciseIds: updatedExerciseIds
-      });
+      await servicePackageService.updateExercises(selectedPkgId, exerciseIds);
       toast.success(t('common.update_success'));
-      fetchData();
+      fetchPackageExercises(selectedPkgId);
+    } catch (e) {
+      console.error(e);
+      toast.error(t('common.error'));
+    }
+  };
+
+  const handleRemoveExerciseFromPkg = async (exerciseId: number) => {
+    if (!selectedPkgId || !confirm(t('common.confirm_delete'))) return;
+    try {
+      const updatedExerciseIds = packageExercises
+        .map(ex => ex.id)
+        .filter(id => id !== exerciseId);
+      
+      await servicePackageService.updateExercises(selectedPkgId, updatedExerciseIds);
+      toast.success(t('common.update_success'));
+      fetchPackageExercises(selectedPkgId);
     } catch (e) {
       console.error(e);
       toast.error(t('common.error'));
@@ -123,7 +153,6 @@ export default function SubscriptionsUnifiedPage() {
 
   const canManage = user?.role === 'MANAGER' || user?.role === 'ADMIN' || user?.role === 'ADMINISTRATOR';
   const currentConfigPkg = packages.find(p => p.id === selectedPkgId);
-  const pkgExercises = allExercises.filter(ex => currentConfigPkg?.exerciseIds?.includes(ex.id));
 
   return (
     <div className="space-y-6">
@@ -145,7 +174,7 @@ export default function SubscriptionsUnifiedPage() {
               <Package className="h-4 w-4" /> {t('manager.subscriptions.tab_packages')}
            </TabsTrigger>
            <TabsTrigger value="sessions" className="rounded-xl px-8 h-11 data-[state=active]:bg-white data-[state=active]:shadow-lg gap-2 font-bold">
-              <Activity className="h-4 w-4" /> {t('manager.subscriptions.tab_sessions')}
+              <Activity className="h-4 w-4" /> {t('manager.subscriptions.tab_sessions') || 'Package Contents'}
            </TabsTrigger>
         </TabsList>
 
@@ -173,6 +202,7 @@ export default function SubscriptionsUnifiedPage() {
                       <TableHead>{t('admin.packages.table.name')}</TableHead>
                       <TableHead className="hidden md:table-cell">{t('admin.packages.table.desc')}</TableHead>
                       <TableHead>{t('admin.packages.table.price')}</TableHead>
+                      <TableHead>{t('admin.packages.table.duration') || 'Duration'}</TableHead>
                       <TableHead>{t('admin.packages.table.status')}</TableHead>
                       <TableHead className="text-right">{t('common.actions')}</TableHead>
                     </TableRow>
@@ -189,7 +219,8 @@ export default function SubscriptionsUnifiedPage() {
                         <TableCell className="max-w-[200px] truncate text-muted-foreground hidden md:table-cell">
                           {pkg.description}
                         </TableCell>
-                        <TableCell className="font-bold text-emerald-600">{pkg.price.toLocaleString()} VNĐ</TableCell>
+                        <TableCell className="font-bold text-emerald-600">{pkg.price.toLocaleString()} {t('common.currency')}</TableCell>
+                        <TableCell className="font-medium text-slate-500">{pkg.durationDays} {t('common.units.days')}</TableCell>
                         <TableCell>
                             <Badge variant={pkg.active ? 'default' : 'secondary'} className={pkg.active ? 'bg-emerald-500' : ''}>
                               {pkg.active ? t('common.active') : t('common.inactive')}
@@ -257,7 +288,7 @@ export default function SubscriptionsUnifiedPage() {
                       </CardDescription>
                     </div>
                     {canManage && (
-                      <Button onClick={() => currentConfigPkg && handleEditPackage(currentConfigPkg)} variant="outline" size="sm" className="rounded-lg gap-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50">
+                      <Button onClick={() => setIsExerciseSelectorOpen(true)} variant="outline" size="sm" className="rounded-lg gap-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50">
                         <Plus className="h-3 w-3" /> {t('manager.subscriptions.add_exercise')}
                       </Button>
                     )}
@@ -269,32 +300,38 @@ export default function SubscriptionsUnifiedPage() {
                       <TableRow className="hover:bg-transparent border-none">
                         <TableHead className="pl-6 pt-4">{t('wellness.scripts.table.name')}</TableHead>
                         <TableHead className="pt-4">{t('wellness.scripts.table.duration')}</TableHead>
-                        <TableHead className="pt-4">{t('wellness.scripts.table.difficulty')}</TableHead>
+                        <TableHead className="pt-4">{t('wellness.scripts.table.level') || 'Level'}</TableHead>
                         <TableHead className="text-right pr-6 pt-4">{t('common.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {pkgExercises.length === 0 ? (
+                      {exerciseLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center py-20 text-muted-foreground">
+                            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 opacity-20" />
+                            {t('common.loading')}
+                          </TableCell>
+                        </TableRow>
+                      ) : packageExercises.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic">
                             {t('manager.subscriptions.no_exercises')}
                           </TableCell>
-                        </TableRow>
-                      ) : (
-                        pkgExercises.map((ex) => (
+                        </TableRow>                       ) : (
+                        packageExercises.map((ex) => (
                           <TableRow key={ex.id} className="group hover:bg-slate-50 transition-colors border-slate-50">
                             <TableCell className="pl-6 font-bold text-slate-700">{ex.name}</TableCell>
                             <TableCell>{ex.durationMinutes}m</TableCell>
                             <TableCell>
                               <Badge variant="secondary" className="bg-slate-100 text-slate-600 uppercase text-[10px] font-bold">
-                                {ex.difficultyLevel}
+                                {ex.level}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right pr-6">
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                onClick={() => currentConfigPkg && handleRemoveExerciseFromPkg(currentConfigPkg, ex.id)}
+                                onClick={() => handleRemoveExerciseFromPkg(ex.id)}
                                 className="text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -318,6 +355,16 @@ export default function SubscriptionsUnifiedPage() {
         initialData={selectedPackage}
         mode={modalMode}
       />
+
+      {currentConfigPkg && (
+        <PackageExerciseSelector 
+          isOpen={isExerciseSelectorOpen}
+          onClose={() => setIsExerciseSelectorOpen(false)}
+          onSave={handleUpdateExercises}
+          currentIds={packageExercises.map(ex => ex.id)}
+          packageLevel={currentConfigPkg.level}
+        />
+      )}
     </div>
   );
 }

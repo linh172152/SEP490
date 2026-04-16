@@ -84,6 +84,7 @@ export interface ServicePackageRequest {
   level: string;
   price: number;
   active: boolean;
+  durationDays: number;
   exerciseIds?: number[];
 }
 
@@ -110,6 +111,8 @@ export interface RobotResponse {
   status: string;
   assignedElderlyId?: number;
   assignedElderlyName?: string;
+  roomId?: number;
+  roomName?: string;
 }
 
 // Robot Status Log Types
@@ -182,7 +185,7 @@ export interface ExerciseScriptRequest {
   name: string;
   description: string;
   durationMinutes: number;
-  difficultyLevel: string;
+  level: string;
   uploadScript: string;
 }
 
@@ -296,6 +299,7 @@ export interface RobotDTO {
   id: number;
   robotName: string;
   model: string;
+  serialNumber: string;
 }
 
 export interface RoomResponse {

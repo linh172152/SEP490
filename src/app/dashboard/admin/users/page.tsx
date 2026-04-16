@@ -132,12 +132,12 @@ export default function UsersManagePage() {
       fetchUsers();
     } catch (error: any) {
       if (error.status === 403 || error.status === 501 || error.status === 400) {
-        toast.info("Tính năng khôi phục đang được phát triển (Backend chưa hỗ trợ)");
+        toast.info(t("admin.robots.backup.info"));
         const updated = backupList.filter(r => r.account.id !== record.account.id);
         setBackupList(updated);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       } else {
-        toast.error("Lỗi khi khôi phục tài khoản");
+        toast.error(t("admin.robots.backup.error"));
       }
     }
   };

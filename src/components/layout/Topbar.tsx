@@ -12,8 +12,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { cn, getAvatarColor, getInitials } from '@/lib/utils';
+import { Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
-export function Topbar() {
+interface TopbarProps {
+  onMenuClick: () => void;
+  onSidebarToggle: () => void;
+  isSidebarCollapsed: boolean;
+}
+
+export function Topbar({ onMenuClick, onSidebarToggle, isSidebarCollapsed }: TopbarProps) {
   const currentUser = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
 
@@ -21,6 +28,32 @@ export function Topbar() {
 
   return (
     <header className="fixed top-0 z-30 flex h-16 w-full items-center justify-between border-b bg-background/95 px-4 backdrop-blur sm:px-6 lg:px-8">
+      <div className="flex items-center gap-2">
+        {/* Mobile Toggle */}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="sm:hidden -ml-2 h-10 w-10 text-slate-500" 
+          onClick={onMenuClick}
+        >
+          <Menu className="h-6 w-6" />
+        </Button>
+
+        {/* Desktop Toggle */}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="hidden sm:flex h-10 w-10 text-slate-400 hover:text-primary transition-colors" 
+          onClick={onSidebarToggle}
+        >
+          {isSidebarCollapsed ? (
+            <PanelLeftOpen className="h-5 w-5" />
+          ) : (
+            <PanelLeftClose className="h-5 w-5" />
+          )}
+        </Button>
+      </div>
+
       <div className="flex flex-1 items-center justify-end gap-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

@@ -24,9 +24,18 @@
     "processing": "Processing...",
     "search": "Search...",
     "confirm_delete": "Are you sure you want to delete this item?",
+    "currency": "VNĐ",
+    "units": {
+      "days": "days"
+    },
     "update_success": "Updated successfully!",
     "create_success": "Created successfully!",
     "delete_success": "Deleted successfully!",
+    "toasts": {
+      "success": "Action successful",
+      "error": "A system error occurred",
+      "connect_error": "Could not connect to technical services"
+    },
     "error": "An error occurred. Please try again.",
     "recent_deletions": "Recent Deletions (24h)",
     "restore_btn": "Restore recently deleted",
@@ -201,7 +210,23 @@
       "success_update": "Password updated successfully",
       "error_mismatch": "New passwords do not match",
       "error_invalid": "Invalid current password or new password too short",
-      "error_failed": "Failed to change password"
+      "error_failed": "Failed to change password",
+      "toasts": {
+        "load_error": "Failed to load settings",
+        "load_audit_error": "Failed to load audit logs",
+        "profile_success": "Profile updated successfully",
+        "profile_error": "Failed to update profile",
+        "notif_success": "Notification preferences updated (Mock)",
+        "notif_error": "Failed to update notifications",
+        "pref_success": "Preferences saved (Mock)",
+        "pref_error": "Failed to update preferences",
+        "security_success": "Security settings updated",
+        "security_error": "Failed to update security",
+        "risk_success": "Risk management settings updated (Mock)",
+        "risk_error": "Failed to update risk management",
+        "session_success": "Session revoked successfully",
+        "session_error": "Failed to revoke session"
+      }
     }
   },
   "sidebar": {
@@ -250,7 +275,14 @@
       "audit_logs_title": "System Activity Logs",
       "user_distribution_title": "User Role Distribution",
       "user_distribution_desc": "Breakdown of all active accounts in the platform.",
-      "security_records_desc": "Recent system security events"
+      "security_records_desc": "Recent system security events",
+      "no_recent_activity": "No recent system activity.",
+      "labels": {
+        "total_accounts": "Infrastructure Users",
+        "robots_status": "Robot Assets",
+        "security_records": "Security Records",
+        "wellness_scripts": "Wellness Scripts"
+      }
     },
     "fleet": {
       "title": "Robot Management",
@@ -276,7 +308,7 @@
       "table": {
         "robot_serial": "Robot & Serial",
         "config": "Configuration",
-        "location": "Room (Location)",
+        "room": "Assigned Room",
         "status": "Status"
       },
       "ota": {
@@ -349,11 +381,17 @@
         "assignment": "Assignment",
         "assigned_to": "Assigned to",
         "unassigned": "Available for assignment",
+        "room": "Room",
         "battery": "Battery",
         "last_ping": "Last ping"
       },
       "delete_btn": "Delete System",
-      "confirm_delete": "Are you sure you want to delete this robot?"
+      "confirm_delete": "Are you sure you want to delete this robot?",
+      "backup": {
+        "info": "Restore feature is under development (Backend not yet supported)",
+        "error": "Error restoring account",
+        "restore_success": "Restored successfully"
+      }
     },
     "security": {
       "title": "Security & Integrity",
@@ -384,6 +422,7 @@
         "name": "Name",
         "desc": "Description",
         "price": "Price (VNĐ)",
+        "duration": "Duration",
         "status": "Status",
         "actions": "Actions",
         "active": "Active",
@@ -399,6 +438,7 @@
           "description": "Full Description",
           "level": "Service Level (e.g. Basic, Pro)",
           "price": "Base Price (VNĐ)",
+          "duration": "Duration (Days)",
           "status_active": "Set Package as Active"
         }
       },
@@ -755,7 +795,19 @@
     "subtitle": "Manage Robot control scripts and monitor system-wide execution logs.",
     "desc": "Global Scripts",
     "library_tab": "Script Library",
-    "history_tab": "System Audit",
+    "exercise_tab": "Activity History",
+    "headers": {
+      "infra": "Infrastructure & Script Management"
+    },
+    "toasts": {
+      "load_error": "Could not load exercise library.",
+      "create_success": "Exercise script created successfully.",
+      "create_error": "Failed to create exercise script.",
+      "update_success": "Exercise script updated successfully.",
+      "update_error": "Failed to update exercise script.",
+      "delete_success": "Exercise library deleted.",
+      "delete_error": "Failed to delete exercise script."
+    },
     "library": {
       "add_btn": "Initialize New Script",
       "edit_btn": "Configure Script",
@@ -774,6 +826,7 @@
         "name": "Script Name",
         "duration": "Est. Duration",
         "difficulty": "Complexity",
+        "level": "Level",
         "actions": "Manage"
       },
       "modal": {
@@ -915,6 +968,51 @@
         "privacy": "Privacy Policy",
         "terms": "Terms of Service",
         "contact": "Contact Support"
+      }
+    }
+  },
+  "family": {
+    "elderly": {
+      "create": {
+        "title": "New Care Profile",
+        "sections": {
+          "identity": {
+            "title": "Personal Identity",
+            "desc": "Primary identification details for the care recipient."
+          },
+          "voice": {
+            "title": "Voice & Interaction",
+            "desc": "Configure how CareBot communicates with the elderly member."
+          },
+          "medical": {
+            "title": "Medical Overview",
+            "desc": "Primary diagnosis and daily care requirements."
+          }
+        },
+        "fields": {
+          "name": {
+            "label": "Legal Full Name",
+            "placeholder": "e.g. John Doe"
+          },
+          "dob": {
+            "label": "Date of Birth"
+          },
+          "language": {
+            "label": "Communication Language"
+          },
+          "speed": {
+            "label": "Robot Speech Speed"
+          },
+          "notes": {
+            "label": "Health History & Daily Needs",
+            "placeholder": "Detail chronic conditions (e.g., Hypertension, Type-2 Diabetes), recent surgeries, or specific mobility notes..."
+          }
+        },
+        "buttons": {
+          "discard": "Discard Changes",
+          "submit": "Finalize & Create",
+          "submitting": "Creating Profile..."
+        }
       }
     }
   }

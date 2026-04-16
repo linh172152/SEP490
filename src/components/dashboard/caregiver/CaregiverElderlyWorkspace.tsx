@@ -38,6 +38,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import {
   AlertTriangle,
@@ -331,6 +339,22 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
       completed: selectedReminders.filter((item) => !item.active),
     };
   }, [selectedReminders]);
+  const sortedSelectedReminders = useMemo(
+    () => selectedReminders.slice().sort((left, right) => new Date(right.scheduleTime).getTime() - new Date(left.scheduleTime).getTime()),
+    [selectedReminders]
+  );
+  const sortedReminderLogs = useMemo(
+    () => selectedReminderLogs.slice().sort((left, right) => new Date(right.triggeredTime).getTime() - new Date(left.triggeredTime).getTime()),
+    [selectedReminderLogs]
+  );
+  const openAlerts = useMemo(
+    () => selectedAlerts.filter((item) => !item.resolved).sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()),
+    [selectedAlerts]
+  );
+  const resolvedAlerts = useMemo(
+    () => selectedAlerts.filter((item) => item.resolved).sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()),
+    [selectedAlerts]
+  );
   const activePackages = useMemo(() => {
     const now = Date.now();
     return userPackages.filter((item) => {
@@ -465,6 +489,22 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
       setMessage({ type: 'success', text: reminder.active ? 'Reminder marked completed.' : 'Reminder reactivated.' });
     } catch (error: unknown) {
       setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to update reminder status.' });
+    }
+  };
+
+  const handleResolveAlert = async (alert: AlertNotificationResponse) => {
+    try {
+      await alertService.update(alert.id, {
+        elderlyId: alert.elderlyId,
+        alertType: alert.alertType,
+        message: alert.message,
+        resolved: true,
+        reminderId: alert.reminderId ?? null,
+      });
+      await loadSelectedElderly();
+      setMessage({ type: 'success', text: 'Alert marked as resolved.' });
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to resolve alert.' });
     }
   };
 
@@ -662,12 +702,171 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 2xl:grid-cols-[1.1fr_0.9fr]">
-        <ReminderGroupCard title="Active" items={reminderGroups.active} onEdit={handleReminderEdit} onDelete={handleReminderDelete} onToggle={handleReminderToggle} />
-        <ReminderGroupCard title="Missed" items={reminderGroups.missed} onEdit={handleReminderEdit} onDelete={handleReminderDelete} onToggle={handleReminderToggle} />
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Created Reminders</CardTitle>
+          <CardDescription>Quick reminder workspace for the selected elderly profile.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {sortedSelectedReminders.length === 0 ? (
+            <EmptyState text="No reminders created for this elderly profile yet." />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Schedule</TableHead>
+                  <TableHead>Pattern</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedSelectedReminders.map((item) => {
+                  const isMissed = item.active && new Date(item.scheduleTime).getTime() < Date.now();
+                  const statusLabel = !item.active ? 'Completed' : isMissed ? 'Missed' : 'Active';
+                  const statusClassName = !item.active
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : isMissed
+                      ? 'bg-rose-50 text-rose-700 border-rose-200'
+                      : 'bg-sky-50 text-sky-700 border-sky-200';
 
-      <ReminderGroupCard title="Completed" items={reminderGroups.completed} onEdit={handleReminderEdit} onDelete={handleReminderDelete} onToggle={handleReminderToggle} />
+                  return (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.title}</TableCell>
+                      <TableCell className="capitalize">{item.reminderType}</TableCell>
+                      <TableCell>{new Date(item.scheduleTime).toLocaleString()}</TableCell>
+                      <TableCell>{item.repeatPattern}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={statusClassName}>{statusLabel}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end gap-2">
+                          <Button size="sm" variant="outline" onClick={() => handleReminderEdit(item)}>Edit</Button>
+                          <Button size="sm" variant="outline" onClick={() => handleReminderToggle(item)}>
+                            {item.active ? 'Mark Completed' : 'Reactivate'}
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleReminderDelete(item.id)}>Delete</Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Reminder Logs</CardTitle>
+          <CardDescription>Robot delivery results for this elderly profile. Green means confirmed, red means not confirmed yet.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {sortedReminderLogs.length === 0 ? (
+            <EmptyState text="No reminder logs for this elderly profile yet." />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Reminder</TableHead>
+                  <TableHead>Robot</TableHead>
+                  <TableHead>Triggered</TableHead>
+                  <TableHead>Confirmed</TableHead>
+                  <TableHead>Confirmed Time</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedReminderLogs.map((item) => (
+                  <TableRow key={item.id} className={item.confirmed ? 'bg-emerald-50/70 hover:bg-emerald-50' : 'bg-rose-50/70 hover:bg-rose-50'}>
+                    <TableCell className="font-medium">{item.reminderTitle}</TableCell>
+                    <TableCell>{item.robotName}</TableCell>
+                    <TableCell>{new Date(item.triggeredTime).toLocaleString()}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={item.confirmed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}>
+                        {item.confirmed ? 'Confirmed' : 'Not Confirmed'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{item.confirmedTime ? new Date(item.confirmedTime).toLocaleString() : 'Pending'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Open Alerts</CardTitle>
+            <CardDescription>Caregiver should review these unresolved alerts and update them after handling the elderly.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {openAlerts.length === 0 ? (
+              <EmptyState text="No unresolved alerts for this elderly profile." />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Message</TableHead>
+                    <TableHead>Created At</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {openAlerts.map((item) => (
+                    <TableRow key={item.id} className="bg-rose-50/70 hover:bg-rose-50">
+                      <TableCell className="font-medium">{item.alertType.replace(/_/g, ' ')}</TableCell>
+                      <TableCell className="max-w-[320px] whitespace-normal">{item.message}</TableCell>
+                      <TableCell>{new Date(item.createdAt).toLocaleString()}</TableCell>
+                      <TableCell>
+                        <div className="flex justify-end">
+                          <Button size="sm" onClick={() => handleResolveAlert(item)}>Mark Resolved</Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Resolved Alerts</CardTitle>
+            <CardDescription>Handled alerts are shown here with green rows for quick confirmation.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {resolvedAlerts.length === 0 ? (
+              <EmptyState text="No resolved alerts for this elderly profile yet." />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Message</TableHead>
+                    <TableHead>Created At</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {resolvedAlerts.map((item) => (
+                    <TableRow key={item.id} className="bg-emerald-50/70 hover:bg-emerald-50">
+                      <TableCell className="font-medium">{item.alertType.replace(/_/g, ' ')}</TableCell>
+                      <TableCell className="max-w-[320px] whitespace-normal">{item.message}</TableCell>
+                      <TableCell>{new Date(item.createdAt).toLocaleString()}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 
@@ -1069,50 +1268,6 @@ function FormRow({ label, children }: { label: string; children: React.ReactNode
 
 function EmptyState({ text }: { text: string }) {
   return <div className="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">{text}</div>;
-}
-
-function ReminderGroupCard({
-  title,
-  items,
-  onEdit,
-  onDelete,
-  onToggle,
-}: {
-  title: string;
-  items: ReminderResponse[];
-  onEdit: (reminder: ReminderResponse) => void;
-  onDelete: (reminderId: number) => void;
-  onToggle: (reminder: ReminderResponse) => void;
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{title === 'Active' ? 'Upcoming active reminders.' : title === 'Missed' ? 'Past due reminders still marked active.' : 'Inactive reminders.'}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {items.length === 0 ? (
-          <EmptyState text={`No ${title.toLowerCase()} reminders.`} />
-        ) : (
-          items.map((item) => (
-            <div key={item.id} className="rounded-2xl border p-4">
-              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                <div>
-                  <div className="font-semibold">{item.title}</div>
-                  <div className="mt-1 text-sm text-muted-foreground">{item.reminderType} • {item.repeatPattern} • {new Date(item.scheduleTime).toLocaleString()}</div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={() => onEdit(item)}>Edit</Button>
-                  <Button size="sm" variant="outline" onClick={() => onToggle(item)}>{item.active ? 'Mark Completed' : 'Reactivate'}</Button>
-                  <Button size="sm" variant="destructive" onClick={() => onDelete(item.id)}>Delete</Button>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </CardContent>
-    </Card>
-  );
 }
 
 function LogCard({ title, items }: { title: string; items: Array<{ id: number; primary: string; secondary: string; time: string }> }) {

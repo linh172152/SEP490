@@ -9,6 +9,10 @@ class AlertService {
     return apiClient.get<AlertNotificationResponse[]>("/api/alerts");
   }
 
+  async getByReminderLogId(reminderLogId: number): Promise<AlertNotificationResponse[]> {
+    return apiClient.get<AlertNotificationResponse[]>(`/api/alerts/reminder/${reminderLogId}`);
+  }
+
   async getById(id: number): Promise<AlertNotificationResponse> {
     return apiClient.get<AlertNotificationResponse>(`/api/alerts/${id}`);
   }
@@ -33,9 +37,10 @@ class AlertService {
   async markAsResolved(id: number): Promise<AlertNotificationResponse> {
     return this.update(id, {
       elderlyId: 0,
-      alertType: "",
-      message: "",
+      alertType: '',
+      message: '',
       resolved: true,
+      reminderId: null,
     });
   }
 }

@@ -258,6 +258,7 @@ export interface AlertNotificationRequest {
   alertType: string;
   message: string;
   resolved: boolean;
+  reminderId?: number | null;
 }
 
 export interface AlertNotificationResponse extends AlertNotificationRequest {

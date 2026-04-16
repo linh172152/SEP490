@@ -23,12 +23,8 @@ export function WellnessHub({ readOnly = false }: { readOnly?: boolean }) {
       <div className="relative group">
         <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 to-violet-500/20 blur-2xl opacity-50 group-hover:opacity-100 transition duration-1000"></div>
         <div className="relative space-y-2">
-          <div className="flex items-center gap-2 text-primary font-bold tracking-widest uppercase text-[10px]">
-            <Terminal className="h-4 w-4 text-indigo-500" />
-            <span>{t("wellness.headers.infra")}</span>
-          </div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
-             {t("wellness.title") || "Exercise Library"}
+             {t("wellness.title")}
           </h1>
           <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed font-medium">
             {t("wellness.subtitle")}

@@ -111,7 +111,7 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this script?")) return;
+    if (!confirm(t("common.confirm_delete"))) return;
     try {
       await exerciseService.deleteScript(id);
       toast.success(t("wellness.toasts.delete_success"));
@@ -148,15 +148,15 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
       case "1":
       case "L1":
       case "EASY":
-        return <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-black text-[10px] uppercase tracking-tighter">L1: {t("wellness.difficulty.easy") || "Basic"}</Badge>;
+        return <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-black text-[10px] uppercase tracking-tighter">L1: {t("wellness.difficulty.easy")}</Badge>;
       case "2":
       case "L2":
       case "MEDIUM":
-        return <Badge className="bg-indigo-500/10 text-indigo-600 border-indigo-500/20 font-black text-[10px] uppercase tracking-tighter">L2: {t("wellness.difficulty.medium") || "Intermediate"}</Badge>;
+        return <Badge className="bg-indigo-500/10 text-indigo-600 border-indigo-500/20 font-black text-[10px] uppercase tracking-tighter">L2: {t("wellness.difficulty.medium")}</Badge>;
       case "3":
       case "L3":
       case "HARD":
-        return <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 font-black text-[10px] uppercase tracking-tighter">L3: {t("wellness.difficulty.hard") || "Complex"}</Badge>;
+        return <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 font-black text-[10px] uppercase tracking-tighter">L3: {t("wellness.difficulty.hard")}</Badge>;
       default:
         return <Badge variant="outline" className="text-[10px] font-bold">{level}</Badge>;
     }
@@ -240,7 +240,7 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
                         <Clock className="h-3.5 w-3.5 opacity-60" />
-                        {script.durationMinutes} MINS
+                        {script.durationMinutes} {t('common.units.minutes').toUpperCase()}
                       </div>
                     </TableCell>
                     <TableCell>

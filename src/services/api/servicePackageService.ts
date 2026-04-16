@@ -11,7 +11,7 @@ class ServicePackageService {
   }
 
   async create(data: ServicePackageRequest): Promise<ServicePackageResponse> {
-    return apiClient.post<ServicePackageResponse>("/api/service-packages", data);
+    return apiClient.post<ServicePackageResponse>("/api/service-packages/auto", data);
   }
 
   async update(id: number, data: ServicePackageRequest): Promise<ServicePackageResponse> {

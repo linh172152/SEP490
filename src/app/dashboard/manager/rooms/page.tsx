@@ -109,14 +109,24 @@ export default function RoomsManagerPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (room: RoomResponse) => {
+    const hasAssignments = (room.caregivers?.length || 0) > 0 || (room.elderlies?.length || 0) > 0 || room.robot !== null;
+
+    if (hasAssignments) {
+      toast.warning(t('manager.rooms.toasts.delete_not_empty', { name: room.roomName }));
+      return;
+    }
+
     if (!confirm(t('manager.rooms.toasts.delete_confirm'))) return;
+    
     try {
-      await roomService.deleteRoom(id);
+      await roomService.deleteRoom(room.id);
       toast.success(t('manager.rooms.toasts.delete_success'));
       fetchRooms();
-    } catch (e) {
-      toast.error(t('manager.rooms.toasts.delete_error'));
+    } catch (e: any) {
+      // Use message from server if it exists (e.g. "Access Denied")
+      const serverMsg = e.message || e.details || e.error;
+      toast.error(serverMsg || t('manager.rooms.toasts.delete_error'));
     }
   };
 
@@ -223,7 +233,7 @@ export default function RoomsManagerPage() {
                       <DropdownMenuItem onClick={() => handleEdit(room)} className="rounded-lg gap-2 font-medium cursor-pointer">
                         <Pencil className="h-4 w-4 text-sky-500" /> {t('manager.rooms.card.edit_info')}
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-rose-600 rounded-lg gap-2 font-medium cursor-pointer" onClick={() => handleDelete(room.id)}>
+                      <DropdownMenuItem className="text-rose-600 rounded-lg gap-2 font-medium cursor-pointer" onClick={() => handleDelete(room)}>
                         <Trash2 className="h-4 w-4" /> {t('manager.rooms.card.delete_room')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>

@@ -105,7 +105,7 @@ export function AdminDashboard() {
       robotList.forEach(r => {
           const s = String(r.status || '').toUpperCase();
           // Normalize various 'online' or 'active' strings from DB
-          if (s === 'ACTIVE' || s === 'ONLINE' || s === 'ONNLINE') active++;
+          if (s === 'ACTIVE' || s === 'ONLINE') active++;
           else if (s === 'MAINTENANCE') maint++;
           else offline++;
       });
@@ -122,9 +122,9 @@ export function AdminDashboard() {
             roleKey: name
         })).filter(item => item.value > 0),
         robotStatusDistribution: [
-          { name: t('admin.robots.status.active') || 'Active', value: active, color: '#10b981' },
-          { name: t('admin.robots.status.maintenance') || 'Maintenance', value: maint, color: '#f59e0b' },
-          { name: t('admin.robots.status.offline') || 'Offline', value: offline, color: '#ef4444' },
+          { name: t('common.status.active'), value: active, color: '#10b981' },
+          { name: t('common.status.maintenance'), value: maint, color: '#f59e0b' },
+          { name: t('common.status.offline'), value: offline, color: '#ef4444' },
         ],
         recentLogs: Array.isArray(logs) ? logs : []
       });
@@ -194,7 +194,7 @@ export function AdminDashboard() {
                 <div className="flex items-center gap-2 mt-2">
                    <TrendingUp className="h-3 w-3 text-blue-600" />
                    <p className="text-xs font-medium text-blue-700 dark:text-blue-500">
-                      {t('admin.robots.status.active')}: {stats.activeRobots}
+                      {t('common.status.active')}: {stats.activeRobots}
                    </p>
                 </div>
               </CardContent>
@@ -209,7 +209,7 @@ export function AdminDashboard() {
               <CardContent>
                 <div className="text-3xl font-black text-amber-900 dark:text-amber-300">{stats.totalExercises}</div>
                 <p className="text-xs font-medium text-amber-700 dark:text-amber-500 mt-2">
-                    {t('wellness.desc') || "Library size"}
+                    {t('wellness.desc')}
                 </p>
               </CardContent>
             </Card>
@@ -223,9 +223,9 @@ export function AdminDashboard() {
           <CardHeader>
             <CardTitle className="text-lg font-bold flex items-center gap-2">
                <Users className="h-5 w-5 text-indigo-500" />
-               {t('admin.dashboard.user_distribution_title') || "User Role Distribution"}
+               {t('admin.dashboard.charts.user_distribution_title')}
             </CardTitle>
-            <CardDescription>{t('admin.dashboard.user_distribution_desc') || "Breakdown of all active accounts in the platform."}</CardDescription>
+            <CardDescription>{t('admin.dashboard.charts.user_distribution_desc')}</CardDescription>
           </CardHeader>
           <CardContent className="h-[350px] pb-20">
             {loading ? (
@@ -284,9 +284,9 @@ export function AdminDashboard() {
         <Card className="lg:col-span-3 border-none shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-bold">
-                {t('admin.dashboard.fleet_distribution') || "Robot Fleet Status"}
+                {t('admin.dashboard.charts.fleet_status_title')}
             </CardTitle>
-            <CardDescription>{t('admin.dashboard.fleet_desc') || "Technical health across theCareBot fleet."}</CardDescription>
+            <CardDescription>{t('admin.dashboard.charts.fleet_status_desc')}</CardDescription>
           </CardHeader>
           <CardContent className="h-[350px]">
             {loading ? (

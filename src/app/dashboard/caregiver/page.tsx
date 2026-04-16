@@ -8,17 +8,23 @@ import { roomService } from '@/services/api/roomService';
 import { alertService } from '@/services/api/alertService';
 import { reminderService } from '@/services/api/reminderService';
 import { robotService } from '@/services/api/robotService';
+import { userPackageService } from '@/services/api/userPackageService';
+import { servicePackageService } from '@/services/api/servicePackageService';
+import { cn } from '@/lib/utils';
+import { getActiveUserPackageForElderly, getCatalogPackageForUserPackage, getServicePackageTheme, getUnpurchasedPackageTheme } from '@/lib/servicePackageThemes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Bell, Bot, Loader2, Users } from 'lucide-react';
+import { AlertTriangle, Bell, Bot, Loader2, Package, Users } from 'lucide-react';
 import type {
   AlertNotificationResponse,
   CaregiverProfileResponse,
   ReminderResponse,
-  RobotResponse,
+  RobotDTO,
   RobotStatusLogResponse,
   RoomElderlySummary,
+  ServicePackageResponse,
+  UserPackageResponse,
 } from '@/services/api/types';
 
 const getCaregiverIdentifiers = (profile: { id?: number | null; accountId?: number | null } | null, userId?: string) => {
@@ -39,8 +45,10 @@ export default function CaregiverOverviewPage() {
   const [roomElderlies, setRoomElderlies] = useState<RoomElderlySummary[]>([]);
   const [reminders, setReminders] = useState<ReminderResponse[]>([]);
   const [alerts, setAlerts] = useState<AlertNotificationResponse[]>([]);
-  const [roomRobot, setRoomRobot] = useState<RobotResponse | null>(null);
+  const [roomRobot, setRoomRobot] = useState<RobotDTO | null>(null);
   const [robotLogs, setRobotLogs] = useState<RobotStatusLogResponse[]>([]);
+  const [userPackages, setUserPackages] = useState<UserPackageResponse[]>([]);
+  const [servicePackages, setServicePackages] = useState<ServicePackageResponse[]>([]);
 
   useEffect(() => {
     const loadOverview = async () => {
@@ -71,17 +79,15 @@ export default function CaregiverOverviewPage() {
         const elderlyIds = new Set(elderlies.map((item) => item.id));
         const caregiverIdentifiers = getCaregiverIdentifiers(currentProfile, user?.id);
 
-        const [allReminders, allAlerts, roomData] = await Promise.all([
+        const [allReminders, allAlerts, roomData, packageCatalog, userPackageGroups] = await Promise.all([
           reminderService.getAll().catch(() => [] as ReminderResponse[]),
           alertService.getAll().catch(() => [] as AlertNotificationResponse[]),
           roomService.getRoomById(currentProfile.roomId).catch(() => null),
+          servicePackageService.getAll().catch(() => [] as ServicePackageResponse[]),
+          Promise.all(elderlies.map((item) => userPackageService.getByElderlyId(item.id).catch(() => [] as UserPackageResponse[]))),
         ]);
 
-        const robotByRoomSummary = roomData?.robot ?? null;
-
-        const robotByRoom = robotByRoomSummary
-          ? await robotService.getById(robotByRoomSummary.id).catch(() => null)
-          : null;
+        const robotByRoom = roomData?.robot ?? null;
 
         setRoomElderlies(elderlies);
         setReminders(
@@ -91,6 +97,8 @@ export default function CaregiverOverviewPage() {
         );
         setAlerts(allAlerts.filter((item) => elderlyIds.has(item.elderlyId) && !item.resolved));
         setRoomRobot(robotByRoom);
+        setServicePackages(packageCatalog);
+        setUserPackages(userPackageGroups.flat());
 
         if (robotByRoom) {
           const statusLogs = await robotService.getStatusLogsByRobot(robotByRoom.id).catch(async () => {
@@ -120,6 +128,8 @@ export default function CaregiverOverviewPage() {
     () => reminders.filter((item) => item.active),
     [reminders]
   );
+
+  const unpurchasedTheme = getUnpurchasedPackageTheme();
 
   const latestRobotLog = robotLogs[0] ?? null;
 
@@ -192,7 +202,7 @@ export default function CaregiverOverviewPage() {
           <CardContent>
             <div className="text-lg font-bold">{roomRobot?.robotName || 'Chua co robot'}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {roomRobot ? `${roomRobot.model} • ${roomRobot.status} • ${roomRobot.firmwareVersion}` : latestRobotLog ? `Trang thai gan nhat: ${latestRobotLog.status}` : 'Chua co robot status log'}
+              {roomRobot ? `${roomRobot.model} • Robot ID ${roomRobot.id}` : latestRobotLog ? `Trang thai gan nhat: ${latestRobotLog.status}` : 'Chua co robot status log'}
             </p>
           </CardContent>
         </Card>
@@ -214,15 +224,59 @@ export default function CaregiverOverviewPage() {
               <p className="text-sm text-muted-foreground">Khong co elderly nao trong room hien tai.</p>
             ) : (
               roomElderlies.map((item) => (
-                <div key={item.id} className="rounded-lg border p-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="font-semibold">{item.name}</div>
-                      <div className="text-xs text-muted-foreground">Elderly ID: {item.id}</div>
+                (() => {
+                  const activeUserPackage = getActiveUserPackageForElderly(userPackages, item.id);
+                  const activePackage = getCatalogPackageForUserPackage(servicePackages, activeUserPackage);
+                  const packageTheme = getServicePackageTheme(activePackage, servicePackages);
+                  const hasPackage = Boolean(activePackage);
+                  const elderlyAlertCount = alerts.filter((alert) => alert.elderlyId === item.id).length;
+
+                  return (
+                    <div key={item.id} className={cn('overflow-hidden rounded-2xl border shadow-sm', hasPackage ? packageTheme.surfaceClassName : unpurchasedTheme.surfaceClassName)}>
+                      <div className={cn('h-1.5 w-full', hasPackage ? packageTheme.accentClassName : unpurchasedTheme.accentClassName)} />
+                      <div className="space-y-4 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="text-lg font-bold">{activePackage?.name || 'Chưa mua gói'}</div>
+                            <div className="mt-1 text-sm text-muted-foreground">Elderly: {item.name} • EL #{item.id}</div>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <Badge variant={hasPackage ? 'outline' : 'secondary'} className={hasPackage ? packageTheme.badgeClassName : unpurchasedTheme.badgeClassName}>
+                              {activePackage?.level || 'No plan'}
+                            </Badge>
+                            {elderlyAlertCount > 0 ? <Badge variant="destructive">{elderlyAlertCount} alerts</Badge> : null}
+                          </div>
+                        </div>
+
+                        <div className={cn('rounded-xl px-3 py-3 text-sm', hasPackage ? 'border-white/60 bg-white/70 backdrop-blur-sm' : 'border-slate-200 bg-slate-50/90')}>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="flex items-center gap-2 text-muted-foreground"><Package className="h-4 w-4 text-emerald-500" /> Status</span>
+                              <span className="font-semibold text-foreground">{hasPackage ? 'Owned' : 'Unpurchased'}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="text-muted-foreground">Room</span>
+                              <span className="font-semibold text-foreground">{profile?.roomId ? `Room ${profile.roomId}` : 'N/A'}</span>
+                            </div>
+                          </div>
+                          {hasPackage ? (
+                            <div className={cn('mt-3 rounded-xl px-3 py-2 text-xs font-semibold', packageTheme.subtleClassName)}>
+                              {activePackage?.level} • {activePackage?.durationDays || 30} ngày • Gắn cho {item.name}
+                            </div>
+                          ) : null}
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button asChild variant="outline" size="sm" className="flex-1">
+                            <Link href={`/dashboard/caregiver/elderly/${item.id}`}>
+                              Details
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                    <Badge variant="outline">Room {profile?.roomId}</Badge>
-                  </div>
-                </div>
+                  );
+                })()
               ))
             )}
           </CardContent>

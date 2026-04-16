@@ -7,7 +7,7 @@ import { roomService } from '@/services/api/roomService';
 import { reminderService } from '@/services/api/reminderService';
 import { interactionLogService } from '@/services/api/interactionLogService';
 import { robotService } from '@/services/api/robotService';
-import type { CaregiverProfileResponse, InteractionLogResponse, ReminderLogResponse, RobotResponse, RobotStatusLogResponse, RoomElderlySummary } from '@/services/api/types';
+import type { CaregiverProfileResponse, InteractionLogResponse, ReminderLogResponse, RobotDTO, RobotStatusLogResponse, RoomElderlySummary } from '@/services/api/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Bot, Clock, Loader2, MessageSquare, NotebookText } from 'lucide-react';
@@ -18,7 +18,7 @@ export default function CaregiverReportsPage() {
   const [elderlies, setElderlies] = useState<RoomElderlySummary[]>([]);
   const [reminderLogs, setReminderLogs] = useState<ReminderLogResponse[]>([]);
   const [interactionLogs, setInteractionLogs] = useState<InteractionLogResponse[]>([]);
-  const [roomRobot, setRoomRobot] = useState<RobotResponse | null>(null);
+  const [roomRobot, setRoomRobot] = useState<RobotDTO | null>(null);
   const [robotLogs, setRobotLogs] = useState<RobotStatusLogResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,8 +42,7 @@ export default function CaregiverReportsPage() {
 
         const elderlyIds = new Set(roomElderlies.map((item) => item.id));
         const roomData = currentProfile?.roomId ? await roomService.getRoomById(currentProfile.roomId).catch(() => null) : null;
-        const roomRobotSummary = roomData?.robot ?? null;
-        const roomRobot = roomRobotSummary ? await robotService.getById(roomRobotSummary.id).catch(() => null) : null;
+        const roomRobot = roomData?.robot ?? null;
         setRoomRobot(roomRobot);
 
         const [allReminderLogs, allInteractionLogs, allRobotLogs] = await Promise.all([
@@ -99,7 +98,7 @@ export default function CaregiverReportsPage() {
               <CardHeader className="pb-2"><CardTitle className="text-sm uppercase text-muted-foreground">Room Robot</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-lg font-bold">{roomRobot?.robotName || 'N/A'}</div>
-                <div className="text-xs text-muted-foreground mt-1">{roomRobot ? `${roomRobot.status} • ${roomRobot.firmwareVersion}` : 'No robot assigned'}</div>
+                <div className="text-xs text-muted-foreground mt-1">{roomRobot ? `${roomRobot.model} • Robot ID ${roomRobot.id}` : 'No robot assigned'}</div>
               </CardContent>
             </Card>
           </div>

@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import { ServicePackageRequest, ServicePackageResponse } from "./types";
+import { ExerciseScriptResponse, ServicePackageRequest, ServicePackageResponse } from "./types";
 
 class ServicePackageService {
   async getAll(): Promise<ServicePackageResponse[]> {
@@ -8,6 +8,10 @@ class ServicePackageService {
 
   async getById(id: number): Promise<ServicePackageResponse> {
     return apiClient.get<ServicePackageResponse>(`/api/service-packages/${id}`);
+  }
+
+  async getExercises(id: number): Promise<ExerciseScriptResponse[]> {
+    return apiClient.get<ExerciseScriptResponse[]>(`/api/service-packages/${id}/exercises`);
   }
 
   async create(data: ServicePackageRequest): Promise<ServicePackageResponse> {

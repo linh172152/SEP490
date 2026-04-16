@@ -16,7 +16,6 @@ import { robotService } from '@/services/api/robotService';
 import { userPackageService } from '@/services/api/userPackageService';
 import { servicePackageService } from '@/services/api/servicePackageService';
 import { exerciseService } from '@/services/api/exerciseService';
-import { filterScriptsByQuota } from '@/utils/privilegeEngine';
 import type {
   AlertNotificationResponse,
   CaregiverProfileResponse,
@@ -27,7 +26,7 @@ import type {
   ReminderLogResponse,
   ReminderRequest,
   ReminderResponse,
-  RobotResponse,
+  RobotDTO,
   RobotStatusLogResponse,
   RoomElderlySummary,
   RoomResponse,
@@ -54,11 +53,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Textarea } from '@/components/ui/textarea';
 import {
   AlertTriangle,
   ArrowRight,
-  Bot,
   CheckCircle2,
   Clock,
   Loader2,
@@ -122,7 +119,6 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   const [loadingRoomDevice, setLoadingRoomDevice] = useState(false);
   const [loadingPackages, setLoadingPackages] = useState(false);
   const [savingReminder, setSavingReminder] = useState(false);
-  const [sendingInteraction, setSendingInteraction] = useState(false);
   const [runningExerciseId, setRunningExerciseId] = useState<number | null>(null);
   const [editingReminderId, setEditingReminderId] = useState<number | null>(null);
   const [isReminderFormOpen, setIsReminderFormOpen] = useState(false);
@@ -135,19 +131,13 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   const [selectedInteractions, setSelectedInteractions] = useState<InteractionLogResponse[]>([]);
   const [selectedAlerts, setSelectedAlerts] = useState<AlertNotificationResponse[]>([]);
   const [roomInfo, setRoomInfo] = useState<RoomResponse | null>(null);
-  const [roomRobot, setRoomRobot] = useState<RobotResponse | null>(null);
+  const [roomRobot, setRoomRobot] = useState<RobotDTO | null>(null);
   const [robotLogs, setRobotLogs] = useState<RobotStatusLogResponse[]>([]);
   const [userPackages, setUserPackages] = useState<UserPackageResponse[]>([]);
   const [servicePackages, setServicePackages] = useState<ServicePackageResponse[]>([]);
-  const [exerciseScripts, setExerciseScripts] = useState<ExerciseScriptResponse[]>([]);
+  const [packageExercisesByPackageId, setPackageExercisesByPackageId] = useState<Record<number, ExerciseScriptResponse[]>>({});
   const [exerciseSessions, setExerciseSessions] = useState<ExerciseSessionResponse[]>([]);
   const [reminderForm, setReminderForm] = useState(defaultReminderForm);
-  const [interactionForm, setInteractionForm] = useState({
-    interactionType: 'qa',
-    userInputText: '',
-    robotResponseText: '',
-    emotionDetected: 'calm',
-  });
 
   const effectiveSelectedId = selectedElderlyId && Number.isFinite(selectedElderlyId) ? selectedElderlyId : undefined;
 
@@ -199,11 +189,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     try {
       const room = await roomService.getRoomById(caregiverProfile.roomId).catch(() => null);
 
-      const robotSummary = room?.robot ?? null;
-
-      const robot = robotSummary
-        ? await robotService.getById(robotSummary.id).catch(() => null)
-        : null;
+      const robot = room?.robot ?? null;
 
       setRoomInfo(room);
       setRoomRobot(robot);
@@ -258,30 +244,38 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   }, [effectiveSelectedId]);
 
   const loadPackageExercise = useCallback(async () => {
-    if (!selectedProfile?.accountId || activeTab !== 'package-exercise') {
+    if (!selectedProfile?.id || activeTab !== 'package-exercise') {
+      setUserPackages([]);
+      setServicePackages([]);
+      setPackageExercisesByPackageId({});
+      setExerciseSessions([]);
       return;
     }
 
     setLoadingPackages(true);
     try {
-      const [packages, catalog, scripts, sessions] = await Promise.all([
-        userPackageService.getByAccountId(selectedProfile.accountId).catch(async () => {
-          const all = await userPackageService.getAll().catch(() => [] as UserPackageResponse[]);
-          return all.filter((item) => item.accountId === selectedProfile.accountId);
-        }),
+      const [packages, catalog, sessions] = await Promise.all([
+        userPackageService.getByElderlyId(selectedProfile.id).catch(() => [] as UserPackageResponse[]),
         servicePackageService.getAll().catch(() => [] as ServicePackageResponse[]),
-        exerciseService.getAllScripts().catch(() => [] as ExerciseScriptResponse[]),
         exerciseService.getAllSessions().catch(() => [] as ExerciseSessionResponse[]),
       ]);
 
+      const uniquePackageIds = Array.from(new Set(packages.map((item) => item.servicePackageId)));
+      const packageExercises = await Promise.all(
+        uniquePackageIds.map(async (packageId) => {
+          const exercises = await servicePackageService.getExercises(packageId).catch(() => [] as ExerciseScriptResponse[]);
+          return [packageId, exercises] as const;
+        })
+      );
+
       setUserPackages(packages);
       setServicePackages(catalog);
-      setExerciseScripts(scripts);
+      setPackageExercisesByPackageId(Object.fromEntries(packageExercises));
       setExerciseSessions(sessions.filter((item) => item.elderlyId === selectedProfile.id));
     } finally {
       setLoadingPackages(false);
     }
-  }, [activeTab, selectedProfile?.accountId, selectedProfile?.id]);
+  }, [activeTab, selectedProfile?.id]);
 
   useEffect(() => {
     loadContext();
@@ -367,18 +361,20 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
       return Number.isNaN(expiresAt) || expiresAt >= now;
     });
   }, [userPackages]);
+  const packageExerciseDetails = useMemo(() => {
+    return activePackages.map((userPackage) => ({
+      userPackage,
+      servicePackage: servicePackages.find((item) => item.id === userPackage.servicePackageId) || null,
+      exercises: packageExercisesByPackageId[userPackage.servicePackageId] || [],
+    }));
+  }, [activePackages, packageExercisesByPackageId, servicePackages]);
   const eligibleExercises = useMemo(() => {
     const mappedScripts = new Map<number, { script: ExerciseScriptResponse; packageNames: string[] }>();
 
-    activePackages.forEach((userPackage) => {
-      const matchedPackage = servicePackages.find((item) => item.id === userPackage.servicePackageId);
+    packageExerciseDetails.forEach(({ servicePackage: matchedPackage, exercises }) => {
       if (!matchedPackage) return;
 
-      const scriptsForPackage = matchedPackage.exerciseIds?.length
-        ? exerciseScripts.filter((script) => matchedPackage.exerciseIds?.includes(script.id))
-        : filterScriptsByQuota(exerciseScripts, matchedPackage.level);
-
-      scriptsForPackage.forEach((script) => {
+      exercises.forEach((script) => {
         const existing = mappedScripts.get(script.id);
         if (existing) {
           if (!existing.packageNames.includes(matchedPackage.name)) {
@@ -392,7 +388,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     });
 
     return Array.from(mappedScripts.values());
-  }, [activePackages, exerciseScripts, servicePackages]);
+  }, [packageExerciseDetails]);
 
   const navigateToElderly = (elderlyId: number, tab: CaregiverWorkspaceTab = activeTab) => {
     router.push(`/dashboard/caregiver/elderly/${elderlyId}/${tab}`);
@@ -492,33 +488,6 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
       setMessage({ type: 'success', text: 'Alert marked as resolved.' });
     } catch (error: unknown) {
       setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to resolve alert.' });
-    }
-  };
-
-  const handleSendInteraction = async () => {
-    if (!effectiveSelectedId || !roomRobot || !interactionForm.userInputText.trim() || !interactionForm.robotResponseText.trim()) {
-      setMessage({ type: 'error', text: 'Robot interaction requires elderly, robot, question, and response.' });
-      return;
-    }
-
-    setSendingInteraction(true);
-    try {
-      await robotService.createStatusLog({ robotId: roomRobot.id, status: 'ACTIVE_CONVERSATION' });
-      await interactionLogService.create({
-        elderlyId: effectiveSelectedId,
-        robotId: roomRobot.id,
-        interactionType: interactionForm.interactionType,
-        userInputText: interactionForm.userInputText.trim(),
-        robotResponseText: interactionForm.robotResponseText.trim(),
-        emotionDetected: interactionForm.emotionDetected.trim() || undefined,
-      });
-      setInteractionForm({ interactionType: 'qa', userInputText: '', robotResponseText: '', emotionDetected: 'calm' });
-      await Promise.all([loadSelectedElderly(), loadRoomDevice()]);
-      setMessage({ type: 'success', text: 'Robot interaction saved.' });
-    } catch (error: unknown) {
-      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to send robot interaction.' });
-    } finally {
-      setSendingInteraction(false);
     }
   };
 
@@ -869,39 +838,44 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   );
 
   const renderRobot = () => (
-    <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+    <div className="grid gap-6 xl:grid-cols-[0.72fr_1.28fr]">
       <Card>
         <CardHeader>
-          <CardTitle>Robot Interaction</CardTitle>
-          <CardDescription>Use this tab for chat, command, emotion detection, and robot response.</CardDescription>
+          <CardTitle>Robot Context</CardTitle>
+          <CardDescription>Read-only details for the assigned robot and the interaction history of this elderly profile.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="rounded-2xl border bg-slate-50 p-4 text-sm">
             <div className="font-semibold">Assigned Robot</div>
             <p className="mt-1 text-muted-foreground">{roomRobot ? `${roomRobot.robotName} • ${roomRobot.model} • ${roomRobot.status}` : 'No robot assigned to this room.'}</p>
           </div>
-          <FormRow label="Interaction Type">
-            <Input value={interactionForm.interactionType} onChange={(event) => setInteractionForm((prev) => ({ ...prev, interactionType: event.target.value }))} placeholder="qa" />
-          </FormRow>
-          <FormRow label="Elderly Message">
-            <Textarea value={interactionForm.userInputText} onChange={(event) => setInteractionForm((prev) => ({ ...prev, userInputText: event.target.value }))} placeholder="Type what the elderly asked..." />
-          </FormRow>
-          <FormRow label="Robot Response">
-            <Textarea value={interactionForm.robotResponseText} onChange={(event) => setInteractionForm((prev) => ({ ...prev, robotResponseText: event.target.value }))} placeholder="Type what the robot answered..." />
-          </FormRow>
-          <FormRow label="Emotion Detected">
-            <Input value={interactionForm.emotionDetected} onChange={(event) => setInteractionForm((prev) => ({ ...prev, emotionDetected: event.target.value }))} placeholder="calm" />
-          </FormRow>
-          <Button onClick={handleSendInteraction} disabled={sendingInteraction || !roomRobot}>{sendingInteraction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}Send To Robot</Button>
+          <InfoPair label="Robot Name" value={roomRobot?.robotName || 'No robot assigned'} />
+          <InfoPair label="Model" value={roomRobot?.model || 'N/A'} />
+          <InfoPair label="Status" value={roomRobot?.status || 'Unknown'} />
+          <div className="rounded-2xl border bg-slate-50 p-4 text-sm">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">Interaction Summary</div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border bg-white p-3">
+                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Total Interactions</div>
+                <div className="mt-2 text-2xl font-bold text-foreground">{selectedInteractions.length}</div>
+              </div>
+              <div className="rounded-xl border bg-white p-3">
+                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Latest Interaction</div>
+                <div className="mt-2 text-sm font-semibold text-foreground">
+                  {selectedInteractions[0] ? new Date(selectedInteractions[0].createdAt).toLocaleString() : 'No history yet'}
+                </div>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
           <CardTitle>Conversation Feed</CardTitle>
-          <CardDescription>Recent robot interactions for this elderly profile.</CardDescription>
+          <CardDescription>Detailed read-only history with timestamps, emotion labels, and both sides of the conversation.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           {selectedInteractions.length === 0 ? (
             <EmptyState text="No robot interactions recorded yet." />
           ) : (
@@ -909,18 +883,31 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
               .slice()
               .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
               .map((item) => (
-                <div key={item.id} className="rounded-2xl border p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold uppercase tracking-wide text-sky-700">{item.interactionType}</span>
-                    <Badge variant="outline">{item.emotionDetected || 'no emotion'}</Badge>
+                <div key={item.id} className="rounded-2xl border p-4 shadow-sm">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold uppercase tracking-wide text-sky-700">{item.interactionType}</span>
+                        <Badge variant="outline">{item.emotionDetected || 'no emotion'}</Badge>
+                        <Badge variant="secondary">{item.robotName}</Badge>
+                      </div>
+                      <p className="mt-2 text-xs text-muted-foreground">Interaction ID #{item.id} • Elderly: {item.elderlyName}</p>
+                    </div>
+                    <div className="text-xs font-medium text-muted-foreground">{new Date(item.createdAt).toLocaleString()}</div>
                   </div>
                   <div className="mt-4 space-y-3">
                     <div className="rounded-2xl bg-slate-50 p-3 text-sm">
-                      <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Elderly</div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Elderly</div>
+                        <div className="text-[11px] text-slate-500">{new Date(item.createdAt).toLocaleTimeString()}</div>
+                      </div>
                       <p className="mt-1">{item.userInputText}</p>
                     </div>
                     <div className="rounded-2xl bg-sky-50 p-3 text-sm">
-                      <div className="text-xs font-bold uppercase tracking-wider text-sky-600">Robot</div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-xs font-bold uppercase tracking-wider text-sky-600">Robot</div>
+                        <div className="text-[11px] text-sky-700/80">{item.robotName}</div>
+                      </div>
                       <p className="mt-1 text-sky-900">{item.robotResponseText}</p>
                     </div>
                   </div>
@@ -953,9 +940,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
           <InfoPair label="Manager" value={roomInfo?.managerName || 'N/A'} />
           <InfoPair label="Robot" value={roomRobot?.robotName || 'No robot assigned'} />
           <InfoPair label="Robot Model" value={roomRobot?.model || 'N/A'} />
-          <InfoPair label="Robot Status" value={roomRobot?.status || 'Unknown'} />
-          <InfoPair label="Firmware" value={roomRobot?.firmwareVersion || 'N/A'} />
-          <InfoPair label="Serial Number" value={roomRobot?.serialNumber || 'N/A'} />
+          <InfoPair label="Robot ID" value={roomRobot?.id ? `${roomRobot.id}` : 'N/A'} />
           <div className="rounded-2xl border bg-slate-50 p-4 text-sm">
             <div className="font-semibold">Device Health</div>
             <p className="mt-2 text-muted-foreground">{robotLogs[0] ? `Latest robot status: ${robotLogs[0].status}` : 'No robot device status logs yet.'}</p>
@@ -998,11 +983,32 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
           {loadingPackages ? <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading package and exercise context...</div> : null}
           <div className="rounded-2xl border bg-slate-50 p-4">
             <div className="text-sm font-semibold">Active Service Plans</div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {activePackages.length === 0 ? <Badge variant="secondary">No active plan</Badge> : activePackages.map((item) => {
-                const pkg = servicePackages.find((servicePackage) => servicePackage.id === item.servicePackageId);
-                return <Badge key={item.id} variant="outline">{pkg?.name || `Package #${item.servicePackageId}`}</Badge>;
-              })}
+            <div className="mt-3 space-y-3">
+              {packageExerciseDetails.length === 0 ? <Badge variant="secondary">No active plan</Badge> : packageExerciseDetails.map(({ userPackage, servicePackage, exercises }) => (
+                <div key={userPackage.id} className="rounded-2xl border bg-white p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <div className="font-semibold">{servicePackage?.name || `Package #${userPackage.servicePackageId}`}</div>
+                      <div className="text-xs text-muted-foreground">Assigned {new Date(userPackage.assignedAt).toLocaleDateString()} • Expires {new Date(userPackage.expiredAt).toLocaleDateString()}</div>
+                    </div>
+                    <Badge variant="outline">{servicePackage?.level || 'Unknown'}</Badge>
+                  </div>
+                  <div className="mt-3">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Included Exercises</div>
+                    {exercises.length === 0 ? (
+                      <p className="mt-2 text-xs text-muted-foreground">This package does not have an exercise list configured yet.</p>
+                    ) : (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {exercises.map((exercise) => (
+                          <Badge key={exercise.id} variant="secondary" className="max-w-full truncate">
+                            {exercise.name} • {exercise.durationMinutes} min
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
           <div className="space-y-3">
@@ -1014,7 +1020,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                   <div className="flex items-center justify-between gap-2">
                     <div>
                       <div className="font-semibold">{script.name}</div>
-                      <div className="text-xs text-muted-foreground">{script.durationMinutes} min • {script.difficultyLevel}</div>
+                      <div className="text-xs text-muted-foreground">{script.durationMinutes} min • {script.difficultyLevel || script.level || 'Unknown'}</div>
                     </div>
                     <Button size="sm" onClick={() => handleRunExercise(script.id)} disabled={runningExerciseId === script.id || !roomRobot}>
                       {runningExerciseId === script.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}

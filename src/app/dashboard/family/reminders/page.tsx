@@ -1,33 +1,39 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useFamilyStore } from '@/store/useFamilyStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { alertService } from '@/services/api/alertService';
+import { reminderService } from '@/services/api/reminderService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Bell, 
-  Search, 
-  RotateCcw, 
-  CheckCircle2, 
-  Clock, 
+import {
+  Bell,
+  Search,
+  RotateCcw,
+  CheckCircle2,
+  Clock,
   Calendar as CalendarIcon,
-  HeartPulse, 
+  HeartPulse,
   Activity,
+  AlertTriangle,
   ChevronRight,
-  User
+  User,
+  Loader2,
+  Siren,
+  ShieldAlert,
 } from 'lucide-react';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { formatDate } from '@/lib/utils';
-import type { ReminderResponse } from '@/services/api/types';
+import type { AlertNotificationResponse, ReminderLogResponse, ReminderResponse } from '@/services/api/types';
 
 const normalizeReminderType = (value: string) => {
   const normalized = value.trim().toLowerCase();
@@ -49,10 +55,24 @@ const getReminderTypeLabel = (value: string) => {
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 };
 
+function dedupeById<T extends { id: number }>(items: T[]) {
+  return items.reduce<T[]>((acc, item) => {
+    if (!acc.some((existing) => existing.id === item.id)) {
+      acc.push(item);
+    }
+
+    return acc;
+  }, []);
+}
+
 export default function RemindersPage() {
   const { user } = useAuthStore();
-  const { elderlyList, reminders, fetchDashboardData, isLoading, isUsingMock, generateDemoData } = useFamilyStore();
-  
+  const { elderlyList, fetchDashboardData, isLoading, isUsingMock, generateDemoData } = useFamilyStore();
+
+  const [loadingFeed, setLoadingFeed] = useState(false);
+  const [reminders, setReminders] = useState<ReminderResponse[]>([]);
+  const [reminderLogs, setReminderLogs] = useState<ReminderLogResponse[]>([]);
+  const [alerts, setAlerts] = useState<AlertNotificationResponse[]>([]);
   const [filterType, setFilterType] = useState<string>('all');
   const [filterElderly, setFilterElderly] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,208 +83,342 @@ export default function RemindersPage() {
     }
   }, [user?.id, fetchDashboardData]);
 
-  const filteredReminders = reminders.filter(r => {
-    const matchesType = filterType === 'all' || normalizeReminderType(r.reminderType) === filterType;
-    const matchesElderly = filterElderly === 'ALL' || r.elderlyId.toString() === filterElderly;
-    const matchesSearch = r.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         r.elderlyName?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesType && matchesElderly && matchesSearch;
-  });
+  useEffect(() => {
+    const loadFamilyFeeds = async () => {
+      if (elderlyList.length === 0) {
+        setReminders([]);
+        setReminderLogs([]);
+        setAlerts([]);
+        setLoadingFeed(false);
+        return;
+      }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+      setLoadingFeed(true);
+      try {
+        const elderlyIds = elderlyList.map((item) => item.id);
+        const [reminderGroups, reminderLogGroups, allAlerts] = await Promise.all([
+          Promise.all(elderlyIds.map((elderlyId) => reminderService.getByElderlyId(elderlyId).catch(() => [] as ReminderResponse[]))),
+          Promise.all(elderlyIds.map((elderlyId) => reminderService.getLogsByElderlyId(elderlyId).catch(() => [] as ReminderLogResponse[]))),
+          alertService.getAll().catch(() => [] as AlertNotificationResponse[]),
+        ]);
 
-  const groups = {
-    today: filteredReminders.filter(r => {
-      const date = new Date(r.scheduleTime);
-      return date >= today && date < tomorrow && r.active;
+        const elderlyIdSet = new Set(elderlyIds);
+        setReminders(dedupeById(reminderGroups.flat()));
+        setReminderLogs(dedupeById(reminderLogGroups.flat()));
+        setAlerts(dedupeById(allAlerts.filter((item) => elderlyIdSet.has(item.elderlyId))));
+      } finally {
+        setLoadingFeed(false);
+      }
+    };
+
+    loadFamilyFeeds();
+  }, [elderlyList]);
+
+  const filteredReminders = useMemo(() => {
+    return reminders.filter((reminder) => {
+      const matchesType = filterType === 'all' || normalizeReminderType(reminder.reminderType) === filterType;
+      const matchesElderly = filterElderly === 'ALL' || reminder.elderlyId.toString() === filterElderly;
+      const query = searchQuery.trim().toLowerCase();
+      const matchesSearch =
+        query.length === 0 ||
+        reminder.title.toLowerCase().includes(query) ||
+        reminder.elderlyName?.toLowerCase().includes(query) ||
+        reminder.caregiverName?.toLowerCase().includes(query);
+
+      return matchesType && matchesElderly && matchesSearch;
+    });
+  }, [filterElderly, filterType, reminders, searchQuery]);
+
+  const filteredReminderLogs = useMemo(() => {
+    return reminderLogs.filter((item) => {
+      const matchesElderly = filterElderly === 'ALL' || item.elderlyId.toString() === filterElderly;
+      const query = searchQuery.trim().toLowerCase();
+      const matchesSearch =
+        query.length === 0 ||
+        item.reminderTitle.toLowerCase().includes(query) ||
+        item.elderlyName.toLowerCase().includes(query) ||
+        item.robotName.toLowerCase().includes(query);
+
+      return matchesElderly && matchesSearch;
+    });
+  }, [filterElderly, reminderLogs, searchQuery]);
+
+  const filteredAlerts = useMemo(() => {
+    return alerts.filter((item) => {
+      const matchesElderly = filterElderly === 'ALL' || item.elderlyId.toString() === filterElderly;
+      const query = searchQuery.trim().toLowerCase();
+      const matchesSearch =
+        query.length === 0 ||
+        item.elderlyName.toLowerCase().includes(query) ||
+        item.alertType.toLowerCase().includes(query) ||
+        item.message.toLowerCase().includes(query);
+
+      return matchesElderly && matchesSearch;
+    });
+  }, [alerts, filterElderly, searchQuery]);
+
+  const now = Date.now();
+  const reminderStats = useMemo(
+    () => ({
+      active: filteredReminders.filter((item) => item.active && new Date(item.scheduleTime).getTime() >= now).length,
+      missed: filteredReminders.filter((item) => item.active && new Date(item.scheduleTime).getTime() < now).length,
+      completed: filteredReminders.filter((item) => !item.active).length,
     }),
-    upcoming: filteredReminders.filter(r => {
-      const date = new Date(r.scheduleTime);
-      return date >= tomorrow && r.active;
-    }),
-    inactive: filteredReminders.filter(r => !r.active),
-    past: filteredReminders.filter(r => {
-      const date = new Date(r.scheduleTime);
-      return date < today && r.active;
-    })
-  };
-
-  const ReminderItem = ({ reminder }: { reminder: ReminderResponse }) => (
-    <div className="flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-md transition-all group">
-      <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${
-        normalizeReminderType(reminder.reminderType) === 'medication' 
-          ? 'bg-rose-50 text-rose-500 dark:bg-rose-900/20' 
-          : 'bg-emerald-50 text-emerald-500 dark:bg-emerald-900/20'
-      }`}>
-        {normalizeReminderType(reminder.reminderType) === 'medication' ? <HeartPulse className="h-6 w-6" /> : <Activity className="h-6 w-6" />}
-      </div>
-      
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <h4 className="font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-primary transition-colors">
-            {reminder.title}
-          </h4>
-          <Badge variant="outline" className={`text-[10px] uppercase font-bold py-0 h-4 ${
-            normalizeReminderType(reminder.reminderType) === 'medication' ? 'text-rose-500 border-rose-100' : 'text-emerald-500 border-emerald-100'
-          }`}>
-            {getReminderTypeLabel(reminder.reminderType)}
-          </Badge>
-        </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground font-medium">
-           <span className="flex items-center gap-1">
-              <User className="h-3 w-3" /> {reminder.elderlyName}
-           </span>
-           <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" /> {formatDate(reminder.scheduleTime)}
-           </span>
-           <span className="flex items-center gap-1">
-              <RotateCcw className="h-3 w-3" /> {reminder.repeatPattern}
-           </span>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3">
-         <div className="hidden sm:flex flex-col items-end mr-2">
-            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Caregiver</span>
-            <span className="text-xs font-semibold">{reminder.caregiverName || 'System'}</span>
-         </div>
-         {reminder.active ? (
-            <div className="h-8 w-8 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center border border-amber-100">
-               <Clock className="h-4 w-4" />
-            </div>
-         ) : (
-            <div className="h-8 w-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center border border-emerald-100">
-               <CheckCircle2 className="h-4 w-4" />
-            </div>
-         )}
-         <ChevronRight className="h-4 w-4 text-slate-300 group-hover:translate-x-1 transition-transform" />
-      </div>
-    </div>
+    [filteredReminders, now]
   );
+
+  const openAlerts = useMemo(() => filteredAlerts.filter((item) => !item.resolved), [filteredAlerts]);
+
+  const sortedReminders = useMemo(
+    () => filteredReminders.slice().sort((left, right) => new Date(right.scheduleTime).getTime() - new Date(left.scheduleTime).getTime()),
+    [filteredReminders]
+  );
+
+  const sortedLogs = useMemo(
+    () => filteredReminderLogs.slice().sort((left, right) => new Date(right.triggeredTime).getTime() - new Date(left.triggeredTime).getTime()),
+    [filteredReminderLogs]
+  );
+
+  const sortedAlerts = useMemo(
+    () => filteredAlerts.slice().sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()),
+    [filteredAlerts]
+  );
+
+  const isPageLoading = isLoading || loadingFeed;
 
   return (
     <div className="space-y-8 pb-10 animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Health &amp; Activity</h1>
-          <p className="text-muted-foreground mt-1">Read-only timeline of medication reminders and activity support for your elderly family members.</p>
+          <p className="mt-1 text-muted-foreground">Read-only family feed for reminders, reminder logs, and alerts across all elderly profiles linked to this account.</p>
         </div>
         <Button asChild variant="outline" className="h-11 px-6 shadow-sm">
-           <Link href="/dashboard/family/elderly">Go To My Elderly</Link>
+          <Link href="/dashboard/family/elderly">Go To My Elderly</Link>
         </Button>
       </div>
 
-      {/* Filters bar */}
-      <div className="grid gap-4 md:grid-cols-4 items-center bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+      <div className="grid gap-4 md:grid-cols-4">
+        <SummaryCard title="Active" value={reminderStats.active} icon={<Bell className="h-5 w-5 text-sky-500" />} />
+        <SummaryCard title="Missed" value={reminderStats.missed} icon={<Clock className="h-5 w-5 text-amber-500" />} />
+        <SummaryCard title="Reminder Logs" value={filteredReminderLogs.length} icon={<CheckCircle2 className="h-5 w-5 text-emerald-500" />} />
+        <SummaryCard title="Open Alerts" value={openAlerts.length} icon={<ShieldAlert className="h-5 w-5 text-rose-500" />} />
+      </div>
+
+      <div className="grid items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 md:grid-cols-4">
         <div className="relative md:col-span-1">
-           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-           <Input 
-             placeholder="Search schedules and activities..." 
-             className="pl-9 bg-muted/50 border-none px-4 h-11"
-             value={searchQuery}
-             onChange={(e) => setSearchQuery(e.target.value)}
-           />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search reminders, logs, alerts..."
+            className="h-11 border-none bg-muted/50 pl-9"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
         </div>
-        
+
         <Select value={filterElderly} onValueChange={setFilterElderly}>
-           <SelectTrigger className="bg-muted/50 border-none h-11">
-              <SelectValue placeholder="All Elderly" />
-           </SelectTrigger>
-           <SelectContent>
-              <SelectItem value="ALL">All Elderly</SelectItem>
-              {elderlyList.map(e => (
-                 <SelectItem key={e.id} value={e.id.toString()}>{e.name}</SelectItem>
-              ))}
-           </SelectContent>
+          <SelectTrigger className="h-11 border-none bg-muted/50">
+            <SelectValue placeholder="All Elderly" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Elderly</SelectItem>
+            {elderlyList.map((elderly) => (
+              <SelectItem key={elderly.id} value={elderly.id.toString()}>{elderly.name}</SelectItem>
+            ))}
+          </SelectContent>
         </Select>
 
         <Select value={filterType} onValueChange={setFilterType}>
-           <SelectTrigger className="bg-muted/50 border-none h-11">
-              <SelectValue placeholder="All Types" />
-           </SelectTrigger>
-           <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="medication">Medication Only</SelectItem>
-              <SelectItem value="exercise">Exercise Only</SelectItem>
-           </SelectContent>
+          <SelectTrigger className="h-11 border-none bg-muted/50">
+            <SelectValue placeholder="All Types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Reminder Types</SelectItem>
+            <SelectItem value="medication">Medication Only</SelectItem>
+            <SelectItem value="exercise">Exercise Only</SelectItem>
+            <SelectItem value="meal">Meal Only</SelectItem>
+          </SelectContent>
         </Select>
 
         <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="icon" onClick={() => { setFilterType('all'); setFilterElderly('ALL'); setSearchQuery(''); }} className="h-11 w-11 rounded-xl">
-              <RotateCcw className="h-5 w-5 text-muted-foreground" />
-           </Button>
-           {!isUsingMock && (
-             <Button variant="ghost" className="h-11 text-sky-600 hover:text-sky-700 hover:bg-sky-50 font-bold" onClick={() => user?.id && generateDemoData(Number(user.id))}>
-                Load Demo
-             </Button>
-           )}
+          <Button variant="ghost" size="icon" onClick={() => { setFilterType('all'); setFilterElderly('ALL'); setSearchQuery(''); }} className="h-11 w-11 rounded-xl">
+            <RotateCcw className="h-5 w-5 text-muted-foreground" />
+          </Button>
+          {!isUsingMock ? (
+            <Button variant="ghost" className="h-11 font-bold text-sky-600 hover:bg-sky-50 hover:text-sky-700" onClick={() => user?.id && generateDemoData(Number(user.id))}>
+              Load Demo
+            </Button>
+          ) : null}
         </div>
       </div>
 
-      {isLoading ? (
-         <div className="flex h-[300px] items-center justify-center">
-            <Clock className="h-10 w-10 animate-spin text-primary opacity-20" />
-         </div>
-      ) : filteredReminders.length > 0 ? (
-        <div className="space-y-10">
-          {groups.today.length > 0 && (
-            <section className="space-y-4">
-              <div className="flex items-center gap-3 px-2">
-                 <div className="h-8 w-8 rounded-full bg-sky-500 text-white flex items-center justify-center shadow-lg shadow-sky-200">
-                    <CalendarIcon className="h-4 w-4" />
-                 </div>
-                 <h3 className="text-xl font-extrabold tracking-tight">Today</h3>
-                 <Badge variant="secondary" className="bg-sky-50 text-sky-700 font-bold">{groups.today.length}</Badge>
-              </div>
-              <div className="grid gap-3">
-                {groups.today.map(r => <ReminderItem key={r.id} reminder={r} />)}
-              </div>
-            </section>
-          )}
-
-          {groups.upcoming.length > 0 && (
-            <section className="space-y-4">
-               <div className="flex items-center gap-3 px-2 text-muted-foreground">
-                 <div className="h-8 w-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center">
-                    <Clock className="h-4 w-4" />
-                 </div>
-                 <h3 className="text-lg font-bold">Upcoming</h3>
-              </div>
-              <div className="grid gap-3">
-                {groups.upcoming.map(r => <ReminderItem key={r.id} reminder={r} />)}
-              </div>
-            </section>
-          )}
-
-          {groups.inactive.length > 0 && (
-            <section className="space-y-4">
-               <div className="flex items-center gap-3 px-2 text-muted-foreground">
-                 <div className="h-8 w-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center">
-                    <CheckCircle2 className="h-4 w-4" />
-                 </div>
-                 <h3 className="text-lg font-bold opacity-50">Completed / Inactive</h3>
-              </div>
-              <div className="grid gap-3 opacity-60 grayscale-[0.5]">
-                {groups.inactive.map(r => <ReminderItem key={r.id} reminder={r} />)}
-              </div>
-            </section>
-          )}
+      {isPageLoading ? (
+        <div className="flex h-[280px] items-center justify-center text-muted-foreground">
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading family health feed...
+        </div>
+      ) : reminders.length === 0 && reminderLogs.length === 0 && alerts.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-16 text-center">
+          <Bell className="mb-6 h-16 w-16 animate-bounce text-slate-300 duration-1000" />
+          <h2 className="mb-2 text-2xl font-bold text-slate-700">No health activity yet</h2>
+          <p className="mb-8 max-w-sm text-muted-foreground">
+            There are no reminders, reminder logs, or alerts available for the elderly profiles linked to this family account yet.
+          </p>
+          <Button asChild className="h-12 rounded-xl bg-sky-600 px-8 font-bold shadow-xl shadow-sky-100 hover:bg-sky-700">
+            <Link href="/dashboard/family/packages">Review Service Plans</Link>
+          </Button>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center p-16 text-center border-2 border-dashed border-slate-200 bg-slate-50/50 rounded-3xl">
-          <Bell className="h-16 w-16 text-slate-300 mb-6 animate-bounce duration-1000" />
-          <h2 className="text-2xl font-bold text-slate-700 mb-2">No health or activity schedules yet</h2>
-          <p className="text-muted-foreground max-w-sm mb-8">
-            There are no medication reminders or exercise activities available for the selected elderly profiles yet.
-          </p>
-          <Button asChild className="bg-sky-600 hover:bg-sky-700 h-12 px-8 rounded-xl font-bold shadow-xl shadow-sky-100">
-             <Link href="/dashboard/family/packages">Review Service Plans</Link>
-          </Button>
+        <div className="space-y-8">
+          <section className="space-y-4">
+            <div className="flex items-center gap-3 px-1">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-500 text-white shadow-lg shadow-sky-200">
+                <CalendarIcon className="h-4 w-4" />
+              </div>
+              <h3 className="text-xl font-extrabold tracking-tight">Reminders</h3>
+              <Badge variant="secondary" className="bg-sky-50 font-bold text-sky-700">{sortedReminders.length}</Badge>
+            </div>
+            {sortedReminders.length === 0 ? (
+              <EmptyState text="No reminders found for the current filter." />
+            ) : (
+              <div className="grid gap-3">
+                {sortedReminders.map((reminder) => (
+                  <ReminderItem key={reminder.id} reminder={reminder} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="space-y-4">
+            <div className="flex items-center gap-3 px-1">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg shadow-emerald-200">
+                <CheckCircle2 className="h-4 w-4" />
+              </div>
+              <h3 className="text-xl font-extrabold tracking-tight">Reminder Logs</h3>
+              <Badge variant="secondary" className="bg-emerald-50 font-bold text-emerald-700">{sortedLogs.length}</Badge>
+            </div>
+            {sortedLogs.length === 0 ? (
+              <EmptyState text="No reminder logs found for the current filter." />
+            ) : (
+              <div className="grid gap-3">
+                {sortedLogs.map((item) => (
+                  <div key={item.id} className={`rounded-2xl border p-4 ${item.confirmed ? 'border-emerald-200 bg-emerald-50/70' : 'border-rose-200 bg-rose-50/70'}`}>
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-slate-900">{item.reminderTitle}</span>
+                          <Badge variant="outline">{item.elderlyName}</Badge>
+                          <Badge variant={item.confirmed ? 'secondary' : 'destructive'}>{item.confirmed ? 'Confirmed' : 'Pending'}</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Robot: {item.robotName}</p>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Triggered: {formatDate(item.triggeredTime)}
+                        <div>{item.confirmedTime ? `Confirmed: ${formatDate(item.confirmedTime)}` : 'Waiting confirmation'}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="space-y-4">
+            <div className="flex items-center gap-3 px-1">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-500 text-white shadow-lg shadow-rose-200">
+                <Siren className="h-4 w-4" />
+              </div>
+              <h3 className="text-xl font-extrabold tracking-tight">Alerts</h3>
+              <Badge variant="secondary" className="bg-rose-50 font-bold text-rose-700">{sortedAlerts.length}</Badge>
+            </div>
+            {sortedAlerts.length === 0 ? (
+              <EmptyState text="No alerts found for the current filter." />
+            ) : (
+              <div className="grid gap-3">
+                {sortedAlerts.map((alert) => (
+                  <div key={alert.id} className="rounded-2xl border p-4">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-slate-900">{alert.alertType.replace(/_/g, ' ')}</span>
+                          <Badge variant="outline">{alert.elderlyName}</Badge>
+                          <Badge variant={alert.resolved ? 'secondary' : 'destructive'}>{alert.resolved ? 'Resolved' : 'Open'}</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{alert.message}</p>
+                      </div>
+                      <div className="text-sm text-muted-foreground">{formatDate(alert.createdAt)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
       )}
     </div>
   );
+}
+
+function ReminderItem({ reminder }: { reminder: ReminderResponse }) {
+  const isMissed = reminder.active && new Date(reminder.scheduleTime).getTime() < Date.now();
+
+  return (
+    <div className="group flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${
+        normalizeReminderType(reminder.reminderType) === 'medication'
+          ? 'bg-rose-50 text-rose-500 dark:bg-rose-900/20'
+          : 'bg-emerald-50 text-emerald-500 dark:bg-emerald-900/20'
+      }`}>
+        {normalizeReminderType(reminder.reminderType) === 'medication' ? <HeartPulse className="h-6 w-6" /> : <Activity className="h-6 w-6" />}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex items-center gap-2">
+          <h4 className="truncate font-bold text-slate-800 transition-colors group-hover:text-primary dark:text-slate-100">{reminder.title}</h4>
+          <Badge variant="outline" className={`h-4 py-0 text-[10px] font-bold uppercase ${
+            normalizeReminderType(reminder.reminderType) === 'medication' ? 'border-rose-100 text-rose-500' : 'border-emerald-100 text-emerald-500'
+          }`}>
+            {getReminderTypeLabel(reminder.reminderType)}
+          </Badge>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium text-muted-foreground">
+          <span className="flex items-center gap-1"><User className="h-3 w-3" /> {reminder.elderlyName}</span>
+          <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {formatDate(reminder.scheduleTime)}</span>
+          <span className="flex items-center gap-1"><RotateCcw className="h-3 w-3" /> {reminder.repeatPattern}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <div className="mr-2 hidden flex-col items-end sm:flex">
+          <span className="text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Caregiver</span>
+          <span className="text-xs font-semibold">{reminder.caregiverName || 'System'}</span>
+        </div>
+        {reminder.active ? (
+          <div className={`flex h-8 w-8 items-center justify-center rounded-full border ${isMissed ? 'border-rose-100 bg-rose-50 text-rose-500' : 'border-amber-100 bg-amber-50 text-amber-500'}`}>
+            {isMissed ? <AlertTriangle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
+          </div>
+        ) : (
+          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50 text-emerald-500">
+            <CheckCircle2 className="h-4 w-4" />
+          </div>
+        )}
+        <ChevronRight className="h-4 w-4 text-slate-300 transition-transform group-hover:translate-x-1" />
+      </div>
+    </div>
+  );
+}
+
+function SummaryCard({ title, value, icon }: { title: string; value: number; icon: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border bg-white p-5 shadow-sm dark:bg-slate-900">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="text-sm font-medium uppercase text-muted-foreground">{title}</div>
+        {icon}
+      </div>
+      <div className="text-3xl font-bold">{value}</div>
+    </div>
+  );
+}
+
+function EmptyState({ text }: { text: string }) {
+  return <div className="rounded-2xl border border-dashed p-8 text-center text-muted-foreground">{text}</div>;
 }

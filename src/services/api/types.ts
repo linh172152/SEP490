@@ -215,6 +215,8 @@ export interface ExerciseScriptRequest {
 
 export interface ExerciseScriptResponse extends ExerciseScriptRequest {
   id: number;
+  deleted?: boolean;
+  level?: string;
 }
 
 export type ExerciseScript = ExerciseScriptResponse;

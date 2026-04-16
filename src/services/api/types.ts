@@ -57,12 +57,19 @@ export interface VoiceCommandResponse extends VoiceCommandRequest {
 export interface UserPackageRequest {
   accountId: number;
   servicePackageId: number;
+  elderlyProfileId?: number;
   assignedAt: string;
   expiredAt: string;
 }
 
 export interface UserPackageResponse extends UserPackageRequest {
   id: number;
+}
+
+export interface RoomElderlySummary {
+  id: number;
+  name: string;
+  accountId?: number;
 }
 
 // System Log Types
@@ -84,13 +91,31 @@ export interface ServicePackageRequest {
   level: string;
   price: number;
   active: boolean;
-  durationDays: number;
+  durationDays?: number;
   exerciseIds?: number[];
 }
 
 export interface ServicePackageResponse extends ServicePackageRequest {
   id: number;
 }
+
+export interface PaymentCreateResponse {
+  qrCodeUrl: string;
+  amount: number;
+  description: string;
+}
+
+export interface PaymentConfirmRequest {
+  description: string;
+  amount: number;
+}
+
+export type PaymentConfirmResponse =
+  | string
+  | {
+      message?: string;
+      status?: string;
+    };
 
 // Robot Types
 export interface RobotRequest {
@@ -140,8 +165,9 @@ export interface ReminderRequest {
 
 export interface ReminderResponse extends ReminderRequest {
   id: number;
-  elderlyName: string;
-  caregiverName: string;
+  accountId?: number | null;
+  elderlyName?: string | null;
+  caregiverName?: string | null;
 }
 
 // Reminder Log Types
@@ -191,6 +217,8 @@ export interface ExerciseScriptRequest {
 
 export interface ExerciseScriptResponse extends ExerciseScriptRequest {
   id: number;
+  deleted?: boolean;
+  level?: string;
 }
 
 export type ExerciseScript = ExerciseScriptResponse;
@@ -202,11 +230,13 @@ export interface ElderlyProfileRequest {
   healthNotes: string;
   preferredLanguage: string;
   speakingSpeed: string;
+  roomId?: number | null;
 }
 
 export interface ElderlyProfileResponse extends ElderlyProfileRequest {
   id: number;
   accountId: number;
+  roomId?: number | null;
   fullName?: string;
   deleted: boolean;
   name: string;
@@ -224,6 +254,7 @@ export interface CaregiverProfileResponse extends CaregiverProfileRequest {
   id: number;
   accountEmail: string;
   name: string;
+  roomId?: number | null;
 }
 
 // Account Response from BE
@@ -241,7 +272,7 @@ export interface AccountResponse {
   message?: string;
   verified?: string;
   createdAt: string;
-  role?: any;
+  role?: unknown;
   roomId?: number;
 }
 
@@ -251,6 +282,7 @@ export interface AlertNotificationRequest {
   alertType: string;
   message: string;
   resolved: boolean;
+  reminderId?: number | null;
 }
 
 export interface AlertNotificationResponse extends AlertNotificationRequest {

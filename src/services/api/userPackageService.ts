@@ -10,6 +10,14 @@ class UserPackageService {
     return apiClient.get<UserPackageResponse>(`/api/user-packages/${id}`);
   }
 
+  async getByAccountId(accountId: number): Promise<UserPackageResponse[]> {
+    return apiClient.get<UserPackageResponse[]>(`/api/user-packages/account/${accountId}`);
+  }
+
+  async getByElderlyId(elderlyId: number): Promise<UserPackageResponse[]> {
+    return apiClient.get<UserPackageResponse[]>(`/api/user-packages/elderly/${elderlyId}`);
+  }
+
   async create(data: UserPackageRequest): Promise<UserPackageResponse> {
     return apiClient.post<UserPackageResponse>("/api/user-packages", data);
   }

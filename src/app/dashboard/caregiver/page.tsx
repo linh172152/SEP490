@@ -1,264 +1,330 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useAuthStore } from '@/store/useAuthStore';
+import { caregiverService } from '@/services/api/caregiverService';
+import { roomService } from '@/services/api/roomService';
+import { alertService } from '@/services/api/alertService';
+import { reminderService } from '@/services/api/reminderService';
+import { robotService } from '@/services/api/robotService';
+import { userPackageService } from '@/services/api/userPackageService';
+import { servicePackageService } from '@/services/api/servicePackageService';
+import { cn } from '@/lib/utils';
+import { getActiveUserPackageForElderly, getCatalogPackageForUserPackage, getServicePackageTheme, getUnpurchasedPackageTheme } from '@/lib/servicePackageThemes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useElderlyStore } from '@/store/useElderlyStore';
-import { Users, AlertTriangle, AlertCircle, Bot, Activity, Heart, Brain, Clock } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { AlertSeverity } from '@/types';
-import { useRouter } from 'next/navigation';
+import { AlertTriangle, Bell, Bot, Loader2, Package, Users } from 'lucide-react';
+import type {
+  AlertNotificationResponse,
+  CaregiverProfileResponse,
+  ReminderResponse,
+  RobotDTO,
+  RobotStatusLogResponse,
+  RoomElderlySummary,
+  ServicePackageResponse,
+  UserPackageResponse,
+} from '@/services/api/types';
+
+const getCaregiverIdentifiers = (profile: { id?: number | null; accountId?: number | null } | null, userId?: string) => {
+  return Array.from(
+    new Set(
+      [profile?.id, profile?.accountId, userId ? Number(userId) : undefined].filter(
+        (value): value is number => typeof value === 'number' && !Number.isNaN(value)
+      )
+    )
+  );
+};
 
 export default function CaregiverOverviewPage() {
-  const router = useRouter();
-  const { elderlyList, alerts, resolveAlert } = useElderlyStore();
-  const [mounted, setMounted] = useState(false);
+  const user = useAuthStore((state) => state.user);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [profile, setProfile] = useState<CaregiverProfileResponse | null>(null);
+  const [roomElderlies, setRoomElderlies] = useState<RoomElderlySummary[]>([]);
+  const [reminders, setReminders] = useState<ReminderResponse[]>([]);
+  const [alerts, setAlerts] = useState<AlertNotificationResponse[]>([]);
+  const [roomRobot, setRoomRobot] = useState<RobotDTO | null>(null);
+  const [robotLogs, setRobotLogs] = useState<RobotStatusLogResponse[]>([]);
+  const [userPackages, setUserPackages] = useState<UserPackageResponse[]>([]);
+  const [servicePackages, setServicePackages] = useState<ServicePackageResponse[]>([]);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    const loadOverview = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
 
-  if (!mounted) return null;
+      setLoading(true);
+      setError(null);
 
-  const totalPatients = elderlyList.length;
-  const activeAlerts = alerts.filter(a => a.status === 'active');
-  const criticalAlerts = activeAlerts.filter(a => a.severity === 'critical');
-  const recentAlerts = alerts.slice(0, 5); // Latest 5 alerts
+      try {
+        const profiles = await caregiverService.getByAccountId(Number(user.id));
+        const currentProfile = profiles[0] ?? null;
+        setProfile(currentProfile);
 
-  const getSeverityColor = (severity: AlertSeverity) => {
-    switch (severity) {
-      case 'critical': return 'bg-red-500 hover:bg-red-600';
-      case 'high': return 'bg-orange-500 hover:bg-orange-600';
-      case 'medium': return 'bg-yellow-500 hover:bg-yellow-600';
-      case 'low': return 'bg-blue-500 hover:bg-blue-600';
-      default: return 'bg-gray-500 hover:bg-gray-600';
-    }
-  };
-  
-  const getStatusBadge = (riskLevel: string) => {
-    switch(riskLevel) {
-      case 'LOW': return <Badge className="bg-emerald-500 hover:bg-emerald-600">Stable</Badge>
-      case 'MEDIUM': return <Badge className="bg-amber-500 hover:bg-amber-600">Warning</Badge>
-      case 'HIGH': return <Badge className="bg-red-500 hover:bg-red-600">Critical</Badge>
-      default: return <Badge variant="outline">Unknown</Badge>
-    }
+        if (!currentProfile?.roomId) {
+          setRoomElderlies([]);
+          setReminders([]);
+          setAlerts([]);
+          setRoomRobot(null);
+          setRobotLogs([]);
+          setLoading(false);
+          return;
+        }
+
+        const elderlies = await roomService.getElderliesByRoom(currentProfile.roomId);
+        const elderlyIds = new Set(elderlies.map((item) => item.id));
+        const caregiverIdentifiers = getCaregiverIdentifiers(currentProfile, user?.id);
+
+        const [allReminders, allAlerts, roomData, packageCatalog, userPackageGroups] = await Promise.all([
+          reminderService.getAll().catch(() => [] as ReminderResponse[]),
+          alertService.getAll().catch(() => [] as AlertNotificationResponse[]),
+          roomService.getRoomById(currentProfile.roomId).catch(() => null),
+          servicePackageService.getAll().catch(() => [] as ServicePackageResponse[]),
+          Promise.all(elderlies.map((item) => userPackageService.getByElderlyId(item.id).catch(() => [] as UserPackageResponse[]))),
+        ]);
+
+        const robotByRoom = roomData?.robot ?? null;
+
+        setRoomElderlies(elderlies);
+        setReminders(
+          allReminders.filter(
+            (item) => caregiverIdentifiers.includes(item.caregiverId) && elderlyIds.has(item.elderlyId)
+          )
+        );
+        setAlerts(allAlerts.filter((item) => elderlyIds.has(item.elderlyId) && !item.resolved));
+        setRoomRobot(robotByRoom);
+        setServicePackages(packageCatalog);
+        setUserPackages(userPackageGroups.flat());
+
+        if (robotByRoom) {
+          const statusLogs = await robotService.getStatusLogsByRobot(robotByRoom.id).catch(async () => {
+            const allLogs = await robotService.getAllStatusLogs().catch(() => [] as RobotStatusLogResponse[]);
+            return allLogs.filter((item) => item.robotId === robotByRoom.id);
+          });
+
+          setRobotLogs(
+            [...statusLogs].sort(
+              (left, right) => new Date(right.reportedAt).getTime() - new Date(left.reportedAt).getTime()
+            )
+          );
+        } else {
+          setRobotLogs([]);
+        }
+      } catch (loadError: unknown) {
+        setError(loadError instanceof Error ? loadError.message : 'Khong the tai caregiver overview tu API.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadOverview();
+  }, [user?.id]);
+
+  const pendingReminders = useMemo(
+    () => reminders.filter((item) => item.active),
+    [reminders]
+  );
+
+  const unpurchasedTheme = getUnpurchasedPackageTheme();
+
+  const latestRobotLog = robotLogs[0] ?? null;
+
+  if (loading) {
+    return (
+      <div className="flex h-[400px] items-center justify-center">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" /> Dang tai caregiver overview...
+        </div>
+      </div>
+    );
   }
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: 0.4 }
-    }
-  };
+  if (error) {
+    return (
+      <Card className="border-rose-200 bg-rose-50">
+        <CardContent className="py-6 text-sm text-rose-700">{error}</CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto pb-10">
+    <div className="space-y-8 pb-10">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
-        <p className="text-muted-foreground">Monitor your assigned patients and overall alerts.</p>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground">
+          {profile?.name ? `${profile.name} - Room ${profile.roomId ?? 'N/A'}` : 'Overview for your assigned room'}
+        </p>
       </div>
 
-      <motion.div 
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
-      >
-        {/* Summary Cards */}
-        <motion.div variants={itemVariants}>
-          <Card className="hover:shadow-md transition-shadow duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Assigned Patients</CardTitle>
-              <Users className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalPatients}</div>
-              <p className="text-xs text-muted-foreground">Currently under your care</p>
-            </CardContent>
-          </Card>
-        </motion.div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium uppercase text-muted-foreground">Elderly In Room</CardTitle>
+            <Users className="h-4 w-4 text-sky-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{roomElderlies.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">Lay tu GET /api/rooms/{'{'}roomId{'}'}/elderlies</p>
+          </CardContent>
+        </Card>
 
-        <motion.div variants={itemVariants}>
-          <Card className="hover:shadow-md transition-shadow duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-yellow-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{activeAlerts.length}</div>
-              <p className="text-xs text-muted-foreground">Requires attention</p>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium uppercase text-muted-foreground">Pending Reminders</CardTitle>
+            <Bell className="h-4 w-4 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{pendingReminders.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">Reminder dang active trong room</p>
+          </CardContent>
+        </Card>
 
-        <motion.div variants={itemVariants}>
-          <Card className="hover:shadow-md transition-shadow duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Critical Alerts</CardTitle>
-              <AlertCircle className="h-4 w-4 text-red-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600 dark:text-red-400">{criticalAlerts.length}</div>
-              <p className="text-xs text-muted-foreground">Immediate action required</p>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium uppercase text-muted-foreground">Active Alerts</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-rose-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{alerts.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">Alert chua resolve trong room</p>
+          </CardContent>
+        </Card>
 
-        <motion.div variants={itemVariants}>
-          <Card className="hover:shadow-md transition-shadow duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Robots Online</CardTitle>
-              <Bot className="h-4 w-4 text-emerald-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">2/2</div>
-              <p className="text-xs text-muted-foreground">All systems operational</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </motion.div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium uppercase text-muted-foreground">Room Robot</CardTitle>
+            <Bot className="h-4 w-4 text-emerald-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold">{roomRobot?.robotName || 'Chua co robot'}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {roomRobot ? `${roomRobot.model} • Robot ID ${roomRobot.id}` : latestRobotLog ? `Trang thai gan nhat: ${latestRobotLog.status}` : 'Chua co robot status log'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Quick Patient Preview */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <Card className="col-span-1 h-full shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Assigned Patients</CardTitle>
-                <CardDescription>Quick overview of patient vitals</CardDescription>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/caregiver/patients')}>
-                View All
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {elderlyList.slice(0, 3).map((patient) => (
-                  <div key={patient.id} className="flex items-center justify-between group">
-                    <div className="flex items-center space-x-4">
-                      <Avatar className="h-10 w-10 border-2 border-primary/10">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${patient.name}`} alt={patient.name} />
-                        <AvatarFallback>{patient.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium leading-none mb-1">{patient.name}</p>
-                        <div className="flex items-center space-x-3 text-xs text-muted-foreground">
-                          <span className="flex items-center">
-                            <Heart className="h-3 w-3 mr-1 text-rose-500" />
-                            {patient.healthStatus.heartRate} bpm
-                          </span>
-                          <span className="flex items-center">
-                            <Brain className="h-3 w-3 mr-1 text-purple-500" />
-                            Mood: {patient.healthStatus.moodScore}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      {getStatusBadge(patient.riskLevel || 'LOW')}
-                    </div>
-                  </div>
-                ))}
-                {elderlyList.length === 0 && (
-                  <div className="text-center py-6 text-muted-foreground text-sm">
-                    No patients assigned yet.
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Elderly In My Room</CardTitle>
+              <CardDescription>Danh sach nguoi cao tuoi thuoc room caregiver dang phu trach.</CardDescription>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/dashboard/caregiver/elderly">Open Elderly</Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {roomElderlies.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Khong co elderly nao trong room hien tai.</p>
+            ) : (
+              roomElderlies.map((item) => (
+                (() => {
+                  const activeUserPackage = getActiveUserPackageForElderly(userPackages, item.id);
+                  const activePackage = getCatalogPackageForUserPackage(servicePackages, activeUserPackage);
+                  const packageTheme = getServicePackageTheme(activePackage, servicePackages);
+                  const hasPackage = Boolean(activePackage);
+                  const elderlyAlertCount = alerts.filter((alert) => alert.elderlyId === item.id).length;
 
-        {/* Recent Alerts */}
-        <motion.div
-           initial={{ opacity: 0, x: 20 }}
-           animate={{ opacity: 1, x: 0 }}
-           transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          <Card className="col-span-1 h-full shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Recent Alerts</CardTitle>
-                <CardDescription>Latest notifications from your patients</CardDescription>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/caregiver/alerts')}>
-                All Alerts
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentAlerts.map((alert) => {
-                  const patient = elderlyList.find(e => e.id === alert.elderlyId);
                   return (
-                    <motion.div 
-                      key={alert.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex items-start space-x-4 p-3 rounded-lg border bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-                    >
-                      <div className={`mt-0.5 p-1.5 rounded-full ${alert.status === 'active' ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
-                         <Activity className="h-4 w-4" />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium leading-none">
-                            {patient?.name || 'Unknown Patient'}
-                          </p>
-                          <span className="text-xs text-muted-foreground flex items-center">
-                            <Clock className="mr-1 h-3 w-3" />
-                            {new Date(alert.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
+                    <div key={item.id} className={cn('overflow-hidden rounded-2xl border shadow-sm', hasPackage ? packageTheme.surfaceClassName : unpurchasedTheme.surfaceClassName)}>
+                      <div className={cn('h-1.5 w-full', hasPackage ? packageTheme.accentClassName : unpurchasedTheme.accentClassName)} />
+                      <div className="space-y-4 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="text-lg font-bold">{activePackage?.name || 'Chưa mua gói'}</div>
+                            <div className="mt-1 text-sm text-muted-foreground">Elderly: {item.name} • EL #{item.id}</div>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <Badge variant={hasPackage ? 'outline' : 'secondary'} className={hasPackage ? packageTheme.badgeClassName : unpurchasedTheme.badgeClassName}>
+                              {activePackage?.level || 'No plan'}
+                            </Badge>
+                            {elderlyAlertCount > 0 ? <Badge variant="destructive">{elderlyAlertCount} alerts</Badge> : null}
+                          </div>
                         </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {alert.message}
-                        </p>
-                        <div className="flex items-center space-x-2 pt-1">
-                          <Badge className={`${getSeverityColor(alert.severity as AlertSeverity)} text-[10px] px-1.5 py-0`}>
-                            {alert.severity.toUpperCase()}
-                          </Badge>
-                          {alert.status === 'active' ? (
-                            <button 
-                              onClick={() => resolveAlert(alert.id)}
-                              className="text-[10px] font-medium text-blue-500 hover:text-blue-700 hover:underline"
-                            >
-                              Mark Resolved
-                            </button>
-                          ) : (
-                            <span className="text-[10px] text-emerald-500 flex items-center"><Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-500/30 text-emerald-600">Resolved</Badge></span>
-                          )}
+
+                        <div className={cn('rounded-xl px-3 py-3 text-sm', hasPackage ? 'border-white/60 bg-white/70 backdrop-blur-sm' : 'border-slate-200 bg-slate-50/90')}>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="flex items-center gap-2 text-muted-foreground"><Package className="h-4 w-4 text-emerald-500" /> Status</span>
+                              <span className="font-semibold text-foreground">{hasPackage ? 'Owned' : 'Unpurchased'}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="text-muted-foreground">Room</span>
+                              <span className="font-semibold text-foreground">{profile?.roomId ? `Room ${profile.roomId}` : 'N/A'}</span>
+                            </div>
+                          </div>
+                          {hasPackage ? (
+                            <div className={cn('mt-3 rounded-xl px-3 py-2 text-xs font-semibold', packageTheme.subtleClassName)}>
+                              {activePackage?.level} • {activePackage?.durationDays || 30} ngày • Gắn cho {item.name}
+                            </div>
+                          ) : null}
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button asChild variant="outline" size="sm" className="flex-1">
+                            <Link href={`/dashboard/caregiver/elderly/${item.id}`}>
+                              Details
+                            </Link>
+                          </Button>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   );
-                })}
-                {recentAlerts.length === 0 && (
-                  <div className="text-center py-10 flex flex-col items-center justify-center text-muted-foreground">
-                    <Bot className="h-10 w-10 mb-2 opacity-20" />
-                    <p className="text-sm">No recent alerts.</p>
+                })()
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Alerts And Robot Status</CardTitle>
+            <CardDescription>Tom tat su kien can chu y trong room.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <div className="mb-2 text-sm font-medium">Active alerts</div>
+              {alerts.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Khong co alert dang mo.</p>
+              ) : (
+                alerts.slice(0, 4).map((item) => (
+                  <div key={item.id} className="mb-2 rounded-lg border p-3 text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold">{item.alertType}</span>
+                      <Badge variant="secondary">{item.elderlyName}</Badge>
+                    </div>
+                    <div className="text-muted-foreground mt-1">{item.message}</div>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+                ))
+              )}
+            </div>
+
+            <div>
+              <div className="mb-2 text-sm font-medium">Recent robot logs</div>
+              {robotLogs.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Chua co robot status log.</p>
+              ) : (
+                robotLogs.slice(0, 4).map((item) => (
+                  <div key={item.id} className="mb-2 rounded-lg border p-3 text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold">{item.status}</span>
+                      <Badge variant="outline">{item.robotName}</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {new Date(item.reportedAt).toLocaleString()}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -21,6 +21,14 @@ class ReminderService {
     );
   }
 
+  async getByElderlyId(elderlyId: number): Promise<ReminderResponse[]> {
+    return apiClient.get<ReminderResponse[]>(`/api/reminders/elderly/${elderlyId}`);
+  }
+
+  async getByCaregiverId(caregiverId: number): Promise<ReminderResponse[]> {
+    return apiClient.get<ReminderResponse[]>(`/api/reminders/caregiver/${caregiverId}`);
+  }
+
   async create(data: ReminderRequest): Promise<ReminderResponse> {
     return apiClient.post<ReminderResponse>("/api/reminders", data);
   }
@@ -36,6 +44,10 @@ class ReminderService {
   // Reminder Logs
   async getAllLogs(): Promise<ReminderLogResponse[]> {
     return apiClient.get<ReminderLogResponse[]>("/api/reminder-logs");
+  }
+
+  async getLogsByElderlyId(elderlyId: number): Promise<ReminderLogResponse[]> {
+    return apiClient.get<ReminderLogResponse[]>(`/api/reminder-logs/elderly/${elderlyId}`);
   }
 
   async getLogById(id: number): Promise<ReminderLogResponse> {

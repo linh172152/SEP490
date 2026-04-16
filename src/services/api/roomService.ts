@@ -1,5 +1,11 @@
 import { apiClient } from './client';
-import { RoomRequest, RoomResponse, CaregiverDTO, ElderlyDTO, RobotDTO } from './types';
+import {
+  RoomRequest,
+  RoomResponse,
+  CaregiverDTO,
+  ElderlyDTO,
+  RoomElderlySummary,
+} from './types';
 
 export const roomService = {
   getAllRooms: async (): Promise<RoomResponse[]> => {
@@ -50,12 +56,8 @@ export const roomService = {
     return apiClient.get<CaregiverDTO[]>(`/api/rooms/${roomId}/caregivers`);
   },
 
-  getElderliesByRoom: async (roomId: number): Promise<ElderlyDTO[]> => {
-    return apiClient.get<ElderlyDTO[]>(`/api/rooms/${roomId}/elderlies`);
+  getElderliesByRoom: async (roomId: number): Promise<RoomElderlySummary[]> => {
+    return apiClient.get<RoomElderlySummary[]>(`/api/rooms/${roomId}/elderlies`);
   },
-
-  getRobotByRoom: async (roomId: number): Promise<RobotDTO> => {
-    return apiClient.get<RobotDTO>(`/api/rooms/${roomId}/robot`);
-  }
 };
 

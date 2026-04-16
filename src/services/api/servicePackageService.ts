@@ -1,5 +1,5 @@
-import { apiClient } from "./client";
-import { ServicePackageRequest, ServicePackageResponse, ExerciseScriptResponse } from "./types";
+import { apiClient } from './client';
+import { ExerciseScriptResponse, ServicePackageRequest, ServicePackageResponse } from './types';
 
 class ServicePackageService {
   async getAll(): Promise<ServicePackageResponse[]> {
@@ -11,7 +11,7 @@ class ServicePackageService {
   }
 
   async create(data: ServicePackageRequest): Promise<ServicePackageResponse> {
-    return apiClient.post<ServicePackageResponse>("/api/service-packages/auto", data);
+    return apiClient.post<ServicePackageResponse>('/api/service-packages/auto', data);
   }
 
   async update(id: number, data: ServicePackageRequest): Promise<ServicePackageResponse> {
@@ -31,7 +31,7 @@ class ServicePackageService {
   }
 
   async createAuto(data: ServicePackageRequest): Promise<ServicePackageResponse> {
-    return apiClient.post<ServicePackageResponse>("/api/service-packages/auto", data);
+    return apiClient.post<ServicePackageResponse>('/api/service-packages/auto', data);
   }
 }
 

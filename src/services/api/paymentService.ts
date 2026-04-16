@@ -1,18 +1,37 @@
-import { apiClient } from "./client";
+import { apiClient } from './client';
+import { PaymentConfirmRequest, PaymentConfirmResponse, PaymentCreateResponse } from './types';
 
-export const paymentService = {
-  /**
-   * Confirm a payment manually using the transaction description and amount.
-   * This is part of the manual QR payment workflow.
-   * 
-   * @param description The transaction description (e.g., PKG:1|ACC:2|ELD:3)
-   * @param amount The actual amount received in the bank account
-   * @returns A confirmation message from the server
-   */
-  confirmPayment: async (description: string, amount: number): Promise<string> => {
-    return apiClient.post<string>(
-      `/api/payments/confirm?description=${encodeURIComponent(description)}&amount=${amount}`,
-      {}
+class PaymentService {
+  async create(servicePackageId: number, elderlyProfileId: number): Promise<PaymentCreateResponse> {
+    return apiClient.post<PaymentCreateResponse>(
+      `/api/payments/create/${servicePackageId}`,
+      null,
+      {
+        params: {
+          elderlyProfileId,
+        },
+      }
     );
   }
-};
+
+  async confirm(payload: PaymentConfirmRequest): Promise<PaymentConfirmResponse> {
+    return apiClient.post<PaymentConfirmResponse>('/api/payments/confirm', null, {
+      params: {
+        description: payload.description,
+        amount: payload.amount,
+      },
+    });
+  }
+
+  async confirmPayment(description: string, amount: number): Promise<string> {
+    const response = await this.confirm({ description, amount });
+
+    if (typeof response === 'string') {
+      return response;
+    }
+
+    return response.message ?? 'Payment confirmed successfully';
+  }
+}
+
+export const paymentService = new PaymentService();

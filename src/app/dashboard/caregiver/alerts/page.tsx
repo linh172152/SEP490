@@ -97,8 +97,8 @@ export default function CaregiverAlertsPage() {
     >
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Alert Center</h1>
-          <p className="text-muted-foreground">Monitor and resolve patient-related alerts for your care circle.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Alerts</h1>
+          <p className="text-muted-foreground">Prioritize urgent incidents such as falls, missed medication responses, and other room-level alerts.</p>
         </div>
         {allAlerts.length === 0 && assignedElderly.length > 0 && (
             <Button onClick={handleGenerateMockAlerts} className="shrink-0 bg-rose-600 hover:bg-rose-700">
@@ -147,8 +147,8 @@ export default function CaregiverAlertsPage() {
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50/50 dark:bg-slate-900/50 h-12">
-              <TableHead className="pl-6 w-1/4">Elderly Name</TableHead>
-              <TableHead className="w-1/4 bg-transparent hidden sm:table-cell">Type & Message</TableHead>
+              <TableHead className="pl-6 w-1/4">Elderly</TableHead>
+              <TableHead className="w-1/4 bg-transparent hidden sm:table-cell">Alert Type & Message</TableHead>
               <TableHead>Severity</TableHead>
               <TableHead>Created At</TableHead>
               <TableHead>Status</TableHead>

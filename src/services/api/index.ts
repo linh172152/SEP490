@@ -16,6 +16,7 @@ export { caregiverService } from "./caregiverService";
 export { interactionLogService } from "./interactionLogService";
 export { servicePackageService } from "./servicePackageService";
 export { userPackageService } from "./userPackageService";
+export { paymentService } from "./paymentService";
 export { systemLogService } from "./systemLogService";
 export { accountService } from "./accountService";
 export { roomService } from "./roomService";

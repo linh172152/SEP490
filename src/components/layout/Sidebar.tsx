@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useI18nStore } from '@/store/useI18nStore';
 import { cn } from '@/lib/utils';
+import type { LucideIcon } from 'lucide-react';
 import { 
   Smile, 
   LayoutDashboard, 
@@ -18,54 +19,56 @@ import {
   Activity,
   ShieldCheck,
   Cpu,
-  History,
   Bell,
   Home,
-  X
+  FileText,
+  HeartPulse,
+  X,
 } from 'lucide-react';
 import { Role } from '@/types';
 import { Button } from '../ui/button';
 
 interface NavItem {
-  i18nKey: string;
+  label?: string;
+  i18nKey?: string;
   href: string;
-  icon: any;
+  icon: LucideIcon;
   roles: Role[];
 }
 
-const navItems: NavItem[] = [
-  // Admin Routes (System & Platform Administration)
+const platformNavItems: NavItem[] = [
   { i18nKey: 'sidebar.overview', href: '/dashboard/admin', icon: LayoutDashboard, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.user_mgt', href: '/dashboard/admin/users', icon: Users, roles: ['ADMIN'] },
+  { i18nKey: 'sidebar.data_security', href: '/dashboard/admin/security', icon: ShieldCheck, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.robot_mgt', href: '/dashboard/admin/fleet', icon: Cpu, roles: ['ADMIN'] },
-  { i18nKey: 'wellness.sidebar_label', href: '/dashboard/admin/wellness', icon: Smile, roles: ['ADMIN'] },
+  { label: 'Wellness Hub', href: '/dashboard/admin/wellness', icon: Smile, roles: ['ADMIN'] },
   { i18nKey: 'sidebar.settings', href: '/dashboard/admin/settings', icon: Settings, roles: ['ADMIN'] },
-
-  // Manager Routes (Operational Hub)
   { i18nKey: 'sidebar.overview', href: '/dashboard/manager', icon: LayoutDashboard, roles: ['MANAGER'] },
   { i18nKey: 'sidebar.rooms', href: '/dashboard/manager/rooms', icon: Home, roles: ['MANAGER'] },
   { i18nKey: 'sidebar.staff_mgt', href: '/dashboard/manager/users', icon: Users, roles: ['MANAGER'] },
   { i18nKey: 'sidebar.robot_fleet', href: '/dashboard/manager/robots', icon: Bot, roles: ['MANAGER'] },
   { i18nKey: 'sidebar.subscriptions', href: '/dashboard/manager/subscriptions', icon: Package, roles: ['MANAGER'] },
-  { i18nKey: 'wellness.sidebar_label', href: '/dashboard/manager/wellness', icon: Smile, roles: ['MANAGER'] },
+  { label: 'Wellness Hub', href: '/dashboard/manager/wellness', icon: Smile, roles: ['MANAGER'] },
   { i18nKey: 'sidebar.settings', href: '/dashboard/manager/settings', icon: Settings, roles: ['MANAGER'] },
-
-
-  // Family / Elderly Routes (from tu2)
-  { i18nKey: 'sidebar.overview', href: '/dashboard/family', icon: LayoutDashboard, roles: ['ELDERLY'] },
-  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/family/elderly', icon: Users, roles: ['ELDERLY'] },
-  { i18nKey: 'sidebar.reminders', href: '/dashboard/family/reminders', icon: Bell, roles: ['ELDERLY'] },
-  { i18nKey: 'sidebar.service_plans', href: '/dashboard/family/packages', icon: Package, roles: ['ELDERLY'] },
-  { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['ELDERLY'] },
-
-  // Caregiver Routes
-  { i18nKey: 'sidebar.overview', href: '/dashboard/caregiver', icon: LayoutDashboard, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.user_mgt', href: '/dashboard/caregiver/elderly', icon: Users, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.reminders', href: '/dashboard/caregiver/reminders', icon: Bell, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.exercises', href: '/dashboard/caregiver/exercises', icon: Activity, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.robot_fleet', href: '/dashboard/caregiver/robot', icon: Bot, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['CAREGIVER'] },
 ];
+
+const careNavItems: NavItem[] = [
+  { label: 'Overview', href: '/dashboard/family', icon: LayoutDashboard, roles: ['ELDERLY', 'FAMILYMEMBER'] },
+  { label: 'My Elderly', href: '/dashboard/family/elderly', icon: HeartPulse, roles: ['ELDERLY', 'FAMILYMEMBER'] },
+  { label: 'Health & Activity', href: '/dashboard/family/health-activity', icon: Activity, roles: ['ELDERLY', 'FAMILYMEMBER'] },
+  { label: 'Alerts', href: '/dashboard/family/alerts', icon: Bell, roles: ['ELDERLY', 'FAMILYMEMBER'] },
+  { label: 'Service Plans', href: '/dashboard/family/packages', icon: Package, roles: ['ELDERLY', 'FAMILYMEMBER'] },
+  { label: 'Settings', href: '/dashboard/family/settings', icon: Settings, roles: ['ELDERLY', 'FAMILYMEMBER'] },
+  { label: 'Dashboard', href: '/dashboard/caregiver', icon: LayoutDashboard, roles: ['CAREGIVER'] },
+  { label: 'Elderly', href: '/dashboard/caregiver/elderly', icon: Users, roles: ['CAREGIVER'] },
+  { label: 'Care Tasks', href: '/dashboard/caregiver/care-tasks', icon: Activity, roles: ['CAREGIVER'] },
+  { label: 'Robot Interaction', href: '/dashboard/caregiver/robot', icon: Bot, roles: ['CAREGIVER'] },
+  { label: 'Alerts', href: '/dashboard/caregiver/alerts', icon: Bell, roles: ['CAREGIVER'] },
+  { label: 'Reports', href: '/dashboard/caregiver/reports', icon: FileText, roles: ['CAREGIVER'] },
+  { label: 'Settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['CAREGIVER'] },
+];
+
+const navItems: NavItem[] = [...platformNavItems, ...careNavItems];
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -77,6 +80,8 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
   const { t } = useI18nStore();
+
+  const getNavLabel = (item: NavItem) => item.label ?? (item.i18nKey ? t(item.i18nKey) : '');
 
   const filteredItems = navItems.filter((item) => {
     if (!user) return false;
@@ -116,7 +121,10 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
       <div className="flex-1 overflow-y-auto py-6 px-4 space-y-8 scrollbar-hide">
         <nav className="space-y-1.5">
           {filteredItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isRootDashboard = ['/dashboard/admin', '/dashboard/manager', '/dashboard/family', '/dashboard/caregiver'].includes(item.href);
+            const isActive = isRootDashboard
+              ? pathname === item.href
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
             return (
               <Link
@@ -130,17 +138,16 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
                     ? 'bg-primary text-white shadow-md shadow-primary/20 translate-x-1'
                     : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 hover:translate-x-1'
                 )}
-                title={isCollapsed ? t(item.i18nKey) : ""}
+                title={isCollapsed ? getNavLabel(item) : ''}
               >
                 <Icon className={cn('h-5 w-5 transition-transform group-hover:scale-110 shrink-0', 
                   isActive ? 'text-white' : 'text-slate-400 group-hover:text-primary')} />
-                
                 {!isCollapsed && (
                   <span className="whitespace-nowrap animate-in fade-in slide-in-from-left-2">
-                    {t(item.i18nKey)}
+                    {getNavLabel(item)}
                   </span>
                 )}
-                
+
                 {isActive && !isCollapsed && (
                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white opacity-50" />
                 )}

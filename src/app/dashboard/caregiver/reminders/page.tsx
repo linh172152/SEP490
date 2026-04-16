@@ -56,6 +56,34 @@ import { Badge } from '@/components/ui/badge';
 import { ReminderRequest, ReminderResponse, RoomElderlySummary } from '@/services/api/types';
 import { format } from 'date-fns';
 
+const normalizeReminderType = (value: string) => {
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized === 'medicine' || normalized === 'media') {
+    return 'medication';
+  }
+
+  return normalized;
+};
+
+const reminderTypeLabelFallback: Record<string, string> = {
+  medication: 'Medication',
+  hydration: 'Hydration',
+  exercise: 'Exercise',
+  meal: 'Meal',
+  appointment: 'Appointment',
+};
+
+const getCaregiverIdentifiers = (profile: { id?: number | null; accountId?: number | null } | null, userId?: string) => {
+  return Array.from(
+    new Set(
+      [profile?.id, profile?.accountId, userId ? Number(userId) : undefined].filter(
+        (value): value is number => typeof value === 'number' && !Number.isNaN(value)
+      )
+    )
+  );
+};
+
 export default function CaregiverRemindersPage() {
   const { t } = useI18nStore();
   const { user } = useAuthStore();
@@ -80,43 +108,76 @@ export default function CaregiverRemindersPage() {
     active: true
   });
 
+  const caregiverIdentifiers = getCaregiverIdentifiers(currentProfile, user?.id);
+
+  const effectiveCaregiverId = currentProfile?.accountId || (user?.id ? Number(user.id) : undefined) || currentProfile?.id || 0;
+
   useEffect(() => {
     if (user?.id) {
       const accountId = Number(user.id);
-      fetchReminders(accountId);
       fetchProfileByAccountId(accountId);
     }
-  }, [user?.id, fetchReminders, fetchProfileByAccountId]);
+  }, [user?.id, fetchProfileByAccountId]);
 
   useEffect(() => {
     const loadRoomElderlies = async () => {
-      if (!currentProfile?.roomId) {
+      if (!currentProfile?.id) {
         setRoomElderlies([]);
+        await fetchReminders({ caregiverId: undefined });
         return;
       }
 
+      let data: RoomElderlySummary[] = [];
+
       try {
-        const data = await roomService.getElderliesByRoom(currentProfile.roomId);
-        setRoomElderlies(data || []);
+        if (currentProfile.roomId) {
+          data = await roomService.getElderliesByRoom(currentProfile.roomId);
+        }
       } catch {
-        setRoomElderlies([]);
+        data = [];
       }
+
+      setRoomElderlies(data || []);
+      await fetchReminders({
+        caregiverIds: getCaregiverIdentifiers(currentProfile, user?.id),
+      });
     };
 
-    loadRoomElderlies();
-  }, [currentProfile?.roomId]);
+    void loadRoomElderlies();
+  }, [currentProfile, fetchReminders, user?.id]);
+
+  const refreshCaregiverReminders = async () => {
+    if (!currentProfile?.id) {
+      return;
+    }
+
+    await fetchReminders({
+      caregiverIds: caregiverIdentifiers,
+    });
+  };
+
+  const getReminderTypeLabel = (type: string) => {
+    const normalizedType = normalizeReminderType(type);
+    const translated = t(`caregiver.reminders.types.${normalizedType}`);
+
+    if (translated && translated !== `caregiver.reminders.types.${normalizedType}`) {
+      return translated;
+    }
+
+    return reminderTypeLabelFallback[normalizedType] || type;
+  };
 
   const filteredReminders = useMemo(() => {
     return reminders.filter(r => {
       const matchesSearch = r.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                            r.elderlyName?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesFilter = filterType === 'all' || r.reminderType === filterType;
+      const matchesFilter = filterType === 'all' || normalizeReminderType(r.reminderType) === filterType;
       return matchesSearch && matchesFilter;
     });
   }, [reminders, searchQuery, filterType]);
 
   const handleOpenModal = (reminder: ReminderResponse | null = null) => {
-    const realCaregiverId = currentProfile?.id || 0;
+    const realCaregiverId = effectiveCaregiverId;
     
     if (reminder) {
       setEditingReminder(reminder);
@@ -148,7 +209,7 @@ export default function CaregiverRemindersPage() {
     e.preventDefault();
     
     // Ensure we have the caregiver profile ID
-    const realCaregiverId = currentProfile?.id;
+    const realCaregiverId = effectiveCaregiverId;
 
     if (!realCaregiverId) {
       toast.error("Caregiver profile not found. Please sync your profile first.");
@@ -168,6 +229,7 @@ export default function CaregiverRemindersPage() {
         await createReminder(payload);
         toast.success(t('common.create_success'));
       }
+      await refreshCaregiverReminders();
       setIsModalOpen(false);
     } catch {
       toast.error(t('common.error'));
@@ -175,7 +237,7 @@ export default function CaregiverRemindersPage() {
   };
 
   const handleToggleActive = async (reminder: ReminderResponse) => {
-    const realCaregiverId = currentProfile?.id;
+    const realCaregiverId = effectiveCaregiverId;
     if (!realCaregiverId) return;
 
     try {
@@ -184,6 +246,7 @@ export default function CaregiverRemindersPage() {
         caregiverId: realCaregiverId,
         active: !reminder.active
       });
+      await refreshCaregiverReminders();
       toast.success(t('common.update_success'));
     } catch {
       toast.error(t('common.error'));
@@ -199,6 +262,7 @@ export default function CaregiverRemindersPage() {
     if (window.confirm(t('common.confirm_delete'))) {
       try {
         await deleteReminder(id);
+        await refreshCaregiverReminders();
         toast.success(t('common.delete_success'));
       } catch {
         toast.error(t('common.error'));
@@ -207,7 +271,7 @@ export default function CaregiverRemindersPage() {
   };
 
   const getTypeBadgeColor = (type: string) => {
-    switch (type) {
+    switch (normalizeReminderType(type)) {
       case 'medication': return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
       case 'exercise': return 'bg-sky-500/10 text-sky-500 border-sky-500/20';
       case 'meal': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
@@ -327,7 +391,7 @@ export default function CaregiverRemindersPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={`capitalize rounded-lg px-2.5 py-1 border font-medium ${getTypeBadgeColor(reminder.reminderType)}`}>
-                          {t(`caregiver.reminders.types.${reminder.reminderType}`)}
+                          {getReminderTypeLabel(reminder.reminderType)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -534,7 +598,7 @@ export default function CaregiverRemindersPage() {
                   {viewingReminder?.title}
                 </DialogTitle>
                 <DialogDescription className="text-slate-500">
-                  {viewingReminder ? t(`caregiver.reminders.types.${viewingReminder.reminderType}`) : ''}
+                  {viewingReminder ? getReminderTypeLabel(viewingReminder.reminderType) : ''}
                 </DialogDescription>
               </div>
             </div>

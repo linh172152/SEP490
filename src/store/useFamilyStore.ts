@@ -48,9 +48,12 @@ export const useFamilyStore = create<FamilyState>()(
         set({ isLoading: true, error: null });
         try {
           const elderly = await elderlyService.getByAccountId(accountId);
+          const activeElderly = elderly.filter((item) => !item.deleted);
+          const activeElderlyIds = new Set(activeElderly.map((item) => item.id));
 
-          const [reminders, packages, servicePackages, rooms] = await Promise.all([
+          const [accountReminders, allReminders, packages, servicePackages, rooms] = await Promise.all([
             reminderService.getByAccountId(accountId).catch(() => []),
+            reminderService.getAll().catch(() => []),
             userPackageService.getByAccountId(accountId).catch(async () => {
               const allPackages = await userPackageService.getAll().catch(() => []);
               return allPackages.filter(p => p.accountId === accountId);
@@ -59,7 +62,15 @@ export const useFamilyStore = create<FamilyState>()(
             roomService.getAllRooms().catch(() => []),
           ]);
 
-          const activeElderly = elderly.filter((item) => !item.deleted);
+          const mergedReminders = [...accountReminders, ...allReminders.filter((item) => activeElderlyIds.has(item.elderlyId))]
+            .reduce<ReminderResponse[]>((acc, reminder) => {
+              if (!acc.some((item) => item.id === reminder.id)) {
+                acc.push(reminder);
+              }
+
+              return acc;
+            }, []);
+
           const roomNames = (rooms || []).reduce<Record<number, string>>((acc, room) => {
             acc[room.id] = room.roomName;
             return acc;
@@ -67,14 +78,14 @@ export const useFamilyStore = create<FamilyState>()(
           
           set({ 
             elderlyList: activeElderly,
-            reminders,
+            reminders: mergedReminders,
             userPackages: packages,
             servicePackages: servicePackages || [],
             roomNames,
             isUsingMock: false,
             isLoading: false 
           });
-        } catch (error: any) {
+        } catch {
           set({ 
             error: 'Cannot load data from API. Try using Demo Data.', 
             isLoading: false 
@@ -140,7 +151,7 @@ export const useFamilyStore = create<FamilyState>()(
             return allPackages.filter(p => p.accountId === accountId);
           });
           set({ userPackages: packages, isLoading: false });
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({ error: 'Failed to purchase package', isLoading: false });
           throw error;
         }

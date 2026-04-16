@@ -2,11 +2,18 @@ import { create } from 'zustand';
 import { reminderService } from '@/services/api/reminderService';
 import { ReminderRequest, ReminderResponse } from '@/services/api/types';
 
+interface FetchRemindersParams {
+  accountId?: number;
+  caregiverId?: number;
+  caregiverIds?: number[];
+  elderlyIds?: number[];
+}
+
 interface ReminderState {
   reminders: ReminderResponse[];
   isLoading: boolean;
   error: string | null;
-  fetchReminders: (accountId: number) => Promise<void>;
+  fetchReminders: (params: FetchRemindersParams) => Promise<void>;
   createReminder: (data: ReminderRequest) => Promise<ReminderResponse>;
   updateReminder: (id: number, data: ReminderRequest) => Promise<ReminderResponse>;
   deleteReminder: (id: number) => Promise<void>;
@@ -14,18 +21,41 @@ interface ReminderState {
   clearError: () => void;
 }
 
-export const useReminderStore = create<ReminderState>((set, get) => ({
+export const useReminderStore = create<ReminderState>((set) => ({
   reminders: [],
   isLoading: false,
   error: null,
 
-  fetchReminders: async (accountId: number) => {
+  fetchReminders: async ({ accountId, caregiverId, caregiverIds, elderlyIds }: FetchRemindersParams) => {
     try {
       set({ isLoading: true, error: null });
-      const data = await reminderService.getByAccountId(accountId);
+
+      let data: ReminderResponse[] = [];
+      const allowedCaregiverIds = new Set(
+        [
+          ...(caregiverIds ?? []),
+          ...(typeof caregiverId === 'number' ? [caregiverId] : []),
+        ].filter((value): value is number => typeof value === 'number' && !Number.isNaN(value))
+      );
+
+      if (allowedCaregiverIds.size > 0) {
+        const allReminders = await reminderService.getAll();
+        const assignedElderlyIds = elderlyIds?.length ? new Set(elderlyIds) : null;
+
+        data = allReminders.filter((item) => {
+          if (!allowedCaregiverIds.has(item.caregiverId)) {
+            return false;
+          }
+
+          return assignedElderlyIds ? assignedElderlyIds.has(item.elderlyId) : true;
+        });
+      } else if (typeof accountId === 'number') {
+        data = await reminderService.getByAccountId(accountId);
+      }
+
       set({ reminders: data || [], isLoading: false });
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to fetch reminders', isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : 'Failed to fetch reminders', isLoading: false });
     }
   },
 
@@ -38,8 +68,8 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
         isLoading: false,
       }));
       return response;
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to create reminder', isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : 'Failed to create reminder', isLoading: false });
       throw error;
     }
   },
@@ -53,8 +83,8 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
         isLoading: false,
       }));
       return response;
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to update reminder', isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : 'Failed to update reminder', isLoading: false });
       throw error;
     }
   },
@@ -67,8 +97,8 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
         reminders: state.reminders.filter((r) => r.id !== id),
         isLoading: false,
       }));
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to delete reminder', isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : 'Failed to delete reminder', isLoading: false });
       throw error;
     }
   },
@@ -79,8 +109,8 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
       const response = await reminderService.getById(id);
       set({ isLoading: false });
       return response;
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to fetch reminder detail', isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : 'Failed to fetch reminder detail', isLoading: false });
       throw error;
     }
   },

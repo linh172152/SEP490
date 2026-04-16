@@ -143,9 +143,9 @@ export interface ReminderRequest {
 
 export interface ReminderResponse extends ReminderRequest {
   id: number;
-  accountId?: number;
-  elderlyName: string;
-  caregiverName: string;
+  accountId?: number | null;
+  elderlyName?: string | null;
+  caregiverName?: string | null;
 }
 
 // Reminder Log Types
@@ -248,7 +248,7 @@ export interface AccountResponse {
   message?: string;
   verified?: string;
   createdAt: string;
-  role?: any;
+  role?: unknown;
   roomId?: number;
 }
 

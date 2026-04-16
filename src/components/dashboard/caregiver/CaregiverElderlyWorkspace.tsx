@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { differenceInYears } from 'date-fns';
@@ -44,18 +43,14 @@ import {
   AlertTriangle,
   ArrowRight,
   Bot,
-  Calendar,
   CheckCircle2,
   Clock,
-  Dumbbell,
   HeartPulse,
   Loader2,
   MapPin,
   MessageSquare,
-  Package,
   Pill,
   Plus,
-  RefreshCw,
   Search,
   Settings2,
   User,
@@ -88,6 +83,16 @@ const defaultReminderForm: Omit<ReminderRequest, 'elderlyId' | 'caregiverId'> = 
   active: true,
 };
 
+const getCaregiverIdentifiers = (profile: { id?: number | null; accountId?: number | null } | null, userId?: string) => {
+  return Array.from(
+    new Set(
+      [profile?.id, profile?.accountId, userId ? Number(userId) : undefined].filter(
+        (value): value is number => typeof value === 'number' && !Number.isNaN(value)
+      )
+    )
+  );
+};
+
 interface WorkspaceProps {
   activeTab: CaregiverWorkspaceTab;
   selectedElderlyId?: number;
@@ -107,6 +112,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   const [sendingInteraction, setSendingInteraction] = useState(false);
   const [runningExerciseId, setRunningExerciseId] = useState<number | null>(null);
   const [editingReminderId, setEditingReminderId] = useState<number | null>(null);
+  const [isReminderFormOpen, setIsReminderFormOpen] = useState(false);
   const [caregiverProfile, setCaregiverProfile] = useState<CaregiverProfileResponse | null>(null);
   const [roomElderlies, setRoomElderlies] = useState<RoomElderlySummary[]>([]);
   const [caregiverReminders, setCaregiverReminders] = useState<ReminderResponse[]>([]);
@@ -157,11 +163,12 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
 
       const allReminders = await reminderService.getAll().catch(() => [] as ReminderResponse[]);
       const elderlyIds = new Set(elderlies.map((item) => item.id));
+      const caregiverIdentifiers = getCaregiverIdentifiers(currentProfile, user?.id);
       setCaregiverReminders(
-        allReminders.filter((item) => item.caregiverId === currentProfile.id && elderlyIds.has(item.elderlyId))
+        allReminders.filter((item) => caregiverIdentifiers.includes(item.caregiverId) && elderlyIds.has(item.elderlyId))
       );
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error?.message || 'Unable to load caregiver room context.' });
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to load caregiver room context.' });
     } finally {
       setLoadingContext(false);
     }
@@ -230,8 +237,8 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
       setSelectedReminderLogs(reminderLogs);
       setSelectedInteractions(interactions.filter((item) => item.elderlyId === effectiveSelectedId));
       setSelectedAlerts(alerts.filter((item) => item.elderlyId === effectiveSelectedId));
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error?.message || 'Unable to load selected elderly details.' });
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to load selected elderly details.' });
     } finally {
       setLoadingSelected(false);
     }
@@ -368,7 +375,9 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   };
 
   const handleReminderSubmit = async () => {
-    if (!effectiveSelectedId || !caregiverProfile?.id || !reminderForm.title.trim()) {
+    const effectiveCaregiverId = caregiverProfile?.accountId || (user?.id ? Number(user.id) : undefined) || caregiverProfile?.id;
+
+    if (!effectiveSelectedId || !effectiveCaregiverId || !reminderForm.title.trim()) {
       setMessage({ type: 'error', text: 'Reminder requires elderly, caregiver, and title.' });
       return;
     }
@@ -378,7 +387,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
 
     const payload: ReminderRequest = {
       elderlyId: effectiveSelectedId,
-      caregiverId: caregiverProfile.id,
+      caregiverId: effectiveCaregiverId,
       title: reminderForm.title.trim(),
       reminderType: reminderForm.reminderType,
       scheduleTime: reminderForm.scheduleTime,
@@ -395,10 +404,11 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
 
       setReminderForm(defaultReminderForm);
       setEditingReminderId(null);
+      setIsReminderFormOpen(false);
       await Promise.all([loadContext(), loadSelectedElderly()]);
       setMessage({ type: 'success', text: editingReminderId ? 'Reminder updated successfully.' : 'Reminder created successfully.' });
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error?.message || 'Unable to save reminder.' });
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to save reminder.' });
     } finally {
       setSavingReminder(false);
     }
@@ -406,6 +416,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
 
   const handleReminderEdit = (reminder: ReminderResponse) => {
     setEditingReminderId(reminder.id);
+    setIsReminderFormOpen(true);
     setReminderForm({
       title: reminder.title,
       reminderType: reminder.reminderType,
@@ -415,13 +426,27 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     });
   };
 
+  const handleReminderFormToggle = () => {
+    if (isReminderFormOpen && editingReminderId) {
+      setEditingReminderId(null);
+      setReminderForm(defaultReminderForm);
+    }
+    setIsReminderFormOpen((current) => !current);
+  };
+
+  const closeReminderForm = () => {
+    setEditingReminderId(null);
+    setReminderForm(defaultReminderForm);
+    setIsReminderFormOpen(false);
+  };
+
   const handleReminderDelete = async (reminderId: number) => {
     try {
       await reminderService.delete(reminderId);
       await Promise.all([loadContext(), loadSelectedElderly()]);
       setMessage({ type: 'success', text: 'Reminder deleted.' });
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error?.message || 'Unable to delete reminder.' });
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to delete reminder.' });
     }
   };
 
@@ -438,8 +463,8 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
       });
       await Promise.all([loadContext(), loadSelectedElderly()]);
       setMessage({ type: 'success', text: reminder.active ? 'Reminder marked completed.' : 'Reminder reactivated.' });
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error?.message || 'Unable to update reminder status.' });
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to update reminder status.' });
     }
   };
 
@@ -463,8 +488,8 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
       setInteractionForm({ interactionType: 'qa', userInputText: '', robotResponseText: '', emotionDetected: 'calm' });
       await Promise.all([loadSelectedElderly(), loadRoomDevice()]);
       setMessage({ type: 'success', text: 'Robot interaction saved.' });
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error?.message || 'Unable to send robot interaction.' });
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to send robot interaction.' });
     } finally {
       setSendingInteraction(false);
     }
@@ -489,8 +514,8 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
       });
       await loadPackageExercise();
       setMessage({ type: 'success', text: 'Exercise session created.' });
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error?.message || 'Unable to create exercise session.' });
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to create exercise session.' });
     } finally {
       setRunningExerciseId(null);
     }
@@ -575,49 +600,74 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
 
   const renderReminders = () => (
     <div className="space-y-6">
-      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingReminderId ? 'Edit Reminder' : 'Create Reminder'}</CardTitle>
-            <CardDescription>For selected elderly, use elderly-specific endpoint when opening the reminder list.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-2xl border bg-slate-50 p-4 text-sm">
-              <div className="font-semibold">Caregiver-wide reminder pool</div>
-              <p className="mt-1 text-muted-foreground">Loaded from GET /api/reminders and filtered by caregiverId = {caregiverProfile?.id || 'N/A'}.</p>
-              <div className="mt-3 text-2xl font-bold">{caregiverReminders.length}</div>
+      <Card>
+        <CardContent className="space-y-4 p-5">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[420px]">
+              <HeaderStat icon={<Pill className="h-4 w-4 text-amber-500" />} label="Active" value={reminderGroups.active.length} />
+              <HeaderStat icon={<Clock className="h-4 w-4 text-rose-500" />} label="Missed" value={reminderGroups.missed.length} />
+              <HeaderStat icon={<CheckCircle2 className="h-4 w-4 text-emerald-500" />} label="Completed" value={reminderGroups.completed.length} />
             </div>
-            <FormRow label="Title">
-              <Input value={reminderForm.title} onChange={(event) => setReminderForm((prev) => ({ ...prev, title: event.target.value }))} placeholder="Example: Evening medication" />
-            </FormRow>
-            <div className="grid gap-4 md:grid-cols-2">
-              <FormRow label="Type">
-                <Input value={reminderForm.reminderType} onChange={(event) => setReminderForm((prev) => ({ ...prev, reminderType: event.target.value }))} placeholder="medication" />
-              </FormRow>
-              <FormRow label="Repeat Pattern">
-                <Input value={reminderForm.repeatPattern} onChange={(event) => setReminderForm((prev) => ({ ...prev, repeatPattern: event.target.value }))} placeholder="daily" />
-              </FormRow>
-            </div>
-            <FormRow label="Schedule Time">
-              <Input
-                type="datetime-local"
-                value={toDateTimeLocal(reminderForm.scheduleTime)}
-                onChange={(event) => setReminderForm((prev) => ({ ...prev, scheduleTime: toIsoString(event.target.value) }))}
-              />
-            </FormRow>
             <div className="flex flex-wrap gap-3">
-              <Button onClick={handleReminderSubmit} disabled={savingReminder}>{savingReminder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}{editingReminderId ? 'Save Changes' : 'Create Reminder'}</Button>
-              {editingReminderId ? <Button variant="outline" onClick={() => { setEditingReminderId(null); setReminderForm(defaultReminderForm); }}>Cancel Edit</Button> : null}
+              <Button variant="outline" onClick={handleReminderFormToggle}>
+                <Plus className="mr-2 h-4 w-4" />
+                {isReminderFormOpen ? 'Hide Form' : 'Create Reminder'}
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <div className="space-y-6">
-          <ReminderGroupCard title="Active" items={reminderGroups.active} onEdit={handleReminderEdit} onDelete={handleReminderDelete} onToggle={handleReminderToggle} />
-          <ReminderGroupCard title="Missed" items={reminderGroups.missed} onEdit={handleReminderEdit} onDelete={handleReminderDelete} onToggle={handleReminderToggle} />
-          <ReminderGroupCard title="Completed" items={reminderGroups.completed} onEdit={handleReminderEdit} onDelete={handleReminderDelete} onToggle={handleReminderToggle} />
-        </div>
+          <div className="rounded-2xl border bg-slate-50 p-4 text-sm">
+            <div className="font-semibold">Reminder Workspace</div>
+            <p className="mt-1 text-muted-foreground">
+              Elderly-specific list is loaded in this tab. `Missed` means past due reminders that are still active and need caregiver attention.
+            </p>
+          </div>
+
+          {isReminderFormOpen ? (
+            <div className="rounded-2xl border bg-white p-4">
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <div className="font-semibold text-foreground">{editingReminderId ? 'Edit Reminder' : 'Create Reminder'}</div>
+                  <p className="mt-1 text-sm text-muted-foreground">Add or update a reminder without losing space for the active reminder list.</p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={closeReminderForm}>Close</Button>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2">
+                <FormRow label="Title">
+                  <Input value={reminderForm.title} onChange={(event) => setReminderForm((prev) => ({ ...prev, title: event.target.value }))} placeholder="Example: Evening medication" />
+                </FormRow>
+                <FormRow label="Type">
+                  <Input value={reminderForm.reminderType} onChange={(event) => setReminderForm((prev) => ({ ...prev, reminderType: event.target.value }))} placeholder="medication" />
+                </FormRow>
+                <FormRow label="Repeat Pattern">
+                  <Input value={reminderForm.repeatPattern} onChange={(event) => setReminderForm((prev) => ({ ...prev, repeatPattern: event.target.value }))} placeholder="daily" />
+                </FormRow>
+                <FormRow label="Schedule Time">
+                  <Input
+                    type="datetime-local"
+                    value={toDateTimeLocal(reminderForm.scheduleTime)}
+                    onChange={(event) => setReminderForm((prev) => ({ ...prev, scheduleTime: toIsoString(event.target.value) }))}
+                  />
+                </FormRow>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Button onClick={handleReminderSubmit} disabled={savingReminder}>
+                  {savingReminder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                  {editingReminderId ? 'Save Changes' : 'Create Reminder'}
+                </Button>
+                <Button variant="outline" onClick={closeReminderForm}>Cancel</Button>
+              </div>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 2xl:grid-cols-[1.1fr_0.9fr]">
+        <ReminderGroupCard title="Active" items={reminderGroups.active} onEdit={handleReminderEdit} onDelete={handleReminderDelete} onToggle={handleReminderToggle} />
+        <ReminderGroupCard title="Missed" items={reminderGroups.missed} onEdit={handleReminderEdit} onDelete={handleReminderDelete} onToggle={handleReminderToggle} />
       </div>
+
+      <ReminderGroupCard title="Completed" items={reminderGroups.completed} onEdit={handleReminderEdit} onDelete={handleReminderDelete} onToggle={handleReminderToggle} />
     </div>
   );
 
@@ -857,14 +907,14 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
         </Card>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+      <div className="grid gap-5 xl:grid-cols-[minmax(220px,1fr)_minmax(0,4fr)] 2xl:grid-cols-[240px_minmax(0,4.2fr)]">
         <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
           <Card>
             <CardHeader>
               <CardTitle>Assigned Elderly</CardTitle>
-              <CardDescription>Master list filtered by caregiver room context.</CardDescription>
+              <CardDescription>Compact master list filtered by caregiver room context.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div className="rounded-2xl border bg-slate-50 p-4 text-sm">
                 <div className="font-semibold">Caregiver</div>
                 <p className="mt-1 text-muted-foreground">{loadingContext ? 'Loading...' : caregiverProfile?.name || 'No caregiver profile found'}</p>
@@ -879,34 +929,43 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
               ) : filteredElderlies.length === 0 ? (
                 <EmptyState text="No elderly profiles assigned to this caregiver room yet." />
               ) : (
-                <div className="space-y-2">
-                  {filteredElderlies.map((item) => {
-                    const reminderCount = caregiverReminders.filter((reminder) => reminder.elderlyId === item.id).length;
-                    const isActive = effectiveSelectedId === item.id;
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => navigateToElderly(item.id)}
-                        className={cn(
-                          'w-full rounded-2xl border p-4 text-left transition-colors',
-                          isActive ? 'border-sky-500 bg-sky-50 shadow-sm' : 'hover:bg-slate-50'
-                        )}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="font-semibold">{item.name}</div>
-                            <div className="mt-1 text-xs text-muted-foreground">Elderly ID: {item.id}</div>
+                <div className="max-h-[56vh] overflow-y-auto pr-1">
+                  <div className="space-y-2">
+                    {filteredElderlies.map((item) => {
+                      const reminderCount = caregiverReminders.filter((reminder) => reminder.elderlyId === item.id).length;
+                      const isActive = effectiveSelectedId === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => navigateToElderly(item.id)}
+                          className={cn(
+                            'group w-full rounded-xl border px-3 py-2.5 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400',
+                            isActive
+                              ? 'border-sky-500 bg-sky-50 shadow-sm ring-1 ring-sky-200'
+                              : 'border-slate-200 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50/60 hover:shadow-sm'
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="truncate text-sm font-semibold text-foreground">{item.name}</div>
+                              <div className="mt-1 text-[11px] text-muted-foreground">ID {item.id}</div>
+                            </div>
+                            <ArrowRight
+                              className={cn(
+                                'mt-0.5 h-4 w-4 shrink-0 transition-transform duration-200',
+                                isActive ? 'text-sky-600' : 'text-slate-400 group-hover:translate-x-0.5 group-hover:text-sky-500'
+                              )}
+                            />
                           </div>
-                          <ArrowRight className="h-4 w-4 text-slate-400" />
-                        </div>
-                        <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                          <Badge variant="outline">{reminderCount} reminders</Badge>
-                          <Badge variant="secondary">Room context</Badge>
-                        </div>
-                      </button>
-                    );
-                  })}
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                            <Badge variant="outline" className="px-2 py-0 text-[10px]">{reminderCount} reminders</Badge>
+                            <Badge variant="secondary" className="px-2 py-0 text-[10px]">Room</Badge>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -915,9 +974,9 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
 
         <div className="space-y-6">
           <Card>
-            <CardContent className="space-y-4 p-6">
-              <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                <div className="space-y-3">
+            <CardContent className="space-y-4 p-5 xl:p-6">
+              <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
+                <div className="space-y-2.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline">{selectedProfile ? `Age ${selectedAge ?? 'N/A'}` : 'Select elderly'}</Badge>
                     <Badge variant={selectedAlertCount > 0 ? 'destructive' : 'secondary'}>{selectedAlertCount > 0 ? `${selectedAlertCount} open alerts` : 'No open alerts'}</Badge>
@@ -928,7 +987,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                     <p className="mt-1 text-sm text-muted-foreground">{selectedProfile ? `${selectedProfile.preferredLanguage} • ${selectedProfile.speakingSpeed} speaking speed • caregiver ${caregiverProfile?.name || 'N/A'}` : 'Choose an elderly profile from the left list to begin.'}</p>
                   </div>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-3 2xl:min-w-[360px]">
                   <HeaderStat icon={<HeartPulse className="h-4 w-4 text-rose-500" />} label="Reminders" value={selectedReminders.length} />
                   <HeaderStat icon={<Wifi className="h-4 w-4 text-sky-500" />} label="Robot" value={roomRobot?.robotName || 'N/A'} />
                   <HeaderStat icon={<Settings2 className="h-4 w-4 text-emerald-500" />} label="Logs" value={selectedReminderLogs.length + selectedInteractions.length} />

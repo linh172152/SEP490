@@ -4,19 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useFamilyStore } from '@/store/useFamilyStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription 
-} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Bell, 
   Search, 
-  Filter, 
   RotateCcw, 
   CheckCircle2, 
   Clock, 
@@ -35,12 +27,33 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { formatDate } from '@/lib/utils';
+import type { ReminderResponse } from '@/services/api/types';
+
+const normalizeReminderType = (value: string) => {
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized === 'medicine' || normalized === 'media') {
+    return 'medication';
+  }
+
+  return normalized;
+};
+
+const getReminderTypeLabel = (value: string) => {
+  const normalized = normalizeReminderType(value);
+
+  if (normalized === 'medication') {
+    return 'Medication';
+  }
+
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+};
 
 export default function RemindersPage() {
   const { user } = useAuthStore();
   const { elderlyList, reminders, fetchDashboardData, isLoading, isUsingMock, generateDemoData } = useFamilyStore();
   
-  const [filterType, setFilterType] = useState<string>('ALL');
+  const [filterType, setFilterType] = useState<string>('all');
   const [filterElderly, setFilterElderly] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -51,7 +64,7 @@ export default function RemindersPage() {
   }, [user?.id, fetchDashboardData]);
 
   const filteredReminders = reminders.filter(r => {
-    const matchesType = filterType === 'ALL' || r.reminderType === filterType;
+    const matchesType = filterType === 'all' || normalizeReminderType(r.reminderType) === filterType;
     const matchesElderly = filterElderly === 'ALL' || r.elderlyId.toString() === filterElderly;
     const matchesSearch = r.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          r.elderlyName?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -79,14 +92,14 @@ export default function RemindersPage() {
     })
   };
 
-  const ReminderItem = ({ reminder }: { reminder: any }) => (
+  const ReminderItem = ({ reminder }: { reminder: ReminderResponse }) => (
     <div className="flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-md transition-all group">
       <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${
-        reminder.reminderType === 'MEDICINE' 
+        normalizeReminderType(reminder.reminderType) === 'medication' 
           ? 'bg-rose-50 text-rose-500 dark:bg-rose-900/20' 
           : 'bg-emerald-50 text-emerald-500 dark:bg-emerald-900/20'
       }`}>
-        {reminder.reminderType === 'MEDICINE' ? <HeartPulse className="h-6 w-6" /> : <Activity className="h-6 w-6" />}
+        {normalizeReminderType(reminder.reminderType) === 'medication' ? <HeartPulse className="h-6 w-6" /> : <Activity className="h-6 w-6" />}
       </div>
       
       <div className="flex-1 min-w-0">
@@ -95,9 +108,9 @@ export default function RemindersPage() {
             {reminder.title}
           </h4>
           <Badge variant="outline" className={`text-[10px] uppercase font-bold py-0 h-4 ${
-            reminder.reminderType === 'MEDICINE' ? 'text-rose-500 border-rose-100' : 'text-emerald-500 border-emerald-100'
+            normalizeReminderType(reminder.reminderType) === 'medication' ? 'text-rose-500 border-rose-100' : 'text-emerald-500 border-emerald-100'
           }`}>
-            {reminder.reminderType}
+            {getReminderTypeLabel(reminder.reminderType)}
           </Badge>
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground font-medium">
@@ -173,14 +186,14 @@ export default function RemindersPage() {
               <SelectValue placeholder="All Types" />
            </SelectTrigger>
            <SelectContent>
-              <SelectItem value="ALL">All Types</SelectItem>
-              <SelectItem value="MEDICINE">Medicine Only</SelectItem>
-              <SelectItem value="EXERCISE">Exercise Only</SelectItem>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="medication">Medication Only</SelectItem>
+              <SelectItem value="exercise">Exercise Only</SelectItem>
            </SelectContent>
         </Select>
 
         <div className="flex justify-end gap-2">
-           <Button variant="ghost" size="icon" onClick={() => { setFilterType('ALL'); setFilterElderly('ALL'); setSearchQuery(''); }} className="h-11 w-11 rounded-xl">
+            <Button variant="ghost" size="icon" onClick={() => { setFilterType('all'); setFilterElderly('ALL'); setSearchQuery(''); }} className="h-11 w-11 rounded-xl">
               <RotateCcw className="h-5 w-5 text-muted-foreground" />
            </Button>
            {!isUsingMock && (

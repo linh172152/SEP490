@@ -21,6 +21,16 @@ import type {
   RoomElderlySummary,
 } from '@/services/api/types';
 
+const getCaregiverIdentifiers = (profile: { id?: number | null; accountId?: number | null } | null, userId?: string) => {
+  return Array.from(
+    new Set(
+      [profile?.id, profile?.accountId, userId ? Number(userId) : undefined].filter(
+        (value): value is number => typeof value === 'number' && !Number.isNaN(value)
+      )
+    )
+  );
+};
+
 export default function CaregiverOverviewPage() {
   const user = useAuthStore((state) => state.user);
   const [loading, setLoading] = useState(true);
@@ -59,6 +69,7 @@ export default function CaregiverOverviewPage() {
 
         const elderlies = await roomService.getElderliesByRoom(currentProfile.roomId);
         const elderlyIds = new Set(elderlies.map((item) => item.id));
+        const caregiverIdentifiers = getCaregiverIdentifiers(currentProfile, user?.id);
 
         const [allReminders, allAlerts, roomData] = await Promise.all([
           reminderService.getAll().catch(() => [] as ReminderResponse[]),
@@ -75,7 +86,7 @@ export default function CaregiverOverviewPage() {
         setRoomElderlies(elderlies);
         setReminders(
           allReminders.filter(
-            (item) => item.caregiverId === currentProfile.id && elderlyIds.has(item.elderlyId)
+            (item) => caregiverIdentifiers.includes(item.caregiverId) && elderlyIds.has(item.elderlyId)
           )
         );
         setAlerts(allAlerts.filter((item) => elderlyIds.has(item.elderlyId) && !item.resolved));
@@ -95,8 +106,8 @@ export default function CaregiverOverviewPage() {
         } else {
           setRobotLogs([]);
         }
-      } catch (loadError: any) {
-        setError(loadError?.message || 'Khong the tai caregiver overview tu API.');
+      } catch (loadError: unknown) {
+        setError(loadError instanceof Error ? loadError.message : 'Khong the tai caregiver overview tu API.');
       } finally {
         setLoading(false);
       }

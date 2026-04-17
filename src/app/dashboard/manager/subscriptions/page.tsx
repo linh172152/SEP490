@@ -12,7 +12,8 @@ import { paymentService } from '@/services/api/paymentService';
 import {
   ServicePackageResponse,
   ServicePackageRequest,
-  ExerciseScriptResponse
+  ExerciseScriptResponse,
+  UserPackageResponse
 } from '@/services/api/types';
 import { PackageExerciseSelector } from './PackageExerciseSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,13 +24,19 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
 
-const MOCK_PENDING_PAYMENTS = [
-  { id: 1, description: 'PKG:1|ACC:45|ELD:101', amount: 290000, familyMember: 'Nguyen Tran Gia Hung', package: 'Basic Care', date: 'Just now' },
-  { id: 2, description: 'PKG:3|ACC:45|ELD:102', amount: 990000, familyMember: 'Hoang Le', package: 'Premium Care', date: '12 mins ago' },
-  { id: 3, description: 'PKG:2|ACC:12|ELD:88', amount: 590000, familyMember: 'Tu Nguyen', package: 'Standard Care', date: '1 hour ago' },
-];
+// Removed MOCK_PENDING_PAYMENTS
 
 export default function SubscriptionsUnifiedPage() {
   const { t } = useI18nStore();
@@ -40,6 +47,8 @@ export default function SubscriptionsUnifiedPage() {
   const [loading, setLoading] = useState(true);
   const [packageExercises, setPackageExercises] = useState<ExerciseScriptResponse[]>([]);
   const [exerciseLoading, setExerciseLoading] = useState(false);
+  const [pendingPayments, setPendingPayments] = useState<UserPackageResponse[]>([]);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   // UI State
   const [activeTab, setActiveTab] = useState('definitions');
@@ -55,12 +64,21 @@ export default function SubscriptionsUnifiedPage() {
   const [confirmDescription, setConfirmDescription] = useState('');
   const [confirmAmount, setConfirmAmount] = useState<string>('');
   const [isConfirming, setIsConfirming] = useState(false);
+  const [searchPaymentQuery, setSearchPaymentQuery] = useState('');
+  const [filterPackageLevel, setFilterPackageLevel] = useState('ALL');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   const fetchData = async () => {
     setLoading(true);
+    setPaymentLoading(true);
     try {
-      const pkgs = await servicePackageService.getAll();
+      const [pkgs, pendings] = await Promise.all([
+        servicePackageService.getAll(),
+        paymentService.getManagerPending()
+      ]);
+      
       setPackages(pkgs || []);
+      setPendingPayments(pendings || []);
 
       if (pkgs && pkgs.length > 0 && !selectedPkgId) {
         setSelectedPkgId(pkgs[0].id);
@@ -70,6 +88,7 @@ export default function SubscriptionsUnifiedPage() {
       toast.error(t('common.error'));
     } finally {
       setLoading(false);
+      setPaymentLoading(false);
     }
   };
 
@@ -496,64 +515,142 @@ export default function SubscriptionsUnifiedPage() {
             </div>
 
             <div className="xl:col-span-3 space-y-6">
-              <div className="flex items-center justify-between px-2">
-                 <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
-                    <Clock className="h-6 w-6 text-indigo-600" /> {t('manager.subscriptions.mock_list_title')}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
+                 <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 shrink-0">
+                    <Clock className="h-6 w-6 text-indigo-600" /> {t('manager.subscriptions.pending_list_title')}
                  </h3>
-                 <Button variant="ghost" size="sm" className="rounded-xl text-indigo-600 font-bold gap-2">
-                    <Filter className="h-4 w-4" /> Filter
-                 </Button>
+                 <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-64">
+                      <Input
+                        placeholder={t('common.search', 'Search ID or UP:ID...')}
+                        value={searchPaymentQuery}
+                        onChange={(e) => setSearchPaymentQuery(e.target.value)}
+                        className="h-10 rounded-xl border-slate-200 bg-white pl-9 text-xs font-bold"
+                      />
+                      <Activity className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    </div>
+                    
+                    <DropdownMenu>
+                       <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="rounded-xl text-slate-600 font-bold gap-2 h-10 border-slate-200">
+                             <Filter className="h-4 w-4" /> Filter
+                          </Button>
+                       </DropdownMenuTrigger>
+                       <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
+                          <DropdownMenuLabel className="font-black text-xs text-slate-400 uppercase tracking-widest px-3 pt-3">
+                             {t('common.sort_label', 'Sort By')}
+                          </DropdownMenuLabel>
+                          <DropdownMenuRadioGroup value={sortOrder} onValueChange={(v) => setSortOrder(v as any)}>
+                             <DropdownMenuRadioItem value="newest" className="rounded-xl font-bold">{t('admin.users.filters.sort_newest', 'Newest')}</DropdownMenuRadioItem>
+                             <DropdownMenuRadioItem value="oldest" className="rounded-xl font-bold">{t('admin.users.filters.sort_oldest', 'Oldest')}</DropdownMenuRadioItem>
+                          </DropdownMenuRadioGroup>
+                          
+                          <DropdownMenuSeparator className="my-2" />
+                          
+                          <DropdownMenuLabel className="font-black text-xs text-slate-400 uppercase tracking-widest px-3">
+                             {t('admin.packages.table.level', 'Package Level')}
+                          </DropdownMenuLabel>
+                          <DropdownMenuRadioGroup value={filterPackageLevel} onValueChange={setFilterPackageLevel}>
+                             <DropdownMenuRadioItem value="ALL" className="rounded-xl font-bold">{t('common.all', 'All Levels')}</DropdownMenuRadioItem>
+                             {Array.from(new Set(packages.map(p => p.level))).map(level => (
+                                <DropdownMenuRadioItem key={level} value={level} className="rounded-xl font-bold">
+                                   {level}
+                                </DropdownMenuRadioItem>
+                             ))}
+                          </DropdownMenuRadioGroup>
+                       </DropdownMenuContent>
+                    </DropdownMenu>
+                 </div>
               </div>
-
               <div className="grid gap-4">
-                {MOCK_PENDING_PAYMENTS.map((item) => (
-                  <Card key={item.id} className="border-none shadow-md shadow-slate-200/40 rounded-3xl group hover:shadow-xl hover:shadow-indigo-100/50 transition-all border-l-4 border-amber-400">
-                    <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-                      <div className="flex items-center gap-5 w-full md:w-auto">
-                        <div className="h-14 w-14 bg-amber-50 rounded-2xl flex items-center justify-center shrink-0">
-                           <Activity className="h-7 w-7 text-amber-500" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-black text-slate-800">{item.familyMember}</span>
-                            <Badge variant="outline" className="bg-slate-50 text-slate-500 font-bold text-[10px] rounded-lg">
-                               {item.package}
-                            </Badge>
+                {paymentLoading ? (
+                  <div className="py-20 text-center">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-indigo-600 opacity-20" />
+                    <p className="text-sm text-slate-400 mt-2">{t('common.loading')}</p>
+                  </div>
+                ) : pendingPayments.length === 0 ? (
+                  <div className="bg-white rounded-3xl p-12 text-center border-2 border-dashed border-slate-100">
+                    <CheckCircle2 className="h-12 w-12 text-emerald-200 mx-auto mb-4" />
+                    <h4 className="font-black text-slate-800">{t('manager.subscriptions.no_pending_title', 'All Caught Up!')}</h4>
+                    <p className="text-sm text-slate-400 mt-1">{t('manager.subscriptions.no_pending_desc', 'There are no pending payments to confirm at the moment.')}</p>
+                  </div>
+                ) : (
+                  pendingPayments
+                    .filter(item => {
+                      const description = `UP:${item.id}`.toLowerCase();
+                      const query = searchPaymentQuery.toLowerCase();
+                      const pkg = packages.find(p => p.id === item.servicePackageId);
+                      
+                      const matchesSearch = description.includes(query) || 
+                                          item.elderlyProfileId?.toString().includes(query);
+                      
+                      const matchesLevel = filterPackageLevel === 'ALL' || (pkg && pkg.level === filterPackageLevel);
+                      
+                      return matchesSearch && matchesLevel;
+                    })
+                    .sort((a, b) => {
+                      const dateA = new Date(a.assignedAt || 0).getTime();
+                      const dateB = new Date(b.assignedAt || 0).getTime();
+                      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+                    })
+                    .map((item) => {
+                    const pkg = packages.find(p => p.id === item.servicePackageId);
+                    const description = `UP:${item.id}`;
+                    
+                    return (
+                      <Card key={item.id} className="border-none shadow-md shadow-slate-200/40 rounded-3xl group hover:shadow-xl hover:shadow-indigo-100/50 transition-all border-l-4 border-amber-400">
+                        <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                          <div className="flex items-center gap-5 w-full md:w-auto">
+                            <div className="h-14 w-14 bg-amber-50 rounded-2xl flex items-center justify-center shrink-0">
+                               <Activity className="h-7 w-7 text-amber-500" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-black text-slate-800">
+                                  {t('common.elderly', 'Elderly')} ID: {item.elderlyProfileId || 'N/A'}
+                                </span>
+                                <Badge variant="outline" className="bg-slate-50 text-slate-500 font-bold text-[10px] rounded-lg">
+                                   {pkg?.name || t('common.package', 'Package')}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                 <code className="text-[12px] bg-slate-100 px-2 py-0.5 rounded-lg font-mono text-slate-600 border border-slate-200">
+                                   {description}
+                                 </code>
+                                 <span className="text-[11px] font-bold text-slate-400">
+                                   {item.assignedAt ? new Date(item.assignedAt).toLocaleString() : ''}
+                                 </span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-3">
-                             <code className="text-[12px] bg-slate-100 px-2 py-0.5 rounded-lg font-mono text-slate-600 border border-slate-200">
-                               {item.description}
-                             </code>
-                             <span className="text-[11px] font-bold text-slate-400">{item.date}</span>
-                          </div>
-                        </div>
-                      </div>
 
-                      <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-4 md:pt-0">
-                         <div className="text-right">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount</p>
-                            <p className="text-xl font-black text-emerald-600">{item.amount.toLocaleString()} ₫</p>
-                         </div>
-                         <Button
-                           onClick={() => {
-                             setConfirmDescription(item.description);
-                             setConfirmAmount(item.amount.toString());
-                             toast.info("Data filled!");
-                           }}
-                           className="h-12 w-12 md:w-auto md:px-6 rounded-2xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white font-black transition-all shadow-inner"
-                         >
-                           <ChevronRight className="h-5 w-5 md:mr-1" />
-                           <span className="hidden md:inline">{t('manager.subscriptions.choose_btn')}</span>
-                         </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                          <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-4 md:pt-0">
+                             <div className="text-right">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('manager.subscriptions.amount', 'Amount')}</p>
+                                <p className="text-xl font-black text-emerald-600">{(pkg?.price || 0).toLocaleString()} ₫</p>
+                             </div>
+                             <Button
+                               onClick={() => {
+                                 setConfirmDescription(description);
+                                 setConfirmAmount((pkg?.price || 0).toString());
+                                 toast.info(t('manager.subscriptions.data_filled', 'Data filled!'));
+                               }}
+                               className="h-12 w-12 md:w-auto md:px-6 rounded-2xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white font-black transition-all shadow-inner"
+                             >
+                               <ChevronRight className="h-5 w-5 md:mr-1" />
+                               <span className="hidden md:inline">{t('manager.subscriptions.choose_btn')}</span>
+                             </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
               </div>
 
               <div className="bg-slate-50 rounded-3xl p-8 border border-dashed border-slate-200 text-center">
                  <p className="text-sm text-slate-400 font-medium italic">
-                    Note: The above list is demo data to help you test the operational workflow. In production, you would verify against actual bank statements.
+                    {t('manager.subscriptions.payment_instruction', 'Use the unique UP:ID from the bank transfer description to confirm payments here.')}
                  </p>
               </div>
             </div>

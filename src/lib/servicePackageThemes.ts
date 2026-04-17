@@ -116,6 +116,7 @@ export function getActiveUserPackageForElderly(
   return userPackages
     .filter((item) => item.elderlyProfileId === elderlyId)
     .filter((item) => {
+      if (!item.expiredAt) return true;
       const expiry = Date.parse(item.expiredAt);
       return Number.isNaN(expiry) || expiry >= now;
     })

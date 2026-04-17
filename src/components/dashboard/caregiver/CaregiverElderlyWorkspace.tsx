@@ -867,7 +867,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                           <Badge variant="outline" className="text-[10px] uppercase">{servicePackage?.level || 'Unknown'}</Badge>
                         </div>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          Assigned {new Date(userPackage.assignedAt).toLocaleDateString()} • Expires {new Date(userPackage.expiredAt).toLocaleDateString()}
+                          Assigned {new Date(userPackage.assignedAt).toLocaleDateString()} • {userPackage.status === 'PAID' && userPackage.expiredAt ? `Expires ${new Date(userPackage.expiredAt).toLocaleDateString()}` : `Status: ${userPackage.status || 'PENDING'}`}
                         </p>
                       </div>
                       <Badge variant="secondary" className="w-fit">{exercises.length} exercise{exercises.length === 1 ? '' : 's'}</Badge>

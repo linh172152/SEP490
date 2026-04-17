@@ -236,7 +236,7 @@ export default function CaregiverOverviewPage() {
                           <div className="grid gap-3 sm:grid-cols-2">
                             <div className="flex items-center justify-between gap-3">
                               <span className="flex items-center gap-2 text-muted-foreground"><Package className="h-4 w-4 text-emerald-500" /> Status</span>
-                              <span className="font-semibold text-foreground">{hasPackage ? 'Owned' : 'Unpurchased'}</span>
+                              <span className="font-semibold text-foreground">{hasPackage ? (activeUserPackage?.status === 'PENDING' ? 'Waiting' : 'Owned') : 'Unpurchased'}</span>
                             </div>
                             <div className="flex items-center justify-between gap-3">
                               <span className="text-muted-foreground">Room</span>

@@ -269,8 +269,11 @@ export default function PackagesPage() {
                         {activePackageInfo?.level || `Membership Level ${activePackage.servicePackageId}`} • {effectiveElderlyName || `EL #${selectedElderlyId}`}
                     </CardDescription>
                  </div>
-                 <Badge className="bg-white/20 hover:bg-white/30 text-white border-none px-4 py-1 text-sm font-bold">
-                    ACTIVE
+                 <Badge className={cn(
+                    "border-none px-4 py-1 text-sm font-bold shadow-md",
+                    activePackage.status === 'PAID' ? "bg-emerald-500 text-white" : "bg-amber-500 text-white animate-pulse"
+                  )}>
+                                        {activePackage.status || (activePackage.expiredAt ? 'PAID' : 'PENDING')}
                  </Badge>
               </CardHeader>
               <CardContent className="pt-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -289,13 +292,17 @@ export default function PackagesPage() {
                     </div>
                     <div>
                        <p className="text-[10px] uppercase font-bold text-emerald-100">Expires At</p>
-                       <p className="text-sm font-bold">{new Date(activePackage.expiredAt).toLocaleDateString()}</p>
+                       <p className="text-sm font-bold">
+                         {activePackage.expiredAt ? new Date(activePackage.expiredAt).toLocaleDateString() : 'Waiting for manager confirm'}
+                       </p>
                     </div>
                  </div>
                  <div className="sm:col-span-2 lg:col-span-1 flex items-center gap-4 bg-black/20 p-4 rounded-2xl backdrop-blur-md border border-white/10 shadow-lg">
                     <Info className="h-8 w-8 text-white/80" />
                     <p className="text-xs font-medium leading-relaxed">
-                      EL #{selectedElderlyId} đang gắn với gói này. Sau khi manager xác nhận thanh toán, trạng thái sẽ hiện tại đây.
+                      {activePackage.status === 'PENDING' || !activePackage.expiredAt 
+                        ? "Gói của bạn đang chờ quản lý xác nhận thanh toán. Các tính năng cao cấp sẽ được kích hoạt ngay sau đó."
+                        : "Gói dịch vụ đã được kích hoạt thành công. Người cao tuổi hiện có quyền truy cập vào các bài tập và tính năng của robot."}
                     </p>
                  </div>
               </CardContent>

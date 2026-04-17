@@ -109,6 +109,7 @@ export default function FamilyElderlyDetailPage() {
   const activeOwnedPackages = useMemo(() => {
     const now = Date.now();
     return ownedPackages.filter((item) => {
+      if (!item.expiredAt) return item.status === 'PENDING'; // Keep pending ones
       const expiry = Date.parse(item.expiredAt);
       return Number.isNaN(expiry) || expiry >= now;
     });
@@ -315,7 +316,7 @@ export default function FamilyElderlyDetailPage() {
               </div>
 
               <div className="space-y-3 text-sm">
-                <SummaryRow icon={<Calendar className="h-4 w-4 text-sky-500" />} label="Date of Birth" value={new Date(profile.dateOfBirth).toLocaleDateString()} />
+                <SummaryRow icon={<Calendar className="h-4 w-4 text-sky-500" />} label="Date of Birth" value={profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString() : 'N/A'} />
                 <SummaryRow icon={<Globe className="h-4 w-4 text-emerald-500" />} label="Preferred Language" value={profile.preferredLanguage} />
                 <SummaryRow icon={<Volume2 className="h-4 w-4 text-violet-500" />} label="Speaking Speed" value={profile.speakingSpeed} />
                 <SummaryRow icon={<MapPin className="h-4 w-4 text-amber-500" />} label="Room" value={room?.roomName || (profile.roomId ? `Room ${profile.roomId}` : 'Unassigned')} />
@@ -347,7 +348,7 @@ export default function FamilyElderlyDetailPage() {
                       <Badge variant="outline" className={getServicePackageTheme(catalog, servicePackages).badgeClassName}>{catalog?.level || 'Unknown'}</Badge>
                     </div>
                     <div className="mt-2 text-xs text-muted-foreground">
-                      Elderly #{ownership.elderlyProfileId || profile.id} • Assigned {new Date(ownership.assignedAt).toLocaleDateString()} • Expires {new Date(ownership.expiredAt).toLocaleDateString()}
+                      Elderly #{ownership.elderlyProfileId || profile.id} • Assigned {new Date(ownership.assignedAt).toLocaleDateString()} • {ownership.expiredAt ? `Expires ${new Date(ownership.expiredAt).toLocaleDateString()}` : `Status: ${ownership.status || 'PENDING'}`}
                     </div>
                   </div>
                 ))
@@ -508,7 +509,9 @@ export default function FamilyElderlyDetailPage() {
                           <div className="font-semibold">{pkg.name}</div>
                           <div className="mt-1 text-sm text-muted-foreground">{pkg.description}</div>
                         </div>
-                        <Badge variant={pkg.isOwned ? 'default' : 'secondary'} className={pkg.isOwned ? getServicePackageTheme(pkg, servicePackages).badgeClassName : unpurchasedTheme.badgeClassName}>{pkg.isOwned ? 'Active' : 'Available'}</Badge>
+                        <Badge variant={pkg.isOwned ? 'default' : 'secondary'} className={pkg.isOwned ? getServicePackageTheme(pkg, servicePackages).badgeClassName : unpurchasedTheme.badgeClassName}>
+                          {pkg.isOwned ? (activeOwnedPackages.find(op => op.servicePackageId === pkg.id)?.status === 'PENDING' ? 'Pending' : 'Active') : 'Available'}
+                        </Badge>
                       </div>
                       <div className="mt-3 flex items-center justify-between gap-3 text-sm">
                         <span className="text-muted-foreground">{pkg.level} • {pkg.durationDays || 30} days</span>

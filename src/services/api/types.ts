@@ -59,7 +59,8 @@ export interface UserPackageRequest {
   servicePackageId: number;
   elderlyProfileId?: number;
   assignedAt: string;
-  expiredAt: string;
+  expiredAt?: string | null;
+  status: "PENDING" | "PAID" | string;
 }
 
 export interface UserPackageResponse extends UserPackageRequest {

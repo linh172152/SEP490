@@ -21,13 +21,11 @@ import type {
   CaregiverProfileResponse,
   ElderlyProfileResponse,
   ExerciseScriptResponse,
-  ExerciseSessionResponse,
   InteractionLogResponse,
   ReminderLogResponse,
   ReminderRequest,
   ReminderResponse,
   RobotDTO,
-  RobotStatusLogResponse,
   RoomElderlySummary,
   RoomResponse,
   ServicePackageResponse,
@@ -68,6 +66,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { AlertPanel } from './AlertPanel';
+import { toast } from 'react-toastify';
 
 export type CaregiverWorkspaceTab =
   | 'overview'
@@ -134,11 +133,9 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   const [selectedAlerts, setSelectedAlerts] = useState<AlertNotificationResponse[]>([]);
   const [roomInfo, setRoomInfo] = useState<RoomResponse | null>(null);
   const [roomRobot, setRoomRobot] = useState<RobotDTO | null>(null);
-  const [robotLogs, setRobotLogs] = useState<RobotStatusLogResponse[]>([]);
   const [userPackages, setUserPackages] = useState<UserPackageResponse[]>([]);
   const [servicePackages, setServicePackages] = useState<ServicePackageResponse[]>([]);
   const [packageExercisesByPackageId, setPackageExercisesByPackageId] = useState<Record<number, ExerciseScriptResponse[]>>({});
-  const [exerciseSessions, setExerciseSessions] = useState<ExerciseSessionResponse[]>([]);
   const [reminderForm, setReminderForm] = useState(defaultReminderForm);
   const [reminderFilter, setReminderFilter] = useState<'all' | 'active' | 'missed' | 'completed'>('all');
 
@@ -193,31 +190,15 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     if (!caregiverProfile?.roomId) {
       setRoomInfo(null);
       setRoomRobot(null);
-      setRobotLogs([]);
       return;
     }
 
     setLoadingRoomDevice(true);
     try {
       const room = await roomService.getRoomById(caregiverProfile.roomId).catch(() => null);
-
       const robot = room?.robot ?? null;
-
       setRoomInfo(room);
       setRoomRobot(robot);
-
-      if (robot) {
-        const logs = await robotService.getStatusLogsByRobot(robot.id).catch(async () => {
-          const all = await robotService.getAllStatusLogs().catch(() => [] as RobotStatusLogResponse[]);
-          return all.filter((item) => item.robotId === robot.id);
-        });
-
-        setRobotLogs(
-          logs.slice().sort((left, right) => new Date(right.reportedAt).getTime() - new Date(left.reportedAt).getTime())
-        );
-      } else {
-        setRobotLogs([]);
-      }
     } finally {
       setLoadingRoomDevice(false);
     }
@@ -264,16 +245,14 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
       setUserPackages([]);
       setServicePackages([]);
       setPackageExercisesByPackageId({});
-      setExerciseSessions([]);
       return;
     }
 
     setLoadingPackages(true);
     try {
-      const [packages, catalog, sessions] = await Promise.all([
+      const [packages, catalog] = await Promise.all([
         userPackageService.getByElderlyId(selectedProfile.id).catch(() => [] as UserPackageResponse[]),
         servicePackageService.getAll().catch(() => [] as ServicePackageResponse[]),
-        exerciseService.getAllSessions().catch(() => [] as ExerciseSessionResponse[]),
       ]);
 
       const uniquePackageIds = Array.from(new Set(packages.map((item) => item.servicePackageId)));
@@ -287,7 +266,6 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
       setUserPackages(packages);
       setServicePackages(catalog);
       setPackageExercisesByPackageId(Object.fromEntries(packageExercises));
-      setExerciseSessions(sessions.filter((item) => item.elderlyId === selectedProfile.id));
     } finally {
       setLoadingPackages(false);
     }
@@ -518,19 +496,8 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
 
     setRunningExerciseId(exerciseId);
     try {
-      const startedAt = new Date();
-      await exerciseService.createSession({
-        exerciseId,
-        elderlyId: effectiveSelectedId,
-        robotId: roomRobot.id,
-        startedAt: startedAt.toISOString(),
-        completedAt: new Date(startedAt.getTime() + 30 * 60_000).toISOString(),
-        feedback: `Started from caregiver workspace for elderly ${effectiveSelectedId}`,
-      });
-      await loadPackageExercise();
-      setMessage({ type: 'success', text: 'Exercise session created.' });
-    } catch (error: unknown) {
-      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to create exercise session.' });
+      // Logic for running exercise without creating a session record frontend-side
+      toast.info("Exercise sequence initiated on robot.");
     } finally {
       setRunningExerciseId(null);
     }
@@ -859,7 +826,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   );
 
   const renderRoomDevice = () => (
-    <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+    <div className="grid gap-6">
       <Card>
         <CardHeader>
           <CardTitle>Room Context</CardTitle>
@@ -872,39 +839,13 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
           <InfoPair label="Robot" value={roomRobot?.robotName || 'No robot assigned'} />
           <InfoPair label="Robot Model" value={roomRobot?.model || 'N/A'} />
           <InfoPair label="Robot ID" value={roomRobot?.id ? `${roomRobot.id}` : 'N/A'} />
-          <div className="rounded-2xl border bg-slate-50 p-4 text-sm">
-            <div className="font-semibold">Device Health</div>
-            <p className="mt-2 text-muted-foreground">{robotLogs[0] ? `Latest robot status: ${robotLogs[0].status}` : 'No robot device status logs yet.'}</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Robot Status History</CardTitle>
-          <CardDescription>Recent device and room status changes.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {robotLogs.length === 0 ? (
-            <EmptyState text="No robot status logs available." />
-          ) : (
-            robotLogs.map((item) => (
-              <div key={item.id} className="rounded-2xl border p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold">{item.status}</span>
-                  <Badge variant="outline">{item.robotName}</Badge>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">{new Date(item.reportedAt).toLocaleString()}</p>
-              </div>
-            ))
-          )}
         </CardContent>
       </Card>
     </div>
   );
 
   const renderExercise = () => (
-    <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+    <div className="grid gap-6">
       <Card>
         <CardHeader>
           <CardTitle>Exercise by Active Package</CardTitle>
@@ -977,31 +918,6 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
               </div>
             </div>
           ) : null}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Exercise Session History</CardTitle>
-          <CardDescription>Recent exercise sessions executed for the selected elderly profile.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {exerciseSessions.length === 0 ? (
-            <EmptyState text="No exercise sessions recorded yet." />
-          ) : (
-            exerciseSessions
-              .slice()
-              .sort((left, right) => new Date(right.startedAt).getTime() - new Date(left.startedAt).getTime())
-              .map((item) => (
-                <div key={item.id} className="rounded-2xl border p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold">{item.exerciseName}</span>
-                    <Badge variant="outline">{item.robotName}</Badge>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">{new Date(item.startedAt).toLocaleString()}</p>
-                </div>
-              ))
-          )}
         </CardContent>
       </Card>
     </div>

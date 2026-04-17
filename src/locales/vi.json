@@ -1,4 +1,11 @@
 {
+  "api": {
+    "errors": {
+      "duplicate_email": "Email này đã được sử dụng trong hệ thống. Vui lòng sử dụng email khác.",
+      "duplicate_phone": "Số điện thoại này đã được sử dụng trong hệ thống. Vui lòng sử dụng số khác.",
+      "duplicate_generic": "Thông tin này đã tồn tại trong hệ thống. Vui lòng kiểm tra lại."
+    }
+  },
   "common": {
     "save": "Lưu Thay Đổi",
     "cancel": "Hủy",

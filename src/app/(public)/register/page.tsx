@@ -80,8 +80,8 @@ export default function RegisterPage() {
       setRegisteredEmail(values.email);
       setShowOtpDialog(true);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t('auth.register.error_toast', 'Account creation failed.');
-      toast.error(errorMessage);
+      const errorMessage = err instanceof Error ? err.message : 'auth.register.error_toast';
+      toast.error(t(errorMessage));
     } finally {
       setIsLoading(false);
     }

@@ -94,7 +94,7 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
                 router.push(`/verify-otp?email=${values.email}`);
             }, 2500);
         } else {
-            toast.error(message || t('auth.login.error_generic'));
+            toast.error(t(message || 'auth.login.error_generic'));
         }
     } finally {
       setIsLoading(false);

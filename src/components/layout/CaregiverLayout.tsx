@@ -8,13 +8,12 @@ import { Topbar } from './Topbar';
 import { socketService } from '@/services/socket';
 import { useAlertSimulation } from '@/hooks/useAlertSimulation';
 import { cn } from '@/lib/utils';
-import { useIsMounted } from '@/hooks/useIsMounted';
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
+export function CaregiverLayout({ children }: { children: React.ReactNode }) {
   const currentUser = useAuthStore((state) => state.user);
   const router = useRouter();
   const pathname = usePathname();
-  const isMounted = useIsMounted();
+  const [isMounted, setIsMounted] = useState(false);
   
   // Sidebar states
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -24,11 +23,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   useAlertSimulation();
 
   useEffect(() => {
+    setIsMounted(true);
     // Initialize collapsed state from local storage if needed
     const saved = localStorage.getItem('sidebar_collapsed');
-    if (saved === 'true') {
-      requestAnimationFrame(() => setIsCollapsed(true));
-    }
+    if (saved === 'true') setIsCollapsed(true);
   }, []);
 
   useEffect(() => {
@@ -86,7 +84,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         "p-4 pt-20 transition-all duration-300 ease-in-out",
         isCollapsed ? "sm:ml-20" : "sm:ml-72"
       )}>
-        <main className="mx-auto max-w-7xl">
+        <main className="mx-auto w-full max-w-[1700px]">
           {children}
         </main>
       </div>

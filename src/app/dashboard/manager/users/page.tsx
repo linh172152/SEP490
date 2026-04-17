@@ -166,12 +166,12 @@ export default function UserManagementPage() {
 
   // -- Filtering & Sorting --
   const caregivers = useMemo(() => accounts.filter(u => {
-    const r = (typeof u.role === 'string' ? u.role : (u as any).Role?.name || u.role?.name || "").toUpperCase();
+    const r = (u.role || "").toUpperCase();
     return r.includes("CAREGIVER");
   }), [accounts]);
 
   const families = useMemo(() => accounts.filter(u => {
-    const r = (typeof u.role === 'string' ? u.role : (u as any).Role?.name || u.role?.name || "").toUpperCase();
+    const r = (u.role || "").toUpperCase();
     return r.includes("FAMILYMEMBER");
   }), [accounts]);
 
@@ -226,7 +226,7 @@ export default function UserManagementPage() {
 
   // -- Helpers --
   const getRoleBadge = (role: any) => {
-    const roleStr = (typeof role === 'string' ? role : role?.name || "").toUpperCase();
+    const roleStr = (typeof role === 'string' ? role : "").toUpperCase();
     if (roleStr.includes("CAREGIVER")) return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/20">{t('common.roles.CAREGIVER')}</Badge>;
     if (roleStr.includes("FAMILY")) return <Badge className="bg-purple-500/15 text-purple-600 border-purple-500/20">{t('common.roles.FAMILYMEMBER')}</Badge>;
     return <Badge variant="outline">{t('common.roles.ELDERLYUSER')}</Badge>;

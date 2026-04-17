@@ -50,7 +50,7 @@ class RobotService {
   /**
    * Fetch Rooms (Mocked until BE creates Room entity)
    */
-  async getRooms(): Promise<any[]> {
+  async getRooms(): Promise<Record<string, unknown>[]> {
     await new Promise(resolve => setTimeout(resolve, 500));
     return [
       { id: 101, name: "Room 101 (Geriatrics)", elderlyCount: 3, floor: 1 },

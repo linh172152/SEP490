@@ -6,8 +6,8 @@ import { SettingsData } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Globe, Moon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Moon, Globe } from 'lucide-react';
+import { useIsMounted } from '@/hooks/useIsMounted';
 
 interface PreferenceSectionProps {
   settings: SettingsData;
@@ -18,12 +18,7 @@ interface PreferenceSectionProps {
 export function PreferenceSection({ isSaving }: PreferenceSectionProps) {
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, t } = useI18nStore();
-  const [mounted, setMounted] = useState(false);
-
-  // Prevent hydration mismatch on theme
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsMounted();
 
   if (!mounted) return null;
 

@@ -44,7 +44,7 @@ export class SettingsService {
     async updateProfile(userId: string | number, data: Partial<SettingsData['profile']>): Promise<void> {
         const id = typeof userId === 'string' ? parseInt(userId, 10) : userId;
 
-        const updatePayload: any = {
+        const updatePayload: Record<string, unknown> = {
             deleted: false // Mandatory for backend unboxing
         };
         if (data.fullName) updatePayload.name = data.fullName;

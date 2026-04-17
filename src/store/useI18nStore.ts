@@ -10,9 +10,13 @@ interface I18nState {
   t: (key: string, secondArg?: Record<string, string | number> | string) => string;
 }
 
-const dictionaries: Record<Language, any> = {
-  en,
-  vi,
+type I18nDictionary = {
+  [key: string]: string | I18nDictionary;
+};
+
+const dictionaries: Record<Language, I18nDictionary> = {
+  en: en as I18nDictionary,
+  vi: vi as I18nDictionary,
 };
 
 export const useI18nStore = create<I18nState>((set, get) => ({
@@ -29,18 +33,18 @@ export const useI18nStore = create<I18nState>((set, get) => ({
     const fallback = typeof secondArg === 'string' ? secondArg : undefined;
 
     const keys = key.split('.');
-    let value = dictionaries[get().language];
+    let value: any = dictionaries[get().language];
     
     for (const k of keys) {
-      if (value === undefined) break;
+      if (value === undefined || typeof value === 'string') break;
       value = value[k];
     }
     
     // Fallback to English if key missing in current language
     if (value === undefined && get().language !== 'en') {
-      let fallbackDictValue = dictionaries['en'];
+      let fallbackDictValue: any = dictionaries['en'];
       for (const k of keys) {
-        if (fallbackDictValue === undefined) break;
+        if (fallbackDictValue === undefined || typeof fallbackDictValue === 'string') break;
         fallbackDictValue = fallbackDictValue[k];
       }
       value = fallbackDictValue;

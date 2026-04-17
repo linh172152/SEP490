@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,6 @@ import {
   Users, 
   Loader2, 
   MoreHorizontal, 
-  Pencil, 
   Trash2, 
   Search, 
   ChevronLeft, 
@@ -47,7 +46,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 
@@ -83,23 +81,23 @@ export default function UsersManagePage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<"SOFT_DELETE" | "RESTORE" | "BLOCK" | null>(null);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response: any = await accountService.getAccounts();
-      const accounts = Array.isArray(response) ? response : (response?.data || []);
+      const response = await accountService.getAccounts();
+      const accounts = response;
       setUsers(accounts);
-    } catch (error: any) {
-      toast.error(error.message || t("admin.users.toasts.fetch_error"));
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : t("admin.users.toasts.fetch_error"));
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     fetchUsers();
     loadBackup();
-  }, []);
+  }, [fetchUsers]);
 
   // -- Backup Logic --
   const loadBackup = () => {
@@ -124,21 +122,24 @@ export default function UsersManagePage() {
 
   const handleRestoreBackup = async (record: BackupRecord) => {
     try {
-      await accountService.updateAccount(record.account.id, { deleted: false } as any);
+      await accountService.updateAccount(record.account.id, { deleted: false });
       toast.success(t("admin.users.toasts.update_success"));
       const updated = backupList.filter(r => r.account.id !== record.account.id);
       setBackupList(updated);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       fetchUsers();
-    } catch (error: any) {
-      if (error.status === 403 || error.status === 501 || error.status === 400) {
-        toast.info(t("admin.robots.backup.info"));
-        const updated = backupList.filter(r => r.account.id !== record.account.id);
-        setBackupList(updated);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } else {
-        toast.error(t("admin.robots.backup.error"));
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'status' in error) {
+        const err = error as { status: number };
+        if (err.status === 403 || err.status === 501 || err.status === 400) {
+          toast.info(t("admin.robots.backup.info"));
+          const updated = backupList.filter(r => r.account.id !== record.account.id);
+          setBackupList(updated);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+          return;
+        }
       }
+      toast.error(t("admin.robots.backup.error"));
     }
   };
 
@@ -196,8 +197,8 @@ export default function UsersManagePage() {
       }
       setIsFormOpen(false);
       fetchUsers();
-    } catch (error: any) {
-      toast.error(error.message || t("admin.users.toasts.error_generic"));
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : t("admin.users.toasts.error_generic"));
     } finally {
       setIsSubmitting(false);
     }
@@ -221,8 +222,8 @@ export default function UsersManagePage() {
       }
       setIsConfirmOpen(false);
       fetchUsers();
-    } catch (error: any) {
-      toast.error(error.message || t("admin.users.toasts.error_generic"));
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : t("admin.users.toasts.error_generic"));
     } finally {
       setIsSubmitting(false);
     }
@@ -382,7 +383,7 @@ export default function UsersManagePage() {
                         </div>
                       </TableCell>
                       <TableCell className="py-4">
-                        {getStatusDisplay(user.deleted !== undefined ? user.deleted : (user as any).deleted)}
+                        {getStatusDisplay(user.deleted)}
                       </TableCell>
                       <TableCell className="py-4 pr-6 text-right">
                         <DropdownMenu>
@@ -394,7 +395,7 @@ export default function UsersManagePage() {
                           <DropdownMenuContent align="end" className="w-48 p-1">
                             <DropdownMenuLabel className="px-3 py-2 text-xs font-semibold uppercase opacity-50">{t("common.actions")}</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            {!(user.deleted !== undefined ? user.deleted : (user as any).deleted) && (
+                            {!user.deleted && (
                               <DropdownMenuItem 
                                 className="rounded-md px-3 py-2 gap-2 text-red-600 focus:text-red-700 focus:bg-red-50 dark:focus:bg-red-900/20" 
                                 onClick={() => confirmSoftDelete(user)}

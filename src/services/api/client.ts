@@ -117,8 +117,8 @@ export class ApiClient {
       else message = "Không thể kết nối tới Server (Network Error/CORS). Vui lòng kiểm tra lại mạng hoặc liên hệ team BE.";
     } else if (typeof errorData === "string" && errorData.length > 0) {
       message = errorData;
-    } else if (errorData && typeof errorData === "object" && "message" in (errorData as any)) {
-      message = (errorData as any).message;
+    } else if (errorData && typeof errorData === "object" && "message" in (errorData as Record<string, unknown>)) {
+      message = (errorData as Record<string, unknown>).message as string;
     } else if (error.message) {
       message = error.message;
     }

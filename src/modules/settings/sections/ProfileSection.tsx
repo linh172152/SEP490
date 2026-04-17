@@ -96,8 +96,8 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
       healthNotes: '',
       preferredLanguage: 'Vietnamese',
       speakingSpeed: 'normal',
-      professionalId: (settings.profile as any).professionalId || '',
-      department: (settings.profile as any).department || '',
+      professionalId: (settings.profile as Record<string, unknown>).professionalId as string || '',
+      department: (settings.profile as Record<string, unknown>).department as string || '',
     },
   });
 
@@ -127,7 +127,7 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
         avatar: avatarPreview,
         professionalId: data.professionalId,
         department: data.department
-      } as any);
+      } as Partial<SettingsData['profile']>);
       
       const accountId = Number(user?.id);
 
@@ -165,7 +165,7 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
 
       toast.success('All profile details updated successfully!');
       form.reset(data);
-    } catch (error) {
+    } catch {
        toast.error('Failed to update one or more profile sections.');
     }
   }

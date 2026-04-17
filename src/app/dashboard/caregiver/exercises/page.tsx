@@ -41,8 +41,9 @@ export default function CaregiverExerciseScriptsPage() {
     );
   }, [search, scripts]);
 
-  const getDifficultyBadge = (level: string) => {
-    const value = level?.toUpperCase();
+  const getDifficultyBadge = (level?: string) => {
+    if (!level) return <Badge variant="outline">N/A</Badge>;
+    const value = level.toUpperCase();
     if (value === 'EASY') return <Badge className="bg-emerald-100 text-emerald-700">Easy</Badge>;
     if (value === 'MEDIUM') return <Badge className="bg-sky-100 text-sky-700">Medium</Badge>;
     if (value === 'HARD') return <Badge className="bg-rose-100 text-rose-700">Hard</Badge>;

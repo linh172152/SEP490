@@ -4,6 +4,7 @@ import {
   RegisterRequest,
   AccountResponse,
   VerifyOtpRequest,
+  ChangePasswordRequest,
 } from "./types";
 
 class AuthService {
@@ -26,7 +27,7 @@ class AuthService {
     return apiClient.put<AccountResponse>("/api/profile", data);
   }
 
-  async changePassword(data: any): Promise<void> {
+  async changePassword(data: ChangePasswordRequest): Promise<void> {
     return apiClient.post<void>("/api/auth/change-password", data);
   }
 

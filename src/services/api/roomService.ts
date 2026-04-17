@@ -3,7 +3,6 @@ import {
   RoomRequest,
   RoomResponse,
   CaregiverDTO,
-  ElderlyDTO,
   RoomElderlySummary,
 } from './types';
 

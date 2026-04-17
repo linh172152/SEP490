@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/select";
 import { robotService } from '@/services/api/robotService';
 import { roomService } from '@/services/api/roomService';
-import { RobotResponse, RoomResponse } from '@/services/api/types';
+import { RobotResponse, RoomResponse, RobotRequest } from '@/services/api/types';
 import { useI18nStore } from '@/store/useI18nStore';
 import { toast } from 'react-toastify';
 import {
@@ -105,7 +105,7 @@ export default function AdminFleetPage() {
         }
       });
       setRoomMap(mapping);
-    } catch (e) {
+    } catch {
       toast.error(t('admin.fleet.toasts.connect_error'));
     } finally {
       setLoading(false);
@@ -136,15 +136,15 @@ export default function AdminFleetPage() {
     e.preventDefault();
     try {
       if (formDialog.mode === 'add') {
-        await robotService.create(formData as any);
+        await robotService.create(formData as RobotRequest);
       } else if (formDialog.robot) {
-        await robotService.update(formDialog.robot.id, formData as any);
+        await robotService.update(formDialog.robot.id, formData as RobotRequest);
       }
       setFormDialog(prev => ({ ...prev, open: false }));
       fetchRobots();
       toast.success(formDialog.mode === 'add' ? t('admin.fleet.toasts.register_success') : t('admin.fleet.toasts.update_success'));
-    } catch (e: any) {
-      toast.error(e.message || t('admin.fleet.ota.error'));
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : t('admin.fleet.ota.error'));
     }
   };
 
@@ -175,7 +175,7 @@ export default function AdminFleetPage() {
       await robotService.delete(id);
       fetchRobots();
       toast.success(t('admin.fleet.toasts.delete_success'));
-    } catch (e) {
+    } catch {
       toast.error(t('admin.fleet.toasts.delete_error'));
     }
   };
@@ -200,7 +200,7 @@ export default function AdminFleetPage() {
       if (sortBy === 'NEWEST') return b.id - a.id;
       return a.id - b.id;
     });
-  }, [robots, searchQuery, statusFilter, sortBy]);
+  }, [robots, searchQuery, statusFilter, sortBy, roomMap]);
 
   const uniqueStatuses = useMemo(() => {
     const statuses = new Set(robots.map(r => normalizeRobotStatus(r.status)));
@@ -259,7 +259,7 @@ export default function AdminFleetPage() {
             <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground whitespace-nowrap">
               {t('admin.fleet.sort_date') || 'Sort'}:
             </div>
-            <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+            <Select value={sortBy} onValueChange={(v: 'NEWEST' | 'OLDEST') => setSortBy(v)}>
               <SelectTrigger className="w-full md:w-[180px] bg-background border-slate-200 rounded-xl font-medium">
                 <SelectValue placeholder="Sort order" />
               </SelectTrigger>

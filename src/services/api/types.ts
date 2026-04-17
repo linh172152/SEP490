@@ -211,7 +211,7 @@ export interface ExerciseScriptRequest {
   name: string;
   description: string;
   durationMinutes: number;
-  level: string;
+  level?: string;
   uploadScript: string;
 }
 
@@ -272,8 +272,14 @@ export interface AccountResponse {
   message?: string;
   verified?: string;
   createdAt: string;
-  role?: unknown;
+  role?: string;
   roomId?: number;
+}
+
+export interface ChangePasswordRequest {
+  oldPassword?: string;
+  newPassword?: string;
+  confirmPassword?: string;
 }
 
 // Alert Notification Types
@@ -333,12 +339,14 @@ export interface RobotDTO {
   robotName: string;
   model: string;
   serialNumber: string;
+  status: string;
 }
 
 export interface RoomResponse {
   id: number;
   roomName: string;
   managerId: number;
+  managerName?: string;
   caregivers: CaregiverDTO[];
   elderlies: ElderlyDTO[];
   robot: RobotDTO | null;

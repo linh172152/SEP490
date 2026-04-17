@@ -370,7 +370,7 @@ export default function FamilyElderlyDetailPage() {
                       <div className="min-w-0 flex-1">
                         <div className="font-semibold text-slate-900 line-clamp-1">{script.name}</div>
                         <div className="mt-1 flex items-center gap-2 text-[10px] uppercase tracking-wider text-slate-500">
-                          <span>{script.difficultyLevel || 'BEGINNER'}</span>
+                          <span>{script.level || 'BEGINNER'}</span>
                           <span>•</span>
                           <span>{script.durationMinutes || 0} MINS</span>
                         </div>

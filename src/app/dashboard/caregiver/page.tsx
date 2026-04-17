@@ -26,6 +26,7 @@ import type {
   ServicePackageResponse,
   UserPackageResponse,
 } from '@/services/api/types';
+import { useIsMounted } from '@/hooks/useIsMounted';
 
 const getCaregiverIdentifiers = (profile: { id?: number | null; accountId?: number | null } | null, userId?: string) => {
   return Array.from(
@@ -49,6 +50,7 @@ export default function CaregiverOverviewPage() {
   const [robotLogs, setRobotLogs] = useState<RobotStatusLogResponse[]>([]);
   const [userPackages, setUserPackages] = useState<UserPackageResponse[]>([]);
   const [servicePackages, setServicePackages] = useState<ServicePackageResponse[]>([]);
+  const isMounted = useIsMounted();
 
   useEffect(() => {
     const loadOverview = async () => {
@@ -132,6 +134,8 @@ export default function CaregiverOverviewPage() {
   const unpurchasedTheme = getUnpurchasedPackageTheme();
 
   const latestRobotLog = robotLogs[0] ?? null;
+
+  if (!isMounted) return null;
 
   if (loading) {
     return (

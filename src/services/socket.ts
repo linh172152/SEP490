@@ -5,7 +5,7 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000'
 
 class SocketService {
     private socket: Socket | null = null;
-    private listeners: Map<string, Function[]> = new Map();
+    private listeners: Map<string, ((...args: unknown[]) => void)[]> = new Map();
 
     connect() {
         if (!this.socket) {
@@ -43,14 +43,14 @@ class SocketService {
         }
     }
 
-    on(event: string, callback: Function) {
+    on(event: string, callback: (...args: unknown[]) => void) {
         if (!this.listeners.has(event)) {
             this.listeners.set(event, []);
         }
         this.listeners.get(event)?.push(callback);
     }
 
-    off(event: string, callback: Function) {
+    off(event: string, callback: (...args: unknown[]) => void) {
         const eventListeners = this.listeners.get(event);
         if (eventListeners) {
             this.listeners.set(
@@ -60,7 +60,7 @@ class SocketService {
         }
     }
 
-    emit(event: string, data: any) {
+    emit(event: string, data: unknown) {
         if (this.socket) {
             this.socket.emit(event, data);
         } else {

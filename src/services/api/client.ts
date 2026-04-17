@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from "axios";
+import { mapBackendErrorToKey } from "./errorMapper";
 
 const API_BASE_URL = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_API_BASE_URL || "https://sep490-be-3.onrender.com");
 // Log only on server or in dev mode to avoid cluttering production console too much
@@ -116,9 +117,13 @@ export class ApiClient {
       if (error.code === 'ECONNABORTED') message = "Kết nối quá hạn (Timeout). Máy chủ có thể đang bị quá tải.";
       else message = "Không thể kết nối tới Server (Network Error/CORS). Vui lòng kiểm tra lại mạng hoặc liên hệ team BE.";
     } else if (typeof errorData === "string" && errorData.length > 0) {
-      message = errorData;
+      // Try to map technical string to friendly key
+      const mappedKey = mapBackendErrorToKey(errorData);
+      message = mappedKey || errorData;
     } else if (errorData && typeof errorData === "object" && "message" in (errorData as Record<string, unknown>)) {
-      message = (errorData as Record<string, unknown>).message as string;
+      const backendMsg = (errorData as Record<string, unknown>).message as string;
+      const mappedKey = mapBackendErrorToKey(backendMsg);
+      message = mappedKey || backendMsg;
     } else if (error.message) {
       message = error.message;
     }

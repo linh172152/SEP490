@@ -91,7 +91,7 @@ function VerifyOtpContent() {
             ? String((error as { message?: unknown }).message || '')
             : undefined;
 
-      toast.error(message || t('auth.verify_otp.error_generic'));
+      toast.error(t(message || 'auth.verify_otp.error_generic'));
     } finally {
       setIsLoading(false);
     }

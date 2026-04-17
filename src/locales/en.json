@@ -1,4 +1,11 @@
 {
+  "api": {
+    "errors": {
+      "duplicate_email": "This email is already registered. Please use a different one.",
+      "duplicate_phone": "This phone number is already registered. Please use a different one.",
+      "duplicate_generic": "This record already exists in our system. Please check your data."
+    }
+  },
   "common": {
     "save": "Save Changes",
     "cancel": "Cancel",

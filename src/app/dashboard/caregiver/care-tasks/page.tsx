@@ -105,6 +105,9 @@ export default function CaregiverCareTasksPage() {
         setElderlies(loadedElderlies);
       }
 
+      const elderlyIds = new Set(elderlyData.map((item) => item.id));
+      const caregiverIdentifiers = getCaregiverIdentifiers(currentProfile, user?.id);
+
       // Try to get specific reminders for this caregiver to avoid 400 Access Denied on global endpoint
       let relevantReminders: ReminderResponse[] = [];
       if (currentProfile?.id) {

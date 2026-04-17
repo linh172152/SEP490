@@ -491,7 +491,10 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     }
   };
 
-  const handleResolveAlert = async (alert: AlertNotificationResponse) => {
+  const handleResolveAlert = async (alertId: number) => {
+    const alert = selectedAlerts.find(a => a.id === alertId);
+    if (!alert) return;
+
     try {
       await alertService.update(alert.id, {
         elderlyId: alert.elderlyId,

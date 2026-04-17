@@ -195,7 +195,7 @@ export default function FamilyElderlyExercisesPage() {
                                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                         <span>{exercise.durationMinutes} min</span>
                                         <span>•</span>
-                                        <span>{exercise.difficultyLevel || exercise.level || 'Unknown level'}</span>
+                                        <span>{exercise.level || 'Unknown level'}</span>
                                       </div>
                                     </div>
                                   </div>

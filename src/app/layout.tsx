@@ -48,8 +48,6 @@ export default function RootLayout({
             draggable
             pauseOnHover
             theme="light"
-            toastClassName="premium-toast"
-            bodyClassName="premium-toast-body"
           />
         </ThemeProvider>
       </body>

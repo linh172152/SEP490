@@ -152,6 +152,25 @@ export default function UserManagementPage() {
     }
   };
 
+  const handlePermanentDelete = async (record: BackupRecord) => {
+    if (!window.confirm(t('common.confirm_permanent_delete') || "Are you sure you want to permanently delete this account? This action cannot be undone.")) return;
+    
+    try {
+      setLoading(true);
+      await accountService.deleteAccount(record.account.id);
+      toast.success(t("common.delete_success"));
+      
+      const updated = backupList.filter(r => r.account.id !== record.account.id);
+      setBackupList(updated);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      fetchData();
+    } catch (error: any) {
+      toast.error(t("common.error"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDelete = async (account: AccountResponse) => {
      if (!confirm(t('confirm_delete') || "Are you sure?")) return;
      try {
@@ -449,19 +468,31 @@ export default function UserManagementPage() {
                    {backupList.map((record) => (
                      <div key={record.account.id} className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100 group transition-all hover:border-primary/20">
                         <div className="flex flex-col">
-                           <span className="font-bold text-slate-900">{record.account.fullName || record.account.FullName}</span>
-                           <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">
+                           <span className="font-bold text-slate-900 leading-tight">{record.account.fullName || record.account.FullName}</span>
+                           <span className="text-[11px] text-slate-500 font-medium mb-1">{record.account.email}</span>
+                           <span className="text-[9px] text-muted-foreground uppercase font-black tracking-widest flex items-center gap-1.5">
+                              <div className="h-1 w-1 rounded-full bg-slate-300" />
                               Deleted at: {new Date(record.deletedAt).toLocaleTimeString()}
                            </span>
                         </div>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="font-bold rounded-lg border-primary/20 text-primary hover:bg-primary hover:text-white"
-                          onClick={() => handleRestore(record)}
-                        >
-                          Restore
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="font-bold rounded-lg border-primary/20 text-primary hover:bg-primary hover:text-white"
+                            onClick={() => handleRestore(record)}
+                          >
+                            Restore
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-9 w-9 p-0 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                            onClick={() => handlePermanentDelete(record)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                      </div>
                    ))}
                  </div>

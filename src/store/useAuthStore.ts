@@ -39,7 +39,7 @@ export const useAuthStore = create<AuthState>()(
                     authService.setToken(token);
 
                     // Trích xuất Role từ Backend (Enum: ADMINISTRATOR, FAMILYMEMBER, v.v.)
-                    const rawRole = loginResponse.role || (loginResponse as any).Role || "";
+                    const rawRole = loginResponse.role || (loginResponse as { Role?: any }).Role || "";
                     let roleStr = typeof rawRole === 'string' ? rawRole : (rawRole?.name || String(rawRole));
                     roleStr = roleStr.replace(/^ROLE_/i, '');
                     let roleLower = roleStr.toLowerCase().trim();
@@ -150,7 +150,7 @@ export const useAuthStore = create<AuthState>()(
                         authService.setToken(token);
 
                         // Đồng bộ logic xử lý role giống hệt hàm login
-                        const rawRole = response.role || (response as any).Role || "";
+                        const rawRole = response.role || (response as { Role?: any }).Role || "";
                         let roleStr = typeof rawRole === 'string' ? rawRole : (rawRole?.name || String(rawRole));
                         roleStr = roleStr.replace(/^ROLE_/i, '');
                         const roleLower = roleStr.toLowerCase().trim();

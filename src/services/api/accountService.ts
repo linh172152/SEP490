@@ -46,7 +46,7 @@ export const accountService = {
     };
 
     // Only send fields that are not undefined (except deleted which is now guaranteed)
-    const cleanPayload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v !== undefined));
+    const cleanPayload = Object.fromEntries(Object.entries(payload).filter(([, v]) => v !== undefined));
 
     return apiClient.put<AccountResponse>(`/api/${id}`, cleanPayload);
   },

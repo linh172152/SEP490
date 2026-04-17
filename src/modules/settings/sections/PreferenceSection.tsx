@@ -3,7 +3,7 @@
 import { useTheme } from 'next-themes';
 import { useI18nStore } from '@/store/useI18nStore';
 import { SettingsData } from '../types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Moon, Globe } from 'lucide-react';
@@ -62,7 +62,7 @@ export function PreferenceSection({ isSaving }: PreferenceSectionProps) {
               <Select 
                 disabled={isSaving} 
                 value={language} 
-                onValueChange={(v) => setLanguage(v as any)}
+                onValueChange={(v) => setLanguage(v as 'en' | 'vi')}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={t('settings.preferences.language_placeholder')} />

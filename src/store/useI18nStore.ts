@@ -33,7 +33,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
     const fallback = typeof secondArg === 'string' ? secondArg : undefined;
 
     const keys = key.split('.');
-    let value: any = dictionaries[get().language];
+    let value: string | I18nDictionary | undefined = dictionaries[get().language];
     
     for (const k of keys) {
       if (value === undefined || typeof value === 'string') break;
@@ -42,7 +42,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
     
     // Fallback to English if key missing in current language
     if (value === undefined && get().language !== 'en') {
-      let fallbackDictValue: any = dictionaries['en'];
+      let fallbackDictValue: string | I18nDictionary | undefined = dictionaries['en'];
       for (const k of keys) {
         if (fallbackDictValue === undefined || typeof fallbackDictValue === 'string') break;
         fallbackDictValue = fallbackDictValue[k];

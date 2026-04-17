@@ -10,12 +10,9 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
-  ShieldCheck, 
   AlertOctagon, 
   Activity, 
   FileDown, 
-  Lock, 
-  Users,
   Database,
   RefreshCcw,
   CheckCircle2,
@@ -29,6 +26,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'react-toastify';
 
+import { SystemLogResponse } from '@/services/api/types';
+
 export function SecurityDashboard() {
   const { t } = useI18nStore();
   const [loading, setLoading] = useState(true);
@@ -36,7 +35,7 @@ export function SecurityDashboard() {
     adminCount: 0,
     managerCount: 0,
     totalLogs: 0,
-    securityEvents: [] as any[],
+    securityEvents: [] as SystemLogResponse[],
     systemHealthy: true,
     lastBackup: 'Never'
   });

@@ -74,6 +74,7 @@ export type CaregiverWorkspaceTab =
   | 'robot'
   | 'logs'
   | 'room-device'
+  | 'exercise'
   | 'package-exercise';
 
 const workspaceTabs: Array<{ key: CaregiverWorkspaceTab; label: string }> = [
@@ -82,7 +83,7 @@ const workspaceTabs: Array<{ key: CaregiverWorkspaceTab; label: string }> = [
   { key: 'robot', label: 'Robot Interaction' },
   { key: 'logs', label: 'Logs / History' },
   { key: 'room-device', label: 'Room / Device' },
-  { key: 'package-exercise', label: 'Package / Exercise' },
+  { key: 'exercise', label: 'Exercise' },
 ];
 
 const defaultReminderForm: Omit<ReminderRequest, 'elderlyId' | 'caregiverId'> = {
@@ -244,7 +245,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   }, [effectiveSelectedId]);
 
   const loadPackageExercise = useCallback(async () => {
-    if (!selectedProfile?.id || activeTab !== 'package-exercise') {
+    if (!selectedProfile?.id || (activeTab !== 'exercise' && activeTab !== 'package-exercise')) {
       setUserPackages([]);
       setServicePackages([]);
       setPackageExercisesByPackageId({});
@@ -972,37 +973,58 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     </div>
   );
 
-  const renderPackageExercise = () => (
+  const renderExercise = () => (
     <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
       <Card>
         <CardHeader>
-          <CardTitle>Service Plan Context</CardTitle>
-          <CardDescription>Not core to the caregiver workflow, but useful for exercise and entitlement checks.</CardDescription>
+          <CardTitle>Exercise by Active Package</CardTitle>
+          <CardDescription>Each elderly profile only sees the exercise scripts unlocked by the service packages that are still active.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {loadingPackages ? <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading package and exercise context...</div> : null}
-          <div className="rounded-2xl border bg-slate-50 p-4">
-            <div className="text-sm font-semibold">Active Service Plans</div>
-            <div className="mt-3 space-y-3">
-              {packageExerciseDetails.length === 0 ? <Badge variant="secondary">No active plan</Badge> : packageExerciseDetails.map(({ userPackage, servicePackage, exercises }) => (
-                <div key={userPackage.id} className="rounded-2xl border bg-white p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <div className="font-semibold">{servicePackage?.name || `Package #${userPackage.servicePackageId}`}</div>
-                      <div className="text-xs text-muted-foreground">Assigned {new Date(userPackage.assignedAt).toLocaleDateString()} • Expires {new Date(userPackage.expiredAt).toLocaleDateString()}</div>
+          {packageExerciseDetails.length === 0 ? (
+            <EmptyState text="This elderly profile does not have any active package with exercise entitlement yet." />
+          ) : (
+            <div className="space-y-4">
+              {packageExerciseDetails.map(({ userPackage, servicePackage, exercises }) => (
+                <div key={userPackage.id} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                  <div className="border-b bg-slate-50/80 px-5 py-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-base font-semibold text-slate-900">{servicePackage?.name || `Package #${userPackage.servicePackageId}`}</h3>
+                          <Badge variant="outline" className="text-[10px] uppercase">{servicePackage?.level || 'Unknown'}</Badge>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Assigned {new Date(userPackage.assignedAt).toLocaleDateString()} • Expires {new Date(userPackage.expiredAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="w-fit">{exercises.length} exercise{exercises.length === 1 ? '' : 's'}</Badge>
                     </div>
-                    <Badge variant="outline">{servicePackage?.level || 'Unknown'}</Badge>
                   </div>
-                  <div className="mt-3">
-                    <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Included Exercises</div>
+
+                  <div className="p-5">
                     {exercises.length === 0 ? (
-                      <p className="mt-2 text-xs text-muted-foreground">This package does not have an exercise list configured yet.</p>
+                      <EmptyState text="Manager has not assigned any exercise to this package yet." />
                     ) : (
-                      <div className="mt-2 flex flex-wrap gap-2">
+                      <div className="space-y-3">
                         {exercises.map((exercise) => (
-                          <Badge key={exercise.id} variant="secondary" className="max-w-full truncate">
-                            {exercise.name} • {exercise.durationMinutes} min
-                          </Badge>
+                          <div key={`${userPackage.id}-${exercise.id}`} className="rounded-2xl border border-slate-200 bg-slate-50/40 p-4">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                              <div className="min-w-0">
+                                <div className="font-semibold text-slate-900">{exercise.name}</div>
+                                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                  <span>{exercise.durationMinutes} min</span>
+                                  <span>•</span>
+                                  <span>{exercise.difficultyLevel || exercise.level || 'Unknown level'}</span>
+                                </div>
+                              </div>
+                              <Button size="sm" onClick={() => handleRunExercise(exercise.id)} disabled={runningExerciseId === exercise.id || !roomRobot}>
+                                {runningExerciseId === exercise.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                                <span className="ml-2">Run</span>
+                              </Button>
+                            </div>
+                          </div>
                         ))}
                       </div>
                     )}
@@ -1010,27 +1032,21 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                 </div>
               ))}
             </div>
-          </div>
-          <div className="space-y-3">
-            {eligibleExercises.length === 0 ? (
-              <EmptyState text="No eligible exercises available for the current service plan." />
-            ) : (
-              eligibleExercises.map(({ script, packageNames }) => (
-                <div key={script.id} className="rounded-2xl border p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <div className="font-semibold">{script.name}</div>
-                      <div className="text-xs text-muted-foreground">{script.durationMinutes} min • {script.difficultyLevel || script.level || 'Unknown'}</div>
-                    </div>
-                    <Button size="sm" onClick={() => handleRunExercise(script.id)} disabled={runningExerciseId === script.id || !roomRobot}>
-                      {runningExerciseId === script.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">Unlocked by: {packageNames.join(', ')}</p>
-                </div>
-              ))
-            )}
-          </div>
+          )}
+
+          {eligibleExercises.length > 0 ? (
+            <div className="rounded-2xl border bg-sky-50/50 p-4">
+              <div className="text-sm font-semibold text-slate-900">Exercise Entitlement Summary</div>
+              <p className="mt-1 text-xs text-muted-foreground">Combined view of all exercises unlocked by the active packages above.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {eligibleExercises.map(({ script, packageNames }) => (
+                  <Badge key={script.id} variant="secondary" className="max-w-full truncate bg-white text-slate-700">
+                    {script.name} • {packageNames.join(', ')}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 
@@ -1069,7 +1085,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
             <div className="rounded-full bg-sky-50 p-4 text-sky-600"><User className="h-8 w-8" /></div>
             <div>
               <h3 className="text-xl font-semibold">Select an elderly profile</h3>
-              <p className="mt-2 max-w-md text-sm text-muted-foreground">Start from the list on the left. After choosing an elderly profile, the workspace will guide you through overview, reminders, robot interaction, logs, room/device, and package/exercise tabs.</p>
+              <p className="mt-2 max-w-md text-sm text-muted-foreground">Start from the list on the left. After choosing an elderly profile, the workspace will guide you through overview, reminders, robot interaction, logs, room/device, and exercise tabs.</p>
             </div>
           </CardContent>
         </Card>
@@ -1087,8 +1103,9 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
         return renderLogs();
       case 'room-device':
         return renderRoomDevice();
+      case 'exercise':
       case 'package-exercise':
-        return renderPackageExercise();
+        return renderExercise();
       default:
         return renderOverview();
     }

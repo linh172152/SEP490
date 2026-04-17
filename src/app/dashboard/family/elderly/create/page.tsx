@@ -201,7 +201,6 @@ export default function CreateElderlyPage() {
                     <FormItem>
                       <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('family.elderly.create.fields.language.label')}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
-                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger className="h-10 rounded-xl border-none bg-slate-50 focus:ring-sky-500 dark:bg-slate-800">
                             <SelectValue placeholder="Select language" />
@@ -224,7 +223,6 @@ export default function CreateElderlyPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('family.elderly.create.fields.speed.label')}</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger className="h-10 rounded-xl border-none bg-slate-50 focus:ring-sky-500 dark:bg-slate-800">

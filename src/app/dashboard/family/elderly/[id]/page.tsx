@@ -31,6 +31,7 @@ import type {
   RoomResponse,
   ServicePackageResponse,
   UserPackageResponse,
+  ExerciseScriptResponse,
 } from '@/services/api/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,7 @@ import {
   ArrowLeft,
   Calendar,
   ChevronRight,
+  Dumbbell,
   Globe,
   HeartPulse,
   Loader2,
@@ -61,6 +63,7 @@ export default function FamilyElderlyDetailPage() {
   const [robot, setRobot] = useState<RobotDTO | null>(null);
   const [servicePackages, setServicePackages] = useState<ServicePackageResponse[]>([]);
   const [ownedPackages, setOwnedPackages] = useState<UserPackageResponse[]>([]);
+  const [packageExercisesByPackageId, setPackageExercisesByPackageId] = useState<Record<number, ExerciseScriptResponse[]>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -82,8 +85,17 @@ export default function FamilyElderlyDetailPage() {
           detail.roomId ? roomService.getRoomById(detail.roomId).catch(() => null) : Promise.resolve(null),
         ]);
 
+        const uniquePackageIds = Array.from(new Set(userPackages.map((item) => item.servicePackageId)));
+        const packageExercises = await Promise.all(
+          uniquePackageIds.map(async (packageId) => {
+            const exercises = await servicePackageService.getExercises(packageId).catch(() => [] as ExerciseScriptResponse[]);
+            return [packageId, exercises] as const;
+          })
+        );
+
         setServicePackages(packages);
         setOwnedPackages(userPackages);
+        setPackageExercisesByPackageId(Object.fromEntries(packageExercises));
         setRoom(roomData);
         setRobot(roomData?.robot || null);
       } finally {
@@ -110,6 +122,27 @@ export default function FamilyElderlyDetailPage() {
       })),
     [activeOwnedPackages, servicePackages]
   );
+
+  const eligibleExercises = useMemo(() => {
+    const mappedScripts = new Map<number, { script: ExerciseScriptResponse; packageNames: string[] }>();
+
+    activePackageDetails.forEach(({ catalog }) => {
+      if (!catalog) return;
+      const exercises = packageExercisesByPackageId[catalog.id] || [];
+      exercises.forEach((script) => {
+        const existing = mappedScripts.get(script.id);
+        if (existing) {
+          if (!existing.packageNames.includes(catalog.name)) {
+            existing.packageNames.push(catalog.name);
+          }
+          return;
+        }
+        mappedScripts.set(script.id, { script, packageNames: [catalog.name] });
+      });
+    });
+
+    return Array.from(mappedScripts.values());
+  }, [activePackageDetails, packageExercisesByPackageId]);
 
   const primaryPackage = activePackageDetails[0]?.catalog || null;
   const packageTheme = getServicePackageTheme(primaryPackage, servicePackages);
@@ -310,6 +343,45 @@ export default function FamilyElderlyDetailPage() {
                     </div>
                     <div className="mt-2 text-xs text-muted-foreground">
                       Elderly #{ownership.elderlyProfileId || profile.id} • Assigned {new Date(ownership.assignedAt).toLocaleDateString()} • Expires {new Date(ownership.expiredAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Included Exercises</CardTitle>
+              <CardDescription>Exercises provided by the active service plans.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {eligibleExercises.length === 0 ? (
+                <div className="space-y-3 rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">
+                  No exercises available. Please purchase a service plan with exercises.
+                </div>
+              ) : (
+                eligibleExercises.map(({ script, packageNames }) => (
+                  <div key={script.id} className="rounded-2xl border bg-slate-50 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-xl bg-purple-100 p-2 dark:bg-purple-900/30">
+                        <Dumbbell className="h-4 w-4 text-purple-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-slate-900 line-clamp-1">{script.name}</div>
+                        <div className="mt-1 flex items-center gap-2 text-[10px] uppercase tracking-wider text-slate-500">
+                          <span>{script.difficultyLevel || 'BEGINNER'}</span>
+                          <span>•</span>
+                          <span>{script.durationMinutes || 0} MINS</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-1">
+                      {packageNames.map((pkgName) => (
+                        <Badge key={pkgName} variant="secondary" className="bg-white/50 text-[10px] text-slate-500">
+                          {pkgName}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
                 ))

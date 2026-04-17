@@ -157,7 +157,7 @@ export default function UsersManagePage() {
     // Role filter
     if (roleFilter !== "ALL") {
         result = result.filter(user => {
-            const r = (user.role?.toUpperCase() || "");
+            const r = String(user.role || "").toUpperCase();
             return r === roleFilter || r === `ROLE_${roleFilter}`;
         });
     }

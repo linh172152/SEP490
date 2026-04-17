@@ -37,7 +37,20 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
-          <ToastContainer position="top-right" autoClose={3000} />
+          <ToastContainer 
+            position="top-right" 
+            autoClose={3000} 
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+            toastClassName="premium-toast"
+            bodyClassName="premium-toast-body"
+          />
         </ThemeProvider>
       </body>
     </html>

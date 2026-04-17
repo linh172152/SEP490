@@ -277,6 +277,11 @@ export default function FamilyElderlyDetailPage() {
               </Link>
             </Button>
             <Button asChild variant="secondary" className="justify-start border-none bg-white/15 text-white hover:bg-white/20">
+              <Link href={`/dashboard/family/elderly/${profile.id}/exercises`}>
+                <Dumbbell className="mr-2 h-4 w-4" /> View Exercises
+              </Link>
+            </Button>
+            <Button asChild variant="secondary" className="justify-start border-none bg-white/15 text-white hover:bg-white/20">
               <Link href="/dashboard/family/elderly">
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back to My Elderly
               </Link>

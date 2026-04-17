@@ -1114,7 +1114,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   return (
     <div className="space-y-4 pb-10">
       <div className="grid gap-4 xl:grid-cols-[minmax(220px,1fr)_minmax(0,4fr)] 2xl:grid-cols-[240px_minmax(0,4.2fr)]">
-        <aside className="space-y-4 xl:sticky xl:top-20 xl:self-start">
+        <aside className="space-y-4 xl:sticky xl:top-[4.5rem] xl:self-start">
           <Card>
             <CardHeader>
               <CardTitle>Assigned Elderly</CardTitle>
@@ -1179,7 +1179,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
         </aside>
 
         <div className="space-y-4">
-          <div className="sticky top-20 z-30 -mx-2 rounded-[24px] bg-background/98 px-2 pb-3 pt-1 shadow-[0_10px_24px_rgba(15,23,42,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/88">
+          <div className="sticky top-16 z-30 -mx-2 rounded-[24px] bg-background/98 px-2 pb-3 pt-1 shadow-[0_10px_24px_rgba(15,23,42,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/88">
             <div className="space-y-2 rounded-2xl bg-background">
             <div className="rounded-2xl border bg-background px-4 py-3 shadow-sm">
               <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">

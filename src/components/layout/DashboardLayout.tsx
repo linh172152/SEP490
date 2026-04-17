@@ -86,7 +86,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         "p-4 pt-20 transition-all duration-300 ease-in-out",
         isCollapsed ? "sm:ml-20" : "sm:ml-72"
       )}>
-        <main className="mx-auto max-w-7xl">
+        <main className="mx-auto w-full max-w-[1600px]">
           {children}
         </main>
       </div>

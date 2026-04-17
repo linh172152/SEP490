@@ -8,12 +8,13 @@ import { Topbar } from './Topbar';
 import { socketService } from '@/services/socket';
 import { useAlertSimulation } from '@/hooks/useAlertSimulation';
 import { cn } from '@/lib/utils';
+import { useIsMounted } from '@/hooks/useIsMounted';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const currentUser = useAuthStore((state) => state.user);
   const router = useRouter();
   const pathname = usePathname();
-  const [isMounted, setIsMounted] = useState(false);
+  const isMounted = useIsMounted();
   
   // Sidebar states
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -23,10 +24,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   useAlertSimulation();
 
   useEffect(() => {
-    setIsMounted(true);
     // Initialize collapsed state from local storage if needed
     const saved = localStorage.getItem('sidebar_collapsed');
-    if (saved === 'true') setIsCollapsed(true);
+    if (saved === 'true') {
+      requestAnimationFrame(() => setIsCollapsed(true));
+    }
   }, []);
 
   useEffect(() => {

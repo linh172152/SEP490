@@ -143,7 +143,7 @@ export function ExerciseLibrary({ readOnly = false }: { readOnly?: boolean }) {
     currentPage * itemsPerPage
   );
 
-  const getDifficultyBadge = (level: string) => {
+  const getDifficultyBadge = (level?: string) => {
     switch (level?.toUpperCase()) {
       case "1":
       case "L1":

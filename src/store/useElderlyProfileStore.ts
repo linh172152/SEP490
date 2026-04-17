@@ -17,7 +17,7 @@ interface ElderlyProfileState {
   clearError: () => void;
 }
 
-export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => ({
+export const useElderlyProfileStore = create<ElderlyProfileState>((set) => ({
   profiles: [],
   currentProfile: null,
   isLoading: false,
@@ -30,8 +30,8 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
         ? await elderlyService.getByAccountId(accountId)
         : await elderlyService.getAll();
       set({ profiles: data });
-    } catch (err: any) {
-      set({ error: err.message || 'Failed to fetch profiles' });
+    } catch (err: unknown) {
+      set({ error: err instanceof Error ? err.message : 'Failed to fetch profiles' });
     } finally {
       set({ isLoading: false });
     }
@@ -42,8 +42,8 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
     try {
       const data = await elderlyService.getById(id);
       set({ currentProfile: data });
-    } catch (err: any) {
-      set({ error: err.message || 'Failed to fetch profile' });
+    } catch (err: unknown) {
+      set({ error: err instanceof Error ? err.message : 'Failed to fetch profile' });
     } finally {
       set({ isLoading: false });
     }
@@ -58,8 +58,8 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
       } else {
         set({ currentProfile: null });
       }
-    } catch (err: any) {
-      set({ error: err.message || 'Failed to fetch profile by account' });
+    } catch (err: unknown) {
+      set({ error: err instanceof Error ? err.message : 'Failed to fetch profile by account' });
     } finally {
       set({ isLoading: false });
     }
@@ -73,8 +73,8 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
         profiles: [...state.profiles, newProfile],
         currentProfile: newProfile 
       }));
-    } catch (err: any) {
-      set({ error: err.message || 'Failed to create profile' });
+    } catch (err: unknown) {
+      set({ error: err instanceof Error ? err.message : 'Failed to create profile' });
       throw err;
     } finally {
       set({ isLoading: false });
@@ -89,8 +89,8 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
         profiles: state.profiles.map(p => p.id === id ? updatedProfile : p),
         currentProfile: state.currentProfile?.id === id ? updatedProfile : state.currentProfile
       }));
-    } catch (err: any) {
-      set({ error: err.message || 'Failed to update profile' });
+    } catch (err: unknown) {
+      set({ error: err instanceof Error ? err.message : 'Failed to update profile' });
       throw err;
     } finally {
       set({ isLoading: false });
@@ -105,8 +105,8 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
         profiles: state.profiles.filter(p => p.id !== id),
         currentProfile: state.currentProfile?.id === id ? null : state.currentProfile
       }));
-    } catch (err: any) {
-      set({ error: err.message || 'Failed to delete profile' });
+    } catch (err: unknown) {
+      set({ error: err instanceof Error ? err.message : 'Failed to delete profile' });
       throw err;
     } finally {
       set({ isLoading: false });

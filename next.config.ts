@@ -15,7 +15,9 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'https://sep490-be-3.onrender.com/api/:path*',
+        destination: process.env.NEXT_PUBLIC_API_BASE_URL 
+          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/:path*` 
+          : 'https://sep490-be-3.onrender.com/api/:path*',
       },
     ];
   },

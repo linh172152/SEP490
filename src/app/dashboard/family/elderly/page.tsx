@@ -163,7 +163,7 @@ export default function ElderlyListPage() {
                       </span>
                       {hasPackage ? (
                         <Badge variant="outline" className={packageTheme.badgeClassName}>
-                          {activePackage.name}
+                          {activePackage?.name}
                         </Badge>
                       ) : (
                         <Badge variant="secondary" className={unpurchasedTheme.badgeClassName}>
@@ -195,7 +195,7 @@ export default function ElderlyListPage() {
                       </Button>
                     ) : (
                       <div className={cn('rounded-xl px-3 py-2 text-xs font-semibold', packageTheme.subtleClassName)}>
-                        {activePackage.level} • {activePackage.durationDays || 30} ngày • Gắn cho {elderly.name}
+                        {activePackage?.level} • {activePackage?.durationDays || 30} ngày • Gắn cho {elderly.name}
                       </div>
                     )}
                   </div>

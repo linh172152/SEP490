@@ -27,8 +27,8 @@ export const useCaregiverStore = create<CaregiverState>((set) => ({
       } else {
         set({ currentProfile: null });
       }
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to fetch caregiver profile' });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : 'Failed to fetch caregiver profile' });
     } finally {
       set({ isLoading: false });
     }
@@ -39,8 +39,8 @@ export const useCaregiverStore = create<CaregiverState>((set) => ({
     try {
       const response = await caregiverService.create(data);
       set({ currentProfile: response });
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to create caregiver profile' });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : 'Failed to create caregiver profile' });
       throw error;
     } finally {
       set({ isLoading: false });
@@ -52,8 +52,8 @@ export const useCaregiverStore = create<CaregiverState>((set) => ({
     try {
       const response = await caregiverService.update(id, data);
       set({ currentProfile: response });
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to update caregiver profile' });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : 'Failed to update caregiver profile' });
       throw error;
     } finally {
       set({ isLoading: false });
@@ -65,8 +65,8 @@ export const useCaregiverStore = create<CaregiverState>((set) => ({
     try {
       await caregiverService.delete(id);
       set({ currentProfile: null });
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to delete caregiver profile' });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : 'Failed to delete caregiver profile' });
       throw error;
     } finally {
       set({ isLoading: false });

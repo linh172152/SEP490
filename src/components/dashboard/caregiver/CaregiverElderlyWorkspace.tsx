@@ -1016,7 +1016,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                   <span>{exercise.durationMinutes} min</span>
                                   <span>•</span>
-                                  <span>{exercise.difficultyLevel || exercise.level || 'Unknown level'}</span>
+                                  <span>{exercise.level || 'Unknown level'}</span>
                                 </div>
                               </div>
                               <Button size="sm" onClick={() => handleRunExercise(exercise.id)} disabled={runningExerciseId === exercise.id || !roomRobot}>

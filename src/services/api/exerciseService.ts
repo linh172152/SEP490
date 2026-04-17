@@ -53,8 +53,8 @@ class ExerciseService {
     formData.append("description", data.description);
     formData.append("durationMinutes", data.durationMinutes.toString());
     
-    // Match the exact BE Enum name using data.difficultyLevel or data.level
-    const levelKey = (data as any).difficultyLevel || data.level || "EASY";
+    // Match the exact BE Enum name using difficultyLevel if present
+    const levelKey = (data as ExerciseScriptRequest & { difficultyLevel?: string }).difficultyLevel || data.level || "EASY";
     formData.append("level", levelKey);
     
     // Create a Blob from the script string to simulate a file upload for the backend

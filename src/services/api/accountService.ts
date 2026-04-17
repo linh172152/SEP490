@@ -1,10 +1,6 @@
 import { apiClient } from "./client";
 import { AccountResponse, RegisterDTO } from "./types";
 
-export interface AccountListResponse {
-  data: AccountResponse[];
-  total: number;
-}
 
 export const accountService = {
   // Get all accounts

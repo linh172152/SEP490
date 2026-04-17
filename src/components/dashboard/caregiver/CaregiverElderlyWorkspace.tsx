@@ -351,6 +351,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   const activePackages = useMemo(() => {
     const now = Date.now();
     return userPackages.filter((item) => {
+      if (!item.expiredAt) return true;
       const expiresAt = Date.parse(item.expiredAt);
       return Number.isNaN(expiresAt) || expiresAt >= now;
     });

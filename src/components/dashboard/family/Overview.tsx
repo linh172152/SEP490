@@ -73,6 +73,7 @@ export function FamilyOverview() {
   const activePackage = useMemo(() => {
     const now = Date.now();
     return userPackages.find((item) => {
+      if (!item.expiredAt) return true;
       const expiry = Date.parse(item.expiredAt);
       return Number.isNaN(expiry) || expiry >= now;
     }) || null;
@@ -140,7 +141,10 @@ export function FamilyOverview() {
               {activePackage && (
                 <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  {activePackageInfo?.level ? `${activePackageInfo.level} • ` : ''}Expires: {new Date(activePackage.expiredAt).toLocaleDateString()}
+                  {activePackageInfo?.level ? `${activePackageInfo.level} • ` : ''}
+                  {activePackage.expiredAt 
+                    ? `Expires: ${new Date(activePackage.expiredAt).toLocaleDateString()}` 
+                    : `Status: ${activePackage.status || 'PENDING'}`}
                 </p>
               )}
             </div>

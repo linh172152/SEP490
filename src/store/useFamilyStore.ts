@@ -119,7 +119,7 @@ export const useFamilyStore = create<FamilyState>()(
         ];
 
         const mockPackages: UserPackageResponse[] = [
-          { id: 1, accountId, servicePackageId: 3, elderlyProfileId: 101, assignedAt: new Date(Date.now() - 86400000 * 15).toISOString(), expiredAt: new Date(Date.now() + 86400000 * 15).toISOString() },
+          { id: 1, accountId, servicePackageId: 3, elderlyProfileId: 101, assignedAt: new Date(Date.now() - 86400000 * 15).toISOString(), expiredAt: new Date(Date.now() + 86400000 * 15).toISOString(), status: 'PAID' },
         ];
 
         const mockServicePackages: ServicePackageResponse[] = [
@@ -147,6 +147,7 @@ export const useFamilyStore = create<FamilyState>()(
             servicePackageId: packageId,
             assignedAt: new Date().toISOString(),
             expiredAt: new Date(Date.now() + 86400000 * 30).toISOString(),
+            status: 'PAID'
           };
           set({ userPackages: [newPackage] });
           return;
@@ -159,6 +160,7 @@ export const useFamilyStore = create<FamilyState>()(
             servicePackageId: packageId,
             assignedAt: new Date().toISOString(),
             expiredAt: new Date(Date.now() + 86400000 * 30).toISOString(),
+            status: 'PENDING'
           });
           const elderly = await elderlyService.getByAccountId(accountId).catch(() => [] as ElderlyProfileResponse[]);
           const packagesByElderly = await Promise.all(

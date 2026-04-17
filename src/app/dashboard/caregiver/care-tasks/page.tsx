@@ -105,15 +105,17 @@ export default function CaregiverCareTasksPage() {
         setElderlies(loadedElderlies);
       }
 
-      const allReminders = await reminderService.getAll().catch(() => [] as ReminderResponse[]);
-      const elderlyIds = new Set(elderlyData.map((item) => item.id));
-      const caregiverIdentifiers = getCaregiverIdentifiers(currentProfile, user?.id);
+      // Try to get specific reminders for this caregiver to avoid 400 Access Denied on global endpoint
+      let relevantReminders: ReminderResponse[] = [];
+      if (currentProfile?.id) {
+        relevantReminders = await reminderService.getByCaregiverId(currentProfile.id).catch(() => [] as ReminderResponse[]);
+      } else {
+        const allReminders = await reminderService.getAll().catch(() => [] as ReminderResponse[]);
+        relevantReminders = allReminders.filter((item) => caregiverIdentifiers.includes(item.caregiverId));
+      }
+
       setReminders(
-        currentProfile
-          ? allReminders.filter(
-              (item) => caregiverIdentifiers.includes(item.caregiverId) && elderlyIds.has(item.elderlyId)
-            )
-          : []
+        relevantReminders.filter((item) => elderlyIds.has(item.elderlyId))
       );
       setScripts(scriptData);
       setElderlies(elderlyData);

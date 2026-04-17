@@ -140,7 +140,7 @@ import {
                 <Input
                   id="price"
                   type="number"
-                  value={formData.price}
+                  value={formData.price === 0 ? '' : formData.price}
                   onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
                   required
                   min="0"

@@ -686,11 +686,11 @@
       "field_description": "Mã nội dung chuyển khoản",
       "field_amount": "Số tiền thực nhận",
       "confirm_btn": "Xác nhận & Kích hoạt",
-      "description_placeholder": "Ví dụ: PKG:1|ACC:2|ELD:3",
+      "description_placeholder": "Ví dụ: UP:35",
       "amount_placeholder": "Nhập số tiền VNĐ",
       "confirm_success": "Đã xác nhận thanh toán và kích hoạt gói thành công!",
       "confirm_error": "Xác nhận thất bại. Vui lòng kiểm tra lại mã và số tiền.",
-      "mock_list_title": "Giao dịch chờ xử lý (Dữ liệu mẫu)",
+      "pending_list_title": "Giao dịch chờ xử lý",
       "choose_btn": "Chọn"
     },
     "nav": {

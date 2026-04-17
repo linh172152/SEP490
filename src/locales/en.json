@@ -664,11 +664,11 @@
       "field_description": "Transaction Description Code",
       "field_amount": "Received Amount",
       "confirm_btn": "Confirm & Activate",
-      "description_placeholder": "e.g. PKG:1|ACC:2|ELD:3",
+      "description_placeholder": "e.g. UP:35",
       "amount_placeholder": "Enter amount in VNĐ",
       "confirm_success": "Payment confirmed and package activated successfully!",
       "confirm_error": "Confirmation failed. Please check the code and amount.",
-      "mock_list_title": "Pending Transactions (Demo Data)",
+      "pending_list_title": "Pending Transactions",
       "choose_btn": "Select"
     },
     "nav": {

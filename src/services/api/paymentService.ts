@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { PaymentConfirmRequest, PaymentConfirmResponse, PaymentCreateResponse } from './types';
+import { PaymentConfirmRequest, PaymentConfirmResponse, PaymentCreateResponse, UserPackageResponse } from './types';
 
 class PaymentService {
   async create(servicePackageId: number, elderlyProfileId: number): Promise<PaymentCreateResponse> {
@@ -26,11 +26,15 @@ class PaymentService {
   async confirmPayment(description: string, amount: number): Promise<string> {
     const response = await this.confirm({ description, amount });
 
-    if (typeof response === 'string') {
+    if (typeof response === "string") {
       return response;
     }
 
-    return response.message ?? 'Payment confirmed successfully';
+    return response.message ?? "Payment confirmed successfully";
+  }
+
+  async getManagerPending(): Promise<UserPackageResponse[]> {
+    return apiClient.get<UserPackageResponse[]>("/api/payments/manager/pending");
   }
 }
 

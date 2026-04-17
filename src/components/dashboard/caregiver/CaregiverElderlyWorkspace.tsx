@@ -67,6 +67,7 @@ import {
   User,
   Zap,
 } from 'lucide-react';
+import { AlertPanel } from './AlertPanel';
 
 export type CaregiverWorkspaceTab =
   | 'overview'
@@ -139,6 +140,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   const [packageExercisesByPackageId, setPackageExercisesByPackageId] = useState<Record<number, ExerciseScriptResponse[]>>({});
   const [exerciseSessions, setExerciseSessions] = useState<ExerciseSessionResponse[]>([]);
   const [reminderForm, setReminderForm] = useState(defaultReminderForm);
+  const [reminderFilter, setReminderFilter] = useState<'all' | 'active' | 'missed' | 'completed'>('all');
 
   const effectiveSelectedId = selectedElderlyId && Number.isFinite(selectedElderlyId) ? selectedElderlyId : undefined;
 
@@ -165,11 +167,20 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
       const elderlies = await roomService.getElderliesByRoom(currentProfile.roomId).catch(() => [] as RoomElderlySummary[]);
       setRoomElderlies(elderlies);
 
-      const allReminders = await reminderService.getAll().catch(() => [] as ReminderResponse[]);
       const elderlyIds = new Set(elderlies.map((item) => item.id));
       const caregiverIdentifiers = getCaregiverIdentifiers(currentProfile, user?.id);
+      
+      // Try to get specific reminders for this caregiver to avoid 400 Access Denied on global endpoint
+      let relevantReminders: ReminderResponse[] = [];
+      if (currentProfile?.id) {
+        relevantReminders = await reminderService.getByCaregiverId(currentProfile.id).catch(() => [] as ReminderResponse[]);
+      } else {
+        const allReminders = await reminderService.getAll().catch(() => [] as ReminderResponse[]);
+        relevantReminders = allReminders.filter((item) => caregiverIdentifiers.includes(item.caregiverId));
+      }
+
       setCaregiverReminders(
-        allReminders.filter((item) => caregiverIdentifiers.includes(item.caregiverId) && elderlyIds.has(item.elderlyId))
+        relevantReminders.filter((item) => elderlyIds.has(item.elderlyId))
       );
     } catch (error: unknown) {
       setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to load caregiver room context.' });
@@ -224,21 +235,25 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
 
     setLoadingSelected(true);
     try {
-      const [profile, reminders, reminderLogs, interactions, alerts] = await Promise.all([
-        elderlyService.getById(effectiveSelectedId),
+      // Fetch profile first
+      const profile = await elderlyService.getById(effectiveSelectedId);
+      setSelectedProfile(profile);
+
+      // Fetch other data in parallel, but handle individual failures (e.g. 400 Access Denied)
+      const [reminders, reminderLogs, interactions, alerts] = await Promise.all([
         reminderService.getByElderlyId(effectiveSelectedId).catch(() => [] as ReminderResponse[]),
         reminderService.getLogsByElderlyId(effectiveSelectedId).catch(() => [] as ReminderLogResponse[]),
         interactionLogService.getAll().catch(() => [] as InteractionLogResponse[]),
         alertService.getAll().catch(() => [] as AlertNotificationResponse[]),
       ]);
 
-      setSelectedProfile(profile);
       setSelectedReminders(reminders);
       setSelectedReminderLogs(reminderLogs);
       setSelectedInteractions(interactions.filter((item) => item.elderlyId === effectiveSelectedId));
       setSelectedAlerts(alerts.filter((item) => item.elderlyId === effectiveSelectedId));
     } catch (error: unknown) {
-      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to load selected elderly details.' });
+      // Profile fetch is critical, if it fails we show error
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to load profile.' });
     } finally {
       setLoadingSelected(false);
     }
@@ -595,248 +610,160 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     </div>
   );
 
-  const renderReminders = () => (
-    <div className="space-y-6">
-      <Card>
-        <CardContent className="space-y-3 p-3 sm:p-4">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="grid gap-2 sm:grid-cols-3 xl:min-w-[360px]">
-              <HeaderStat icon={<Pill className="h-4 w-4 text-amber-500" />} label="Active" value={reminderGroups.active.length} />
-              <HeaderStat icon={<Clock className="h-4 w-4 text-rose-500" />} label="Missed" value={reminderGroups.missed.length} />
-              <HeaderStat icon={<CheckCircle2 className="h-4 w-4 text-emerald-500" />} label="Completed" value={reminderGroups.completed.length} />
-            </div>
-            <div className="flex flex-wrap items-center gap-2 xl:justify-end">
-              <p className="text-xs text-muted-foreground xl:max-w-[380px] xl:text-right">
-                Missed = overdue reminders still active and waiting for caregiver attention.
-              </p>
-              <Button size="sm" variant="outline" onClick={handleReminderFormToggle}>
-                <Plus className="mr-2 h-4 w-4" />
-                {isReminderFormOpen ? 'Hide Form' : 'Create Reminder'}
+  const renderReminders = () => {
+    const sortedSelectedReminders = [...selectedReminders].sort(
+      (left, right) => new Date(left.scheduleTime).getTime() - new Date(right.scheduleTime).getTime()
+    );
+
+    const filteredReminders = sortedSelectedReminders.filter(item => {
+      const isMissed = item.active && new Date(item.scheduleTime).getTime() < Date.now();
+      if (reminderFilter === 'active') return item.active && !isMissed;
+      if (reminderFilter === 'missed') return isMissed;
+      if (reminderFilter === 'completed') return !item.active;
+      return true;
+    });
+
+    return (
+      <div className="space-y-6">
+        <Card className="overflow-hidden border-none shadow-sm">
+          <CardHeader className="bg-slate-50/50 pb-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="text-xl font-bold text-slate-900">Reminders</CardTitle>
+                <CardDescription>Manage and track medication or care reminders.</CardDescription>
+              </div>
+              <Button onClick={() => setIsReminderFormOpen(!isReminderFormOpen)} className="gap-2 font-bold shadow-lg shadow-sky-100">
+                {isReminderFormOpen ? 'Close Form' : <><Plus className="h-4 w-4" /> Create New</> }
               </Button>
             </div>
-          </div>
-
-          {isReminderFormOpen ? (
-            <div className="rounded-2xl border bg-white p-4">
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div>
-                  <div className="font-semibold text-foreground">{editingReminderId ? 'Edit Reminder' : 'Create Reminder'}</div>
-                  <p className="mt-1 text-xs text-muted-foreground">Add or update a reminder without pushing the table too far down.</p>
-                </div>
-                <Button variant="ghost" size="sm" onClick={closeReminderForm}>Close</Button>
-              </div>
-              <div className="grid gap-4 lg:grid-cols-2">
-                <FormRow label="Title">
-                  <Input value={reminderForm.title} onChange={(event) => setReminderForm((prev) => ({ ...prev, title: event.target.value }))} placeholder="Example: Evening medication" />
-                </FormRow>
-                <FormRow label="Type">
-                  <Select value={normalizeReminderType(reminderForm.reminderType)} onValueChange={(value) => setReminderForm((prev) => ({ ...prev, reminderType: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {REMINDER_TYPE_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormRow>
-                <FormRow label="Repeat Pattern">
-                  <Select value={normalizeReminderPattern(reminderForm.repeatPattern)} onValueChange={(value) => setReminderForm((prev) => ({ ...prev, repeatPattern: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select pattern" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {REMINDER_PATTERN_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormRow>
-                <FormRow label="Schedule Time">
-                  <Input
-                    type="datetime-local"
-                    value={toDateTimeLocal(reminderForm.scheduleTime)}
-                    onChange={(event) => setReminderForm((prev) => ({ ...prev, scheduleTime: toIsoString(event.target.value) }))}
-                  />
-                </FormRow>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <Button onClick={handleReminderSubmit} disabled={savingReminder}>
-                  {savingReminder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                  {editingReminderId ? 'Save Changes' : 'Create Reminder'}
-                </Button>
-                <Button variant="outline" onClick={closeReminderForm}>Cancel</Button>
-              </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="mb-6 flex gap-2 bg-slate-100 p-1 rounded-xl w-fit">
+               {(['all', 'active', 'missed', 'completed'] as const).map(f => (
+                 <button 
+                   key={f}
+                   className={cn(
+                     "px-4 py-1.5 rounded-lg text-xs font-bold capitalize transition-all",
+                     reminderFilter === f ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                   )}
+                   onClick={() => setReminderFilter(f)}
+                 >
+                   {f}
+                 </button>
+               ))}
             </div>
-          ) : null}
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Created Reminders</CardTitle>
-          <CardDescription>Quick reminder workspace for the selected elderly profile.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {sortedSelectedReminders.length === 0 ? (
-            <EmptyState text="No reminders created for this elderly profile yet." />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Schedule</TableHead>
-                  <TableHead>Pattern</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedSelectedReminders.map((item) => {
-                  const isMissed = item.active && new Date(item.scheduleTime).getTime() < Date.now();
-                  const statusLabel = !item.active ? 'Completed' : isMissed ? 'Missed' : 'Active';
-                  const statusClassName = !item.active
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : isMissed
-                      ? 'bg-rose-50 text-rose-700 border-rose-200'
-                      : 'bg-sky-50 text-sky-700 border-sky-200';
+            {isReminderFormOpen ? (
+              <div className="mb-6 rounded-2xl border bg-white p-5 shadow-inner">
+                <div className="mb-4 flex items-center justify-between border-b pb-3">
+                  <div className="font-bold text-slate-800">{editingReminderId ? 'Edit Reminder' : 'New Reminder'}</div>
+                </div>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <FormRow label="Title">
+                    <Input value={reminderForm.title} onChange={(event) => setReminderForm((prev) => ({ ...prev, title: event.target.value }))} placeholder="Example: Evening medication" />
+                  </FormRow>
+                  <FormRow label="Type">
+                    <Select value={normalizeReminderType(reminderForm.reminderType)} onValueChange={(value) => setReminderForm((prev) => ({ ...prev, reminderType: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {REMINDER_TYPE_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormRow>
+                  <FormRow label="Repeat Pattern">
+                    <Select value={normalizeReminderPattern(reminderForm.repeatPattern)} onValueChange={(value) => setReminderForm((prev) => ({ ...prev, repeatPattern: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select pattern" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {REMINDER_PATTERN_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormRow>
+                  <FormRow label="Schedule Time">
+                    <Input
+                      type="datetime-local"
+                      value={toDateTimeLocal(reminderForm.scheduleTime)}
+                      onChange={(event) => setReminderForm((prev) => ({ ...prev, scheduleTime: toIsoString(event.target.value) }))}
+                    />
+                  </FormRow>
+                </div>
+                <div className="mt-6 flex justify-end gap-3">
+                  <Button variant="ghost" onClick={closeReminderForm}>Cancel</Button>
+                  <Button onClick={handleReminderSubmit} disabled={savingReminder} className="bg-sky-600 hover:bg-sky-700">
+                    {savingReminder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {editingReminderId ? 'Update Reminder' : 'Create Reminder'}
+                  </Button>
+                </div>
+              </div>
+            ) : null}
 
-                  return (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.title}</TableCell>
-                      <TableCell>{getReminderTypeLabel(item.reminderType)}</TableCell>
-                      <TableCell>{new Date(item.scheduleTime).toLocaleString()}</TableCell>
-                      <TableCell>{getReminderPatternLabel(item.repeatPattern)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={statusClassName}>{statusLabel}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex justify-end gap-2">
-                          <Button size="sm" variant="outline" onClick={() => handleReminderEdit(item)}>Edit</Button>
-                          <Button size="sm" variant="destructive" onClick={() => handleReminderDelete(item.id)}>Delete</Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Reminder Logs</CardTitle>
-          <CardDescription>Robot delivery results for this elderly profile. Green means confirmed, red means not confirmed yet.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {sortedReminderLogs.length === 0 ? (
-            <EmptyState text="No reminder logs for this elderly profile yet." />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Reminder</TableHead>
-                  <TableHead>Robot</TableHead>
-                  <TableHead>Triggered</TableHead>
-                  <TableHead>Confirmed</TableHead>
-                  <TableHead>Confirmed Time</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedReminderLogs.map((item) => (
-                  <TableRow key={item.id} className={item.confirmed ? 'bg-emerald-50/70 hover:bg-emerald-50' : 'bg-rose-50/70 hover:bg-rose-50'}>
-                    <TableCell className="font-medium">{item.reminderTitle}</TableCell>
-                    <TableCell>{item.robotName}</TableCell>
-                    <TableCell>{new Date(item.triggeredTime).toLocaleString()}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={item.confirmed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}>
-                        {item.confirmed ? 'Confirmed' : 'Not Confirmed'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{item.confirmedTime ? new Date(item.confirmedTime).toLocaleString() : 'Pending'}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-6 xl:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Open Alerts</CardTitle>
-            <CardDescription>Caregiver should review these unresolved alerts and update them after handling the elderly.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {openAlerts.length === 0 ? (
-              <EmptyState text="No unresolved alerts for this elderly profile." />
+            {filteredReminders.length === 0 ? (
+              <EmptyState text={`No ${reminderFilter !== 'all' ? reminderFilter : ''} reminders found.`} />
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Message</TableHead>
-                    <TableHead>Created At</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {openAlerts.map((item) => (
-                    <TableRow key={item.id} className="bg-rose-50/70 hover:bg-rose-50">
-                      <TableCell className="font-medium">{item.alertType.replace(/_/g, ' ')}</TableCell>
-                      <TableCell className="max-w-[320px] whitespace-normal">{item.message}</TableCell>
-                      <TableCell>{new Date(item.createdAt).toLocaleString()}</TableCell>
-                      <TableCell>
-                        <div className="flex justify-end">
-                          <Button size="sm" onClick={() => handleResolveAlert(item)}>Mark Resolved</Button>
-                        </div>
-                      </TableCell>
+              <div className="rounded-xl border border-slate-100 overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-slate-50/50">
+                    <TableRow>
+                      <TableHead className="font-bold">Title</TableHead>
+                      <TableHead className="font-bold">Type</TableHead>
+                      <TableHead className="font-bold">Schedule</TableHead>
+                      <TableHead className="font-bold">Pattern</TableHead>
+                      <TableHead className="font-bold">Status</TableHead>
+                      <TableHead className="text-right font-bold pr-6">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredReminders.map((item) => {
+                      const isMissed = item.active && new Date(item.scheduleTime).getTime() < Date.now();
+                      const statusLabel = !item.active ? 'Completed' : isMissed ? 'Missed' : 'Active';
+                      const statusClassName = !item.active
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                        : isMissed
+                          ? 'bg-rose-50 text-rose-700 border-rose-100'
+                          : 'bg-sky-50 text-sky-700 border-sky-100';
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Resolved Alerts</CardTitle>
-            <CardDescription>Handled alerts are shown here with green rows for quick confirmation.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {resolvedAlerts.length === 0 ? (
-              <EmptyState text="No resolved alerts for this elderly profile yet." />
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Message</TableHead>
-                    <TableHead>Created At</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {resolvedAlerts.map((item) => (
-                    <TableRow key={item.id} className="bg-emerald-50/70 hover:bg-emerald-50">
-                      <TableCell className="font-medium">{item.alertType.replace(/_/g, ' ')}</TableCell>
-                      <TableCell className="max-w-[320px] whitespace-normal">{item.message}</TableCell>
-                      <TableCell>{new Date(item.createdAt).toLocaleString()}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                      return (
+                        <TableRow key={item.id} className="hover:bg-slate-50/50">
+                          <TableCell className="font-semibold text-slate-900">{item.title}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {getReminderTypeLabel(item.reminderType)}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-slate-600 text-xs text-nowrap">
+                             <div className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> {new Date(item.scheduleTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</div>
+                          </TableCell>
+                          <TableCell>
+                             <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider">{getReminderPatternLabel(item.repeatPattern)}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={cn("font-bold px-2.5 py-0.5", statusClassName)}>{statusLabel}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right pr-6">
+                            <div className="flex justify-end gap-1">
+                              <Button size="sm" variant="outline" onClick={() => handleReminderEdit(item)}>Edit</Button>
+                              <Button size="sm" variant="destructive" onClick={() => handleReminderDelete(item.id)}>Delete</Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderRobot = () => (
     <div className="grid gap-6 xl:grid-cols-[0.72fr_1.28fr]">
@@ -1113,60 +1040,50 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
 
   return (
     <div className="space-y-4 pb-10">
-      <div className="grid gap-4 xl:grid-cols-[minmax(220px,1fr)_minmax(0,4fr)] 2xl:grid-cols-[240px_minmax(0,4.2fr)]">
-        <aside className="space-y-4 xl:sticky xl:top-20 xl:self-start">
-          <Card>
-            <CardHeader>
-              <CardTitle>Assigned Elderly</CardTitle>
-              <CardDescription>Compact master list filtered by caregiver room context.</CardDescription>
+      <div className="grid gap-4 xl:grid-cols-[minmax(220px,240px)_minmax(0,1fr)_minmax(300px,360px)]">
+        {/* Left Panel: Elderly List */}
+        <aside className="space-y-4 xl:sticky xl:top-[4.5rem] xl:self-start">
+          <Card className="border-none shadow-sm overflow-hidden">
+            <CardHeader className="bg-slate-50/50 pb-4">
+              <CardTitle className="text-lg">Assigned Room</CardTitle>
+              <CardDescription className="text-[10px] uppercase font-bold tracking-wider">
+                 {caregiverProfile?.roomId ? `Room ${caregiverProfile.roomId}` : 'Unassigned'}
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="rounded-2xl border bg-slate-50 p-4 text-sm">
-                <div className="font-semibold">Caregiver</div>
-                <p className="mt-1 text-muted-foreground">{loadingContext ? 'Loading...' : caregiverProfile?.name || 'No caregiver profile found'}</p>
-                <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground"><MapPin className="h-3.5 w-3.5" /> {caregiverProfile?.roomId ? `Room ${caregiverProfile.roomId}` : 'No room assigned'}</div>
+            <CardContent className="space-y-4 pt-4">
+               <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground opacity-50" />
+                <Input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search..." className="pl-9 h-9 border-slate-100 bg-slate-50/50" />
               </div>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search elderly name..." className="pl-9" />
-              </div>
+              
               {loadingContext ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading room elderly...</div>
+                <div className="flex px-2 py-4 items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Loading...</div>
               ) : filteredElderlies.length === 0 ? (
-                <EmptyState text="No elderly profiles assigned to this caregiver room yet." />
+                <div className="text-center py-8 opacity-40">No records</div>
               ) : (
-                <div className="max-h-[56vh] overflow-y-auto pr-1">
-                  <div className="space-y-2">
+                <div className="max-h-[60vh] overflow-y-auto pr-1">
+                  <div className="space-y-1.5 font-sans">
                     {filteredElderlies.map((item) => {
-                      const reminderCount = caregiverReminders.filter((reminder) => reminder.elderlyId === item.id).length;
                       const isActive = effectiveSelectedId === item.id;
+                      const hasAlert = selectedAlerts.some(a => a.elderlyId === item.id && !a.resolved);
                       return (
                         <button
                           key={item.id}
                           type="button"
                           onClick={() => navigateToElderly(item.id)}
                           className={cn(
-                            'group w-full rounded-xl border px-3 py-2.5 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400',
+                            'group relative w-full rounded-xl px-3 py-3 text-left transition-all duration-200 focus-visible:outline-none ring-offset-2',
                             isActive
-                              ? 'border-sky-500 bg-sky-50 shadow-sm ring-1 ring-sky-200'
-                              : 'border-slate-200 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50/60 hover:shadow-sm'
+                              ? 'bg-slate-900 text-white shadow-xl shadow-slate-200 text-nowrap'
+                              : 'hover:bg-slate-100 text-slate-600'
                           )}
                         >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <div className="truncate text-sm font-semibold text-foreground">{item.name}</div>
-                              <div className="mt-1 text-[11px] text-muted-foreground">ID {item.id}</div>
-                            </div>
-                            <ArrowRight
-                              className={cn(
-                                'mt-0.5 h-4 w-4 shrink-0 transition-transform duration-200',
-                                isActive ? 'text-sky-600' : 'text-slate-400 group-hover:translate-x-0.5 group-hover:text-sky-500'
-                              )}
-                            />
+                          <div className="flex items-center justify-between gap-2">
+                             <div className="font-bold text-sm truncate">{item.name}</div>
+                             {hasAlert && !isActive && <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse ring-4 ring-rose-100" />}
                           </div>
-                          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                            <Badge variant="outline" className="px-2 py-0 text-[10px]">{reminderCount} reminders</Badge>
-                            <Badge variant="secondary" className="px-2 py-0 text-[10px]">Room</Badge>
+                          <div className={cn("text-[10px] mt-0.5 font-medium opacity-60", isActive ? "text-slate-300" : "text-slate-400")}>
+                             {isActive ? 'Current selection' : `EL-${item.id}`}
                           </div>
                         </button>
                       );
@@ -1178,80 +1095,75 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
           </Card>
         </aside>
 
+        {/* Middle Panel: Main Content */}
         <div className="space-y-4">
-          <div className="sticky top-20 z-30 -mx-2 rounded-[24px] bg-background/98 px-2 pb-3 pt-1 shadow-[0_10px_24px_rgba(15,23,42,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/88">
+          <div className="sticky top-16 z-30 -mx-2 rounded-[24px] bg-background/98 px-2 pb-3 pt-1 shadow-[0_10px_24px_rgba(15,23,42,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/88">
             <div className="space-y-2 rounded-2xl bg-background">
-            <div className="rounded-2xl border bg-background px-4 py-3 shadow-sm">
+            <div className="rounded-2xl border bg-background px-4 py-3 shadow-sm border-slate-100">
               <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                <div className="min-w-0 space-y-2">
-                  <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium text-muted-foreground">
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1">{selectedProfile ? `Age ${selectedAge ?? 'N/A'}` : 'Select elderly'}</span>
-                    <span className={cn('rounded-full px-2.5 py-1', selectedAlertCount > 0 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700')}>
-                      {selectedAlertCount > 0 ? `${selectedAlertCount} open alerts` : 'No open alerts'}
-                    </span>
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1">{roomInfo?.roomName || (caregiverProfile?.roomId ? `Room ${caregiverProfile.roomId}` : 'No room')}</span>
+                <div className="min-w-0 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
+                    <span className="flex items-center gap-1"><User className="h-3 w-3" /> Profile</span>
+                    <span>•</span>
+                    <span>{selectedProfile ? `Age ${selectedAge ?? 'N/A'}` : 'Select elderly'}</span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <h2 className="text-lg font-bold tracking-tight text-foreground">{selectedProfile?.name || 'No elderly selected'}</h2>
-                    {selectedProfile ? <span className="text-sm text-muted-foreground">{selectedProfile.preferredLanguage} • {selectedProfile.speakingSpeed}</span> : null}
-                    {caregiverProfile?.name ? <span className="text-sm text-muted-foreground">Caregiver {caregiverProfile.name}</span> : null}
-                  </div>
+                  <h2 className="text-2xl font-black tracking-tight text-slate-900 truncate">
+                    {selectedProfile?.name || 'Caregiver Workspace'}
+                  </h2>
                 </div>
 
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <div className="rounded-xl border bg-slate-50 px-3 py-1.5 text-right">
-                    <div className="font-bold text-slate-500">Reminders</div>
-                    <div className="text-sm font-semibold text-slate-900">{selectedReminders.length}</div>
-                  </div>
-                  <div className="rounded-xl border bg-slate-50 px-3 py-1.5 text-right">
-                    <div className="font-bold text-slate-500">Robot</div>
-                    <div className="text-sm font-semibold text-slate-900">{roomRobot?.robotName || 'N/A'}</div>
-                  </div>
-                  <div className="rounded-xl border bg-slate-50 px-3 py-1.5 text-right">
-                    <div className="font-bold text-slate-500">Logs</div>
-                    <div className="text-sm font-semibold text-slate-900">{selectedReminderLogs.length + selectedInteractions.length}</div>
-                  </div>
+                <div className="hidden sm:flex gap-1 bg-slate-100/50 p-1 rounded-xl">
+                  {workspaceTabs.map((tab) => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => handleTabChange(tab.key)}
+                      disabled={!effectiveSelectedId}
+                      className={cn(
+                        'rounded-lg px-4 py-2 text-xs font-bold transition-all whitespace-nowrap',
+                        activeTab === tab.key 
+                          ? 'bg-white text-slate-900 shadow-sm' 
+                          : 'text-slate-500 hover:text-slate-700 hover:bg-white/40',
+                        !effectiveSelectedId && 'cursor-not-allowed opacity-30'
+                      )}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
               {message ? (
-                <div className={cn('mt-3 flex items-center gap-2 rounded-xl border px-3 py-2 text-sm', message.type === 'error' ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700')}>
-                  {message.type === 'error' ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                  <span className="truncate">{message.text}</span>
+                <div className={cn('mt-3 flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-bold', message.type === 'error' ? 'border-rose-100 bg-rose-50 text-rose-600' : 'border-emerald-100 bg-emerald-50 text-emerald-600')}>
+                  {message.type === 'error' ? <AlertTriangle className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                  <span className="truncate uppercase">{message.text}</span>
                 </div>
               ) : null}
-            </div>
-
-            <div className="rounded-2xl border bg-background p-2 shadow-sm">
-              <div className="flex flex-wrap gap-2">
-                {workspaceTabs.map((tab) => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => handleTabChange(tab.key)}
-                    disabled={!effectiveSelectedId}
-                    className={cn(
-                      'rounded-full px-3 py-2 text-sm font-medium transition-colors',
-                      activeTab === tab.key ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
-                      !effectiveSelectedId && 'cursor-not-allowed opacity-50'
-                    )}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
             </div>
             </div>
           </div>
 
           {loadingSelected && effectiveSelectedId ? (
-            <Card>
-              <CardContent className="flex min-h-[260px] items-center justify-center gap-2 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" /> Loading selected elderly workspace...
-              </CardContent>
-            </Card>
-          ) : renderTabContent()}
+            <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 text-muted-foreground">
+              <Loader2 className="h-8 w-8 animate-spin opacity-20" />
+              <div className="text-xs font-black uppercase tracking-widest opacity-40">Synchronizing Data...</div>
+            </div>
+          ) : (
+            <div className="pb-20">
+              {renderTabContent()}
+            </div>
+          )}
         </div>
+
+        {/* Right Panel: Alerts & Logs (Sticky) */}
+        <aside className="space-y-4 xl:sticky xl:top-[4.5rem] xl:self-start">
+           <AlertPanel 
+             alerts={selectedAlerts} 
+             logs={selectedReminderLogs} 
+             onResolveAlert={handleResolveAlert}
+             onViewAllLogs={() => handleTabChange('logs')}
+           />
+        </aside>
       </div>
     </div>
   );

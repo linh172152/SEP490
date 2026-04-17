@@ -81,21 +81,21 @@ export default function CaregiverOverviewPage() {
         const elderlyIds = new Set(elderlies.map((item) => item.id));
         const caregiverIdentifiers = getCaregiverIdentifiers(currentProfile, user?.id);
 
-        const [allReminders, allAlerts, roomData, packageCatalog, userPackageGroups] = await Promise.all([
-          reminderService.getAll().catch(() => [] as ReminderResponse[]),
+        const [allAlerts, roomData, packageCatalog, userPackageGroups] = await Promise.all([
           alertService.getAll().catch(() => [] as AlertNotificationResponse[]),
           roomService.getRoomById(currentProfile.roomId).catch(() => null),
           servicePackageService.getAll().catch(() => [] as ServicePackageResponse[]),
           Promise.all(elderlies.map((item) => userPackageService.getByElderlyId(item.id).catch(() => [] as UserPackageResponse[]))),
         ]);
 
+        // Specific reminders for this caregiver
+        const relevantReminders = await reminderService.getByCaregiverId(currentProfile.id).catch(() => [] as ReminderResponse[]);
+
         const robotByRoom = roomData?.robot ?? null;
 
         setRoomElderlies(elderlies);
         setReminders(
-          allReminders.filter(
-            (item) => caregiverIdentifiers.includes(item.caregiverId) && elderlyIds.has(item.elderlyId)
-          )
+          relevantReminders.filter((item) => elderlyIds.has(item.elderlyId))
         );
         setAlerts(allAlerts.filter((item) => elderlyIds.has(item.elderlyId) && !item.resolved));
         setRoomRobot(robotByRoom);

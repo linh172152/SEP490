@@ -1,0 +1,64 @@
+
+/* Premium Glassmorphism & UI Utilities */
+@layer utilities {
+  .glass {
+    @apply bg-background/70 backdrop-blur-md border border-white/20 dark:border-white/10;
+  }
+  
+  .glass-dark {
+    @apply bg-black/40 backdrop-blur-xl border border-white/5;
+  }
+
+  .premium-shadow {
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  }
+}
+
+/* React Toastify Premium Overrides */
+.Toastify__toast-container {
+  width: 400px;
+  max-width: 90vw;
+}
+
+.Toastify__toast {
+  @apply rounded-xl p-0 overflow-hidden mb-4 premium-shadow border-0;
+  background: transparent !important;
+}
+
+.Toastify__toast-body {
+  @apply p-4 m-0 font-sans glass;
+  margin: 0 !important;
+  border-radius: inherit !important;
+}
+
+.Toastify__toast--success .Toastify__toast-body {
+  @apply border-l-4 border-l-primary;
+}
+
+.Toastify__toast--error .Toastify__toast-body {
+  @apply border-l-4 border-l-destructive;
+}
+
+.Toastify__toast--warning .Toastify__toast-body {
+  @apply border-l-4 border-l-chart-4;
+}
+
+.Toastify__toast--info .Toastify__toast-body {
+  @apply border-l-4 border-l-chart-3;
+}
+
+.Toastify__close-button {
+  @apply opacity-50 hover:opacity-100 transition-opacity absolute top-3 right-3;
+}
+
+.Toastify__progress-bar {
+  @apply opacity-50;
+}
+
+.Toastify__progress-bar--success {
+  @apply bg-primary;
+}
+
+.Toastify__progress-bar--error {
+  @apply bg-destructive;
+}

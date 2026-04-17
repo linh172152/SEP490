@@ -45,6 +45,7 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  --shadow-premium: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
 :root {
@@ -80,6 +81,15 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Toastify Premium Variables */
+  --toastify-color-light: color-mix(in srgb, var(--background) 80%, transparent);
+  --toastify-color-dark: color-mix(in srgb, var(--background) 80%, transparent);
+  --toastify-text-color-light: var(--foreground);
+  --toastify-toast-min-height: 72px;
+  --toastify-toast-width: 420px;
+  --toastify-toast-background: transparent;
+  --toastify-toast-bd-radius: 1.25rem;
 }
 
 .dark {
@@ -143,4 +153,80 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+/* Premium Glassmorphism & UI Utilities */
+@layer utilities {
+  .glass {
+    @apply bg-background/70 backdrop-blur-md border border-white/20 dark:border-white/10;
+  }
+  
+  .glass-dark {
+    @apply bg-black/40 backdrop-blur-xl border border-white/5;
+  }
+}
+
+/* React Toastify Premium Overrides v11 */
+:root {
+  --toastify-font-family: inherit;
+}
+
+.Toastify__toast-container {
+  padding: 1rem;
+}
+
+.Toastify__toast {
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  background: color-mix(in srgb, var(--background) 85%, transparent) !important;
+}
+
+.Toastify__toast-body {
+  padding: 1rem !important;
+  font-weight: 500 !important;
+  font-family: inherit !important;
+  color: var(--foreground) !important;
+}
+
+.Toastify__toast--success {
+  border-left: 6px solid var(--primary) !important;
+}
+
+.Toastify__toast--error {
+  border-left: 6px solid var(--destructive) !important;
+}
+
+.Toastify__toast--warning {
+  border-left: 6px solid var(--chart-4) !important;
+}
+
+.Toastify__close-button {
+  position: absolute !important;
+  top: 0.5rem !important;
+  right: 0.5rem !important;
+  padding: 0.25rem !important;
+  opacity: 0.4 !important;
+  transition: opacity 0.2s !important;
+  color: var(--foreground) !important;
+}
+
+.Toastify__close-button:hover {
+  opacity: 1 !important;
+}
+
+/* Adjusting toast content alignment */
+.Toastify__toast-body > div {
+  @apply flex items-center gap-3;
+}
+
+.Toastify__progress-bar {
+  height: 4px !important;
+  opacity: 0.7 !important;
+}
+
+.Toastify__progress-bar--success {
+  background: var(--primary) !important;
 }

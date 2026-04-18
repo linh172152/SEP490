@@ -24,7 +24,7 @@ export function useAlertSimulation() {
                 const randomType = types[Math.floor(Math.random() * types.length)];
 
                 addAlert(randomElderly.id, {
-                    type: randomType.type as any,
+                    type: randomType.type as 'mood_drop' | 'heart_rate_abnormal' | 'emergency',
                     severity: randomType.severity,
                     message: randomType.message
                 });

@@ -26,6 +26,7 @@ export const login = async (email: string, password?: string): Promise<AuthRespo
 
             if (user) {
                 // Return User without exposing password
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 const { password: _, ...userWithoutPassword } = user;
 
                 resolve({
@@ -65,6 +66,7 @@ export const register = async (data: RegisterDTO): Promise<AuthResponse> => {
             // Mutate fakeUsers to simulate DB insert
             fakeUsers.push(newUser);
 
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { password: _, ...userWithoutPassword } = newUser;
 
             resolve({

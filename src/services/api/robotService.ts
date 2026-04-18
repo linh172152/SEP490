@@ -2,8 +2,6 @@ import { apiClient } from "./client";
 import {
   RobotRequest,
   RobotResponse,
-  RobotStatusLogRequest,
-  RobotStatusLogResponse,
 } from "./types";
 
 class RobotService {
@@ -58,33 +56,6 @@ class RobotService {
       { id: 201, name: "Room 201 (Post-Op)", elderlyCount: 4, floor: 2 },
       { id: 205, name: "Room 205 (Standard)", elderlyCount: 2, floor: 2 },
     ];
-  }
-
-  // --- Robot Status Logs ---
-  async getAllStatusLogs(): Promise<RobotStatusLogResponse[]> {
-    return apiClient.get<RobotStatusLogResponse[]>("/api/robot-status-logs");
-  }
-
-  async getStatusLogsByRobot(
-    robotId: number
-  ): Promise<RobotStatusLogResponse[]> {
-    return apiClient.get<RobotStatusLogResponse[]>(
-      `/api/robot-status-logs/robot/${robotId}`
-    );
-  }
-
-  async getStatusLogById(id: number): Promise<RobotStatusLogResponse> {
-    return apiClient.get<RobotStatusLogResponse>(`/api/robot-status-logs/${id}`);
-  }
-
-  async createStatusLog(
-    data: RobotStatusLogRequest
-  ): Promise<RobotStatusLogResponse> {
-    return apiClient.post<RobotStatusLogResponse>("/api/robot-status-logs", data);
-  }
-
-  async deleteStatusLog(id: number): Promise<void> {
-    return apiClient.delete<void>(`/api/robot-status-logs/${id}`);
   }
 }
 

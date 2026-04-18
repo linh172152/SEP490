@@ -9,8 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Save, Trash2, AlertTriangle, Loader2, HeartPulse, UserCircle } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Save, Loader2, HeartPulse, UserCircle } from 'lucide-react';
 import { toast } from "react-toastify";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -67,7 +67,7 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
     isLoading: isElderlyLoading
   } = useElderlyProfileStore();
 
-  const [avatarPreview, setAvatarPreview] = useState(settings.profile.avatar);
+  const avatarPreview = settings.profile.avatar;
   const isCaregiver = user?.role === 'CAREGIVER';
   const isFamily = user?.role === 'FAMILYMEMBER';
   const isProfessional = capabilities.canAccessProfessionalProfile;
@@ -84,7 +84,7 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
   }, [user?.id, isCaregiver, isFamily, fetchCaregiverProfile, fetchElderlyProfile]);
 
   const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema) as any,
+    resolver: zodResolver(profileSchema),
     defaultValues: {
       fullName: settings.profile.fullName || '',
       email: settings.profile.email || '',

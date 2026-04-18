@@ -47,7 +47,7 @@ export const roomService = {
     await apiClient.delete(`/api/rooms/elderlies/${elderlyId}`);
   },
 
-  unassignRobotFromRoom: async (roomId: number, robotId: number): Promise<void> => {
+  unassignRobotFromRoom: async (roomId: number): Promise<void> => {
     await apiClient.delete(`/api/rooms/${roomId}/robot`);
   },
 

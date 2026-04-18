@@ -57,7 +57,7 @@ export function SecuritySection({ isSaving }: SecuritySectionProps) {
       } else {
         toast.error(t('settings.security.error_invalid'));
       }
-    } catch (error) {
+    } catch {
       toast.error(t('settings.security.error_failed'));
     } finally {
       setIsChangingPwd(false);
@@ -146,9 +146,9 @@ export function SecuritySection({ isSaving }: SecuritySectionProps) {
               <Button
                 type="submit"
                 className="px-8 shadow-sm hover:shadow-md transition-all font-semibold"
-                disabled={isChangingPwd || !currentPassword || !newPassword || !confirmPassword}
+                disabled={isChangingPwd || isSaving || !currentPassword || !newPassword || !confirmPassword}
               >
-                {isChangingPwd ? t('settings.security.button_updating') : t('settings.security.button_update')}
+                {(isChangingPwd || isSaving) ? t('settings.security.button_updating') : t('settings.security.button_update')}
               </Button>
             </CardFooter>
           </form>

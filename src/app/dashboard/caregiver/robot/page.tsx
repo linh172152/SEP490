@@ -9,11 +9,9 @@ import { reminderService } from '@/services/api/reminderService';
 import { exerciseService } from '@/services/api/exerciseService';
 import { robotService } from '@/services/api/robotService';
 import type {
-  ExerciseSessionResponse,
   InteractionLogResponse,
   ReminderLogResponse,
   RobotDTO,
-  RobotStatusLogResponse,
   RoomElderlySummary,
 } from '@/services/api/types';
 import {
@@ -47,7 +45,7 @@ import {
   Users,
 } from 'lucide-react';
 
-type RobotActivityType = 'interaction' | 'reminder-log' | 'exercise-session' | 'robot-status';
+type RobotActivityType = 'interaction' | 'reminder-log';
 
 type RobotActivityFeedItem = {
   id: string;
@@ -69,8 +67,6 @@ export default function CaregiverRobotPage() {
   const [roomRobot, setRoomRobot] = useState<RobotDTO | null>(null);
   const [interactionLogs, setInteractionLogs] = useState<InteractionLogResponse[]>([]);
   const [reminderLogs, setReminderLogs] = useState<ReminderLogResponse[]>([]);
-  const [exerciseSessions, setExerciseSessions] = useState<ExerciseSessionResponse[]>([]);
-  const [robotStatusLogs, setRobotStatusLogs] = useState<RobotStatusLogResponse[]>([]);
   const [selectedElderlyId, setSelectedElderlyId] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -92,8 +88,6 @@ export default function CaregiverRobotPage() {
         setRoomRobot(null);
         setInteractionLogs([]);
         setReminderLogs([]);
-        setExerciseSessions([]);
-        setRobotStatusLogs([]);
         setLoading(false);
         return;
       }
@@ -103,11 +97,9 @@ export default function CaregiverRobotPage() {
       const elderlyIds = new Set(elderlies.map((item) => item.id));
       const robot = roomData?.robot ?? null;
 
-      const [allInteractions, allReminderLogs, allExerciseSessions, allRobotLogs] = await Promise.all([
+      const [allInteractions, allReminderLogs] = await Promise.all([
         interactionLogService.getAll().catch(() => [] as InteractionLogResponse[]),
         reminderService.getAllLogs().catch(() => [] as ReminderLogResponse[]),
-        exerciseService.getAllSessions().catch(() => [] as ExerciseSessionResponse[]),
-        robotService.getAllStatusLogs().catch(() => [] as RobotStatusLogResponse[]),
       ]);
 
       setRoomElderlies(elderlies);
@@ -117,12 +109,6 @@ export default function CaregiverRobotPage() {
       );
       setReminderLogs(
         allReminderLogs.filter((item) => elderlyIds.has(item.elderlyId) && (!robot || item.robotId === robot.id))
-      );
-      setExerciseSessions(
-        allExerciseSessions.filter((item) => elderlyIds.has(item.elderlyId) && (!robot || item.robotId === robot.id))
-      );
-      setRobotStatusLogs(
-        robot ? allRobotLogs.filter((item) => item.robotId === robot.id) : []
       );
     } catch (loadError: unknown) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load robot activity data.');
@@ -142,10 +128,6 @@ export default function CaregiverRobotPage() {
   const filteredReminderLogs = useMemo(() => {
     return reminderLogs.filter((item) => selectedElderlyId === 'ALL' || item.elderlyId.toString() === selectedElderlyId);
   }, [reminderLogs, selectedElderlyId]);
-
-  const filteredExerciseSessions = useMemo(() => {
-    return exerciseSessions.filter((item) => selectedElderlyId === 'ALL' || item.elderlyId.toString() === selectedElderlyId);
-  }, [exerciseSessions, selectedElderlyId]);
 
   const selectedElderly = useMemo(() => {
     if (selectedElderlyId === 'ALL') {
@@ -180,26 +162,6 @@ export default function CaregiverRobotPage() {
         timestamp: item.confirmedTime || item.triggeredTime,
         badge: item.confirmed ? 'confirmed' : 'pending',
       })),
-      ...filteredExerciseSessions.map((item) => ({
-        id: `exercise-session-${item.id}`,
-        type: 'exercise-session' as const,
-        elderlyId: item.elderlyId,
-        elderlyName: item.elderlyName,
-        title: item.exerciseName,
-        subtitle: item.robotName,
-        description: item.feedback || 'Exercise session recorded by robot.',
-        timestamp: item.startedAt,
-        badge: 'exercise',
-      })),
-      ...robotStatusLogs.map((item) => ({
-        id: `robot-status-${item.id}`,
-        type: 'robot-status' as const,
-        title: item.status,
-        subtitle: item.robotName,
-        description: 'Robot status change recorded by backend.',
-        timestamp: item.reportedAt,
-        badge: 'status',
-      })),
     ];
 
     return items
@@ -213,7 +175,7 @@ export default function CaregiverRobotPage() {
           .some((value) => value!.toLowerCase().includes(query));
       })
       .sort((left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime());
-  }, [filteredExerciseSessions, filteredInteractions, filteredReminderLogs, robotStatusLogs, searchQuery]);
+  }, [filteredInteractions, filteredReminderLogs, searchQuery]);
 
   if (loading) {
     return (
@@ -245,11 +207,10 @@ export default function CaregiverRobotPage() {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <MetricCard title="Assigned Elderly" value={roomElderlies.length} icon={<Users className="h-5 w-5 text-sky-500" />} />
         <MetricCard title="Interactions" value={filteredInteractions.length} icon={<MessageSquare className="h-5 w-5 text-emerald-500" />} />
         <MetricCard title="Reminder Logs" value={filteredReminderLogs.length} icon={<Bell className="h-5 w-5 text-amber-500" />} />
-        <MetricCard title="Exercise Sessions" value={filteredExerciseSessions.length} icon={<Dumbbell className="h-5 w-5 text-violet-500" />} />
       </div>
 
       <Card>
@@ -304,8 +265,6 @@ export default function CaregiverRobotPage() {
               <div className="mt-3 flex flex-wrap gap-2">
                 <Badge variant="outline">Interaction Logs</Badge>
                 <Badge variant="outline">Reminder Delivery</Badge>
-                <Badge variant="outline">Exercise Sessions</Badge>
-                <Badge variant="outline">Robot Status Logs</Badge>
               </div>
             </div>
           </CardContent>
@@ -344,7 +303,7 @@ export default function CaregiverRobotPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid gap-6 xl:grid-cols-2">
         <ActivityPanel
           title="Interaction Logs"
           description="Conversations between robot and elderly in this room."
@@ -367,18 +326,6 @@ export default function CaregiverRobotPage() {
             badge: item.confirmed ? 'Confirmed' : 'Pending',
             detail: `${item.elderlyName} • ${item.robotName}`,
             time: item.confirmedTime || item.triggeredTime,
-          }))}
-        />
-        <ActivityPanel
-          title="Exercise Sessions"
-          description="Exercise actions performed by the room robot."
-          icon={<Activity className="h-5 w-5 text-violet-500" />}
-          items={filteredExerciseSessions.map((item) => ({
-            id: item.id,
-            title: item.exerciseName,
-            badge: item.robotName,
-            detail: item.elderlyName,
-            time: item.startedAt,
           }))}
         />
       </div>
@@ -456,10 +403,6 @@ function getActivityTypeLabel(type: RobotActivityType) {
       return 'Interaction';
     case 'reminder-log':
       return 'Reminder';
-    case 'exercise-session':
-      return 'Exercise';
-    case 'robot-status':
-      return 'Robot Status';
   }
 }
 
@@ -469,9 +412,5 @@ function getActivityBadgeClassName(type: RobotActivityType) {
       return 'border-emerald-200 bg-emerald-50 text-emerald-700';
     case 'reminder-log':
       return 'border-amber-200 bg-amber-50 text-amber-700';
-    case 'exercise-session':
-      return 'border-violet-200 bg-violet-50 text-violet-700';
-    case 'robot-status':
-      return 'border-sky-200 bg-sky-50 text-sky-700';
   }
 }

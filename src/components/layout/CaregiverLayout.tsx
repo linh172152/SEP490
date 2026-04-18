@@ -23,6 +23,7 @@ export function CaregiverLayout({ children }: { children: React.ReactNode }) {
   useAlertSimulation();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMounted(true);
     // Initialize collapsed state from local storage if needed
     const saved = localStorage.getItem('sidebar_collapsed');

@@ -59,7 +59,8 @@ export interface UserPackageRequest {
   servicePackageId: number;
   elderlyProfileId?: number;
   assignedAt: string;
-  expiredAt: string;
+  expiredAt?: string | null;
+  status: "PENDING" | "PAID" | string;
 }
 
 export interface UserPackageResponse extends UserPackageRequest {
@@ -140,18 +141,6 @@ export interface RobotResponse {
   roomName?: string;
 }
 
-// Robot Status Log Types
-export interface RobotStatusLogRequest {
-  robotId: number;
-  status: string;
-}
-
-export interface RobotStatusLogResponse extends RobotStatusLogRequest {
-  id: number;
-  robotName: string;
-  reportedAt: string;
-}
-
 // Reminder Types
 export interface ReminderRequest {
   elderlyId: number;
@@ -186,25 +175,6 @@ export interface ReminderLogResponse extends ReminderLogRequest {
   confirmed: boolean;
   confirmedTime?: string;
 }
-
-// Exercise Session Types
-export interface ExerciseSessionRequest {
-  exerciseId: number;
-  elderlyId: number;
-  robotId: number;
-  startedAt: string;
-  completedAt?: string;
-  feedback?: string;
-}
-
-export interface ExerciseSessionResponse extends ExerciseSessionRequest {
-  id: number;
-  exerciseName: string;
-  elderlyName: string;
-  robotName: string;
-}
-
-export type ExerciseSession = ExerciseSessionResponse;
 
 // Exercise Script Types
 export interface ExerciseScriptRequest {

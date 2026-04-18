@@ -7,7 +7,7 @@ import { roomService } from '@/services/api/roomService';
 import { reminderService } from '@/services/api/reminderService';
 import { interactionLogService } from '@/services/api/interactionLogService';
 import { robotService } from '@/services/api/robotService';
-import type { CaregiverProfileResponse, InteractionLogResponse, ReminderLogResponse, RobotDTO, RobotStatusLogResponse, RoomElderlySummary } from '@/services/api/types';
+import type { CaregiverProfileResponse, InteractionLogResponse, ReminderLogResponse, RobotDTO, RoomElderlySummary } from '@/services/api/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Bot, Clock, Loader2, MessageSquare, NotebookText } from 'lucide-react';
@@ -19,7 +19,6 @@ export default function CaregiverReportsPage() {
   const [reminderLogs, setReminderLogs] = useState<ReminderLogResponse[]>([]);
   const [interactionLogs, setInteractionLogs] = useState<InteractionLogResponse[]>([]);
   const [roomRobot, setRoomRobot] = useState<RobotDTO | null>(null);
-  const [robotLogs, setRobotLogs] = useState<RobotStatusLogResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,15 +44,13 @@ export default function CaregiverReportsPage() {
         const roomRobot = roomData?.robot ?? null;
         setRoomRobot(roomRobot);
 
-        const [allReminderLogs, allInteractionLogs, allRobotLogs] = await Promise.all([
+        const [allReminderLogs, allInteractionLogs] = await Promise.all([
           reminderService.getAllLogs().catch(() => [] as ReminderLogResponse[]),
           interactionLogService.getAll().catch(() => [] as InteractionLogResponse[]),
-          robotService.getAllStatusLogs().catch(() => [] as RobotStatusLogResponse[]),
         ]);
 
         setReminderLogs(allReminderLogs.filter((item) => elderlyIds.has(item.elderlyId)));
         setInteractionLogs(allInteractionLogs.filter((item) => elderlyIds.has(item.elderlyId)));
-        setRobotLogs(roomRobot ? allRobotLogs.filter((item) => item.robotId === roomRobot.id) : []);
       } finally {
         setLoading(false);
       }
@@ -64,7 +61,6 @@ export default function CaregiverReportsPage() {
 
   const recentReminderLogs = useMemo(() => reminderLogs.slice().sort((left, right) => new Date(right.triggeredTime).getTime() - new Date(left.triggeredTime).getTime()).slice(0, 5), [reminderLogs]);
   const recentInteractionLogs = useMemo(() => interactionLogs.slice().sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()).slice(0, 5), [interactionLogs]);
-  const recentRobotLogs = useMemo(() => robotLogs.slice().sort((left, right) => new Date(right.reportedAt).getTime() - new Date(left.reportedAt).getTime()).slice(0, 5), [robotLogs]);
 
   return (
     <div className="space-y-6 pb-10">
@@ -103,7 +99,7 @@ export default function CaregiverReportsPage() {
             </Card>
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-3">
+          <div className="grid gap-6 xl:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><NotebookText className="h-5 w-5 text-sky-500" /> Reminder History</CardTitle>
@@ -132,24 +128,6 @@ export default function CaregiverReportsPage() {
                   <div key={log.id} className="rounded-xl border p-3 text-sm">
                     <div className="font-semibold">{log.elderlyName}</div>
                     <div className="mt-1 text-muted-foreground line-clamp-2">{log.userInputText}</div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5 text-amber-500" /> Robot Logs</CardTitle>
-                <CardDescription>Latest status changes for the room robot.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {recentRobotLogs.length === 0 ? <p className="text-sm text-muted-foreground">No robot logs yet.</p> : recentRobotLogs.map((log) => (
-                  <div key={log.id} className="rounded-xl border p-3 text-sm">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold">{log.robotName}</span>
-                      <Badge variant="outline">{log.status}</Badge>
-                    </div>
-                    <div className="mt-1 flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4" /> {new Date(log.reportedAt).toLocaleString()}</div>
                   </div>
                 ))}
               </CardContent>

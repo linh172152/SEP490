@@ -63,6 +63,8 @@ export default function FamilyElderlyExercisesPage() {
   const activePackages = useMemo(() => {
     const now = Date.now();
     return userPackages.filter((item) => {
+      if (item.status === 'PENDING') return false;
+      if (!item.expiredAt) return true; // If PAID but expiredAt is null (though unusual for PAID), keep it
       const expiresAt = Date.parse(item.expiredAt);
       return Number.isNaN(expiresAt) || expiresAt >= now;
     });
@@ -170,7 +172,7 @@ export default function FamilyElderlyExercisesPage() {
                                 <Badge variant="outline" className={cn("text-[10px] uppercase", theme?.badgeClassName)}>{servicePackage?.level || 'Unknown'}</Badge>
                               </div>
                               <p className="mt-1 text-xs text-muted-foreground">
-                                Purchased {new Date(userPackage.assignedAt).toLocaleDateString()} • Expires {new Date(userPackage.expiredAt).toLocaleDateString()}
+                                Purchased {new Date(userPackage.assignedAt).toLocaleDateString()} • {userPackage.expiredAt ? `Expires ${new Date(userPackage.expiredAt).toLocaleDateString()}` : `Status: ${userPackage.status || 'PAID'}`}
                               </p>
                             </div>
                             <Badge variant="secondary" className="w-fit">{exercises.length} exercise{exercises.length === 1 ? '' : 's'}</Badge>

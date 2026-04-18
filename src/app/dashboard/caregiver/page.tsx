@@ -21,7 +21,6 @@ import type {
   CaregiverProfileResponse,
   ReminderResponse,
   RobotDTO,
-  RobotStatusLogResponse,
   RoomElderlySummary,
   ServicePackageResponse,
   UserPackageResponse,
@@ -47,7 +46,6 @@ export default function CaregiverOverviewPage() {
   const [reminders, setReminders] = useState<ReminderResponse[]>([]);
   const [alerts, setAlerts] = useState<AlertNotificationResponse[]>([]);
   const [roomRobot, setRoomRobot] = useState<RobotDTO | null>(null);
-  const [robotLogs, setRobotLogs] = useState<RobotStatusLogResponse[]>([]);
   const [userPackages, setUserPackages] = useState<UserPackageResponse[]>([]);
   const [servicePackages, setServicePackages] = useState<ServicePackageResponse[]>([]);
   const isMounted = useIsMounted();
@@ -72,7 +70,6 @@ export default function CaregiverOverviewPage() {
           setReminders([]);
           setAlerts([]);
           setRoomRobot(null);
-          setRobotLogs([]);
           setLoading(false);
           return;
         }
@@ -101,21 +98,6 @@ export default function CaregiverOverviewPage() {
         setRoomRobot(robotByRoom);
         setServicePackages(packageCatalog);
         setUserPackages(userPackageGroups.flat());
-
-        if (robotByRoom) {
-          const statusLogs = await robotService.getStatusLogsByRobot(robotByRoom.id).catch(async () => {
-            const allLogs = await robotService.getAllStatusLogs().catch(() => [] as RobotStatusLogResponse[]);
-            return allLogs.filter((item) => item.robotId === robotByRoom.id);
-          });
-
-          setRobotLogs(
-            [...statusLogs].sort(
-              (left, right) => new Date(right.reportedAt).getTime() - new Date(left.reportedAt).getTime()
-            )
-          );
-        } else {
-          setRobotLogs([]);
-        }
       } catch (loadError: unknown) {
         setError(loadError instanceof Error ? loadError.message : 'Khong the tai caregiver overview tu API.');
       } finally {
@@ -132,8 +114,6 @@ export default function CaregiverOverviewPage() {
   );
 
   const unpurchasedTheme = getUnpurchasedPackageTheme();
-
-  const latestRobotLog = robotLogs[0] ?? null;
 
   if (!isMounted) return null;
 
@@ -206,7 +186,7 @@ export default function CaregiverOverviewPage() {
           <CardContent>
             <div className="text-lg font-bold">{roomRobot?.robotName || 'Chua co robot'}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {roomRobot ? `${roomRobot.model} • Robot ID ${roomRobot.id}` : latestRobotLog ? `Trang thai gan nhat: ${latestRobotLog.status}` : 'Chua co robot status log'}
+              {roomRobot ? `${roomRobot.model} • Robot ID ${roomRobot.id}` : 'Chua co robot trong phong'}
             </p>
           </CardContent>
         </Card>
@@ -256,7 +236,7 @@ export default function CaregiverOverviewPage() {
                           <div className="grid gap-3 sm:grid-cols-2">
                             <div className="flex items-center justify-between gap-3">
                               <span className="flex items-center gap-2 text-muted-foreground"><Package className="h-4 w-4 text-emerald-500" /> Status</span>
-                              <span className="font-semibold text-foreground">{hasPackage ? 'Owned' : 'Unpurchased'}</span>
+                              <span className="font-semibold text-foreground">{hasPackage ? (activeUserPackage?.status === 'PENDING' ? 'Waiting' : 'Owned') : 'Unpurchased'}</span>
                             </div>
                             <div className="flex items-center justify-between gap-3">
                               <span className="text-muted-foreground">Room</span>
@@ -304,25 +284,6 @@ export default function CaregiverOverviewPage() {
                       <Badge variant="secondary">{item.elderlyName}</Badge>
                     </div>
                     <div className="text-muted-foreground mt-1">{item.message}</div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div>
-              <div className="mb-2 text-sm font-medium">Recent robot logs</div>
-              {robotLogs.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Chua co robot status log.</p>
-              ) : (
-                robotLogs.slice(0, 4).map((item) => (
-                  <div key={item.id} className="mb-2 rounded-lg border p-3 text-sm">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold">{item.status}</span>
-                      <Badge variant="outline">{item.robotName}</Badge>
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {new Date(item.reportedAt).toLocaleString()}
-                    </div>
                   </div>
                 ))
               )}

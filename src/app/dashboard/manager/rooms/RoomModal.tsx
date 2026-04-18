@@ -195,10 +195,10 @@ export function RoomModal({ isOpen, onClose, room, onRefresh, managerId }: RoomM
     }
   };
 
-  const handleUnassignRobot = async (robotId: number) => {
+  const handleUnassignRobot = async () => {
     if (!room) return;
     try {
-      await roomService.unassignRobotFromRoom(room.id, robotId);
+      await roomService.unassignRobotFromRoom(room.id);
       toast.success(t('manager.rooms.toasts.remove_success') || "Robot removed from room");
       onRefresh();
       loadSelectionLists();
@@ -486,7 +486,7 @@ export function RoomModal({ isOpen, onClose, room, onRefresh, managerId }: RoomM
                                   size="sm" 
                                   variant="destructive"
                                   className="rounded-lg font-bold min-w-[100px] bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100 h-8"
-                                  onClick={() => handleUnassignRobot(rb.id)}
+                                  onClick={() => handleUnassignRobot()}
                                 >
                                   <Trash2 className="h-4 w-4 mr-1"/> {t('manager.rooms.modal.btn_remove') || "Remove"}
                                 </Button>

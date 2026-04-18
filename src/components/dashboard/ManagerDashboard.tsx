@@ -60,6 +60,7 @@ import { userPackageService } from '@/services/api/userPackageService';
 import { accountService } from '@/services/api/accountService';
 import { interactionLogService } from '@/services/api/interactionLogService';
 import { elderlyService } from '@/services/api/elderlyService';
+import { paymentService } from '@/services/api/paymentService';
 import { RobotResponse, ServicePackageResponse, UserPackageResponse, AccountResponse, InteractionLogResponse, ElderlyProfileResponse } from '@/services/api/types';
 import { useI18nStore } from '@/store/useI18nStore';
 
@@ -70,6 +71,7 @@ export function ManagerDashboard() {
   const [robots, setRobots] = useState<RobotResponse[]>([]);
   const [servicePackages, setServicePackages] = useState<ServicePackageResponse[]>([]);
   const [userPackages, setUserPackages] = useState<UserPackageResponse[]>([]);
+  const [pendingPackages, setPendingPackages] = useState<UserPackageResponse[]>([]);
   const [accounts, setAccounts] = useState<AccountResponse[]>([]);
   const [interactionLogs, setInteractionLogs] = useState<InteractionLogResponse[]>([]);
   const [elderlyProfiles, setElderlyProfiles] = useState<ElderlyProfileResponse[]>([]);
@@ -91,7 +93,8 @@ export function ManagerDashboard() {
           userPackageService.getAll(),
           accountService.getAccounts(),
           interactionLogService.getAll(),
-          elderlyService.getAll()
+          elderlyService.getAll(),
+          paymentService.getManagerPending()
         ]);
         
         // Check if any major API failed
@@ -107,6 +110,7 @@ export function ManagerDashboard() {
         if (results[3].status === 'fulfilled') setAccounts(results[3].value || []);
         if (results[4].status === 'fulfilled') setInteractionLogs(results[4].value || []);
         if (results[5].status === 'fulfilled') setElderlyProfiles(results[5].value || []);
+        if (results[6].status === 'fulfilled') setPendingPackages(results[6].value || []);
 
       } catch (err: any) {
         console.error("Dashboard critical logic error:", err);
@@ -144,6 +148,18 @@ export function ManagerDashboard() {
     value: userPackages.filter(up => up.servicePackageId === pkg.id).length
   })).filter(p => p.value > 0);
 
+  // Filter only confirmed packages for revenue calculations
+  const confirmedPackages = useMemo(() => {
+    return userPackages.filter(up => {
+      // 1. Check if the ID is in the dedicated pending list (if available)
+      const inPendingList = pendingPackages.some(pending => pending.id === up.id);
+      if (inPendingList) return false;
+      
+      // 2. Safety filter: explicitly check status if BE supports it
+      return up.status !== 'PENDING';
+    });
+  }, [userPackages, pendingPackages]);
+
   // Group and calculate real revenue trend for the last N months
   const monthlyRevenue = useMemo(() => {
     // Generate last N months starting from current month
@@ -153,7 +169,7 @@ export function ManagerDashboard() {
       const monthLabel = format(monthDate, 'MMMM', { locale: dateLocale });
       const monthDisplay = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
       
-      const revenueInMonth = userPackages.reduce((sum, up) => {
+      const revenueInMonth = confirmedPackages.reduce((sum, up) => {
         // Use standard assignedAt field
         const dateStr = up.assignedAt;
         if (!dateStr) return sum;
@@ -172,14 +188,11 @@ export function ManagerDashboard() {
 
       return { name: monthDisplay, actual: revenueInMonth };
     });
-  }, [userPackages, servicePackages, timeRange]);
+  }, [confirmedPackages, servicePackages, timeRange, dateLocale]);
 
   const totalRevenue = useMemo(() => {
-    return userPackages.reduce((sum, up) => {
-      const pkg = servicePackages.find(p => p.id === up.servicePackageId);
-      return sum + (pkg?.price || 0);
-    }, 0);
-  }, [userPackages, servicePackages]);
+    return monthlyRevenue.reduce((sum, item) => sum + item.actual, 0);
+  }, [monthlyRevenue]);
 
   if (loading) {
     return (

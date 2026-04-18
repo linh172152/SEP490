@@ -99,43 +99,74 @@ export default function UsersManagePage() {
     loadBackup();
   }, [fetchUsers]);
 
-  // -- Backup Logic --
+  // -- Backup Logic (Non-destructive) --
   const loadBackup = () => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     try {
-      const parsed: BackupRecord[] = JSON.parse(raw);
-      const fresh = parsed.filter(r => Date.now() - r.deletedAt < 24 * 60 * 60 * 1000);
-      setBackupList(fresh);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
+      const allRecords: BackupRecord[] = JSON.parse(raw);
+      const allowedRoles = ["ADMINISTRATOR", "MANAGER", "ROLE_ADMINISTRATOR", "ROLE_MANAGER"];
+      
+      // We ONLY filter for display state. We DO NOT overwrite the storage here to avoid losing other roles' data.
+      const displayList = allRecords.filter(r => {
+        const isFresh = Date.now() - r.deletedAt < 24 * 60 * 60 * 1000;
+        const role = String(r.account.role || "").toUpperCase();
+        return isFresh && allowedRoles.includes(role);
+      });
+
+      setBackupList(displayList);
+    } catch (e) {
+      console.warn("Failed to load backup:", e);
     }
   };
 
   const saveToBackup = (account: AccountResponse) => {
     const record: BackupRecord = { account, deletedAt: Date.now() };
-    const updated = [record, ...backupList].slice(0, 50);
-    setBackupList(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    
+    // Read raw ALL records first
+    const raw = localStorage.getItem(STORAGE_KEY);
+    let allRecords: BackupRecord[] = [];
+    try {
+      if (raw) allRecords = JSON.parse(raw);
+    } catch { allRecords = []; }
+
+    // Merge: prevent duplicates if account already in backup
+    const otherRecords = allRecords.filter(r => r.account.id !== account.id);
+    const updatedAll = [record, ...otherRecords].slice(0, 100); // Global cap 100
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedAll));
+    
+    // Update local display list
+    loadBackup(); 
   };
 
   const handleRestoreBackup = async (record: BackupRecord) => {
     try {
       await accountService.updateAccount(record.account.id, { deleted: false });
       toast.success(t("admin.users.toasts.update_success"));
-      const updated = backupList.filter(r => r.account.id !== record.account.id);
-      setBackupList(updated);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      
+      // Remove from global storage
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const all: BackupRecord[] = JSON.parse(raw);
+        const filtered = all.filter(r => r.account.id !== record.account.id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+      }
+      
+      loadBackup();
       fetchUsers();
     } catch (error: unknown) {
       if (error && typeof error === 'object' && 'status' in error) {
         const err = error as { status: number };
         if (err.status === 403 || err.status === 501 || err.status === 400) {
           toast.info(t("admin.robots.backup.info"));
-          const updated = backupList.filter(r => r.account.id !== record.account.id);
-          setBackupList(updated);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const all: BackupRecord[] = JSON.parse(raw);
+            const filtered = all.filter(r => r.account.id !== record.account.id);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+          }
+          loadBackup();
           return;
         }
       }
@@ -151,9 +182,15 @@ export default function UsersManagePage() {
       await accountService.deleteAccount(record.account.id);
       toast.success(t("admin.users.toasts.delete_success"));
       
-      const updated = backupList.filter(r => r.account.id !== record.account.id);
-      setBackupList(updated);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      // Remove from global storage
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const all: BackupRecord[] = JSON.parse(raw);
+        const filtered = all.filter(r => r.account.id !== record.account.id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+      }
+      
+      loadBackup();
       fetchUsers();
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : t("admin.users.toasts.error_generic"));

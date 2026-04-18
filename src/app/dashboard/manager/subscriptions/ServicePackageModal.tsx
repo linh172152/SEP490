@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { ServicePackageRequest, ServicePackageResponse, ExerciseScriptResponse } from '@/services/api/types';
 import { 
   Select, 
@@ -43,7 +44,6 @@ import {
   }: ServicePackageModalProps) {
     const { t } = useI18nStore();
     const [loading, setLoading] = useState(false);
-    const [scripts, setScripts] = useState<ExerciseScriptResponse[]>([]);
     
     const [formData, setFormData] = useState<ServicePackageRequest>({
       name: '',
@@ -53,8 +53,6 @@ import {
       active: true,
       durationDays: 30,
     });
-
-    // No longer fetching scripts here as exercise assignment is separated
 
     useEffect(() => {
       if (initialData) {
@@ -77,8 +75,6 @@ import {
         });
       }
     }, [initialData, isOpen]);
-
-    // toggleExercise removed as it moved to exercise selector
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -107,13 +103,19 @@ import {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">{t('admin.packages.modal.fields.name')}</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="name">{t('admin.packages.modal.fields.name')}</Label>
+                <span className="text-[10px] text-muted-foreground font-medium">
+                  {formData.name.length}/100
+                </span>
+              </div>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g. Premium Care+"
                 required
+                maxLength={100}
               />
             </div>
 
@@ -161,18 +163,31 @@ import {
               />
             </div>
 
-            {/* Exercise Selection removed: Moved to separate component */}
-
             <div className="space-y-2">
-              <Label htmlFor="description">{t('admin.packages.modal.fields.description')}</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="description">{t('admin.packages.modal.fields.description')}</Label>
+                <span className={cn(
+                  "text-[10px] px-1.5 py-0.5 rounded-full font-bold transition-all",
+                  formData.description.length > 240 ? "bg-orange-100 text-orange-600" : "bg-secondary text-secondary-foreground",
+                  formData.description.length >= 255 && "bg-destructive/10 text-destructive"
+                )}>
+                  {formData.description.length}/255
+                </span>
+              </div>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Detail what services are included in this plan..."
                 required
-                className="min-h-[80px]"
+                maxLength={255}
+                className="min-h-[100px] resize-none"
               />
+              {formData.description.length >= 255 && (
+                <p className="text-[10px] text-destructive font-medium animate-pulse">
+                  {t('common.max_length_reached') || 'Maximum description length reached (255 characters).'}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-between p-3 rounded-lg border">

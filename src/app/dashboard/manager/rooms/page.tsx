@@ -18,8 +18,19 @@ import {
   Pencil, 
   Trash2,
   Settings2,
-  ChevronDown
+  ChevronDown,
+  AlertTriangle
 } from 'lucide-react';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useI18nStore } from '@/store/useI18nStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-toastify';
@@ -47,6 +58,20 @@ export default function RoomsManagerPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<RoomResponse | null>(null);
+
+  // Confirm Dialog State
+  const [confirmDelete, setConfirmDelete] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+    isLoading?: boolean;
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    onConfirm: () => {},
+  });
 
   const fetchRooms = async () => {
     setLoading(true);
@@ -109,7 +134,7 @@ export default function RoomsManagerPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (room: RoomResponse) => {
+  const handleDelete = (room: RoomResponse) => {
     const hasAssignments = (room.caregivers?.length || 0) > 0 || (room.elderlies?.length || 0) > 0 || room.robot !== null;
 
     if (hasAssignments) {
@@ -117,17 +142,24 @@ export default function RoomsManagerPage() {
       return;
     }
 
-    if (!confirm(t('manager.rooms.toasts.delete_confirm'))) return;
-    
-    try {
-      await roomService.deleteRoom(room.id);
-      toast.success(t('manager.rooms.toasts.delete_success'));
-      fetchRooms();
-    } catch (e: any) {
-      // Use message from server if it exists (e.g. "Access Denied")
-      const serverMsg = e.message || e.details || e.error;
-      toast.error(serverMsg || t('manager.rooms.toasts.delete_error'));
-    }
+    setConfirmDelete({
+      isOpen: true,
+      title: t('manager.rooms.toasts.delete_confirm') || "Delete Room?",
+      description: `Are you sure you want to delete room "${room.roomName}"? This action cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          setConfirmDelete(prev => ({ ...prev, isLoading: true }));
+          await roomService.deleteRoom(room.id);
+          toast.success(t('manager.rooms.toasts.delete_success'));
+          fetchRooms();
+        } catch (e: any) {
+          const serverMsg = e.message || e.details || e.error;
+          toast.error(serverMsg || t('manager.rooms.toasts.delete_error'));
+        } finally {
+          setConfirmDelete(prev => ({ ...prev, isOpen: false, isLoading: false }));
+        }
+      }
+    });
   };
 
   return (
@@ -298,6 +330,40 @@ export default function RoomsManagerPage() {
         onClose={() => setIsViewModalOpen(false)}
         room={selectedRoom}
       />
+
+      {/* Premium Confirm Dialog */}
+      <AlertDialog 
+        open={confirmDelete.isOpen} 
+        onOpenChange={(open) => setConfirmDelete(prev => ({ ...prev, isOpen: open }))}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <AlertDialogTitle className="text-center text-xl font-bold">{confirmDelete.title}</AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-slate-500 font-medium">
+              {confirmDelete.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogCancel className="rounded-xl font-bold">
+              {t('common.cancel') || 'Cancel'}
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete.onConfirm();
+              }}
+              className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold gap-2"
+              disabled={confirmDelete.isLoading}
+            >
+              {confirmDelete.isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {t('common.confirm') || 'Confirm'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

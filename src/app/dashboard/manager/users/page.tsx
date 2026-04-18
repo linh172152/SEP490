@@ -8,22 +8,33 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Plus, 
-  Users, 
-  Loader2, 
-  MoreHorizontal, 
-  Trash2, 
-  Search, 
+  ChevronLeft, 
+  ChevronRight,
+  UserSquare2,
+  AlertTriangle,
+  Users,
+  History,
+  Plus,
+  Search,
   Calendar,
+  Loader2,
   Mail,
   Smartphone,
   HeartPulse,
-  History,
-  Info,
-  ChevronLeft,
-  ChevronRight,
-  UserSquare2
+  MoreHorizontal,
+  Trash2,
+  Info
 } from "lucide-react";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useI18nStore } from "@/store/useI18nStore";
 import { accountService } from "@/services/api/accountService";
 import { elderlyService } from "@/services/api/elderlyService";
@@ -84,6 +95,20 @@ export default function UserManagementPage() {
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [backupList, setBackupList] = useState<BackupRecord[]>([]);
 
+  // Confirm Dialog State
+  const [confirmDelete, setConfirmDelete] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+    isLoading?: boolean;
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    onConfirm: () => {},
+  });
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -105,82 +130,126 @@ export default function UserManagementPage() {
     loadBackup();
   }, []);
 
-  // -- Backup Logic --
+  // -- Backup Logic (Non-destructive) --
   const loadBackup = () => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     try {
-      const parsed: BackupRecord[] = JSON.parse(raw);
-      // Filter out records > 24h old
-      const fresh = parsed.filter(r => Date.now() - r.deletedAt < 24 * 60 * 60 * 1000);
-      setBackupList(fresh);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
+      const allRecords: BackupRecord[] = JSON.parse(raw);
+      const allowedRoles = ["CAREGIVER", "FAMILYMEMBER", "ROLE_CAREGIVER", "ROLE_FAMILYMEMBER"];
+      
+      // Filter for display state only. DO NOT overwrite the storage here.
+      const displayList = allRecords.filter(r => {
+        const isFresh = Date.now() - r.deletedAt < 24 * 60 * 60 * 1000;
+        const role = String(r.account.role || "").toUpperCase();
+        return isFresh && allowedRoles.includes(role);
+      });
+
+      setBackupList(displayList);
+    } catch (e) {
+      console.warn("Failed to load backup:", e);
     }
   };
 
   const saveToBackup = (account: AccountResponse) => {
     const record: BackupRecord = { account, deletedAt: Date.now() };
-    const updated = [record, ...backupList].slice(0, 50); // Keep last 50
-    setBackupList(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    
+    // Read raw ALL records first
+    const raw = localStorage.getItem(STORAGE_KEY);
+    let allRecords: BackupRecord[] = [];
+    try {
+      if (raw) allRecords = JSON.parse(raw);
+    } catch { allRecords = []; }
+
+    // Merge: prevent duplicates
+    const otherRecords = allRecords.filter(r => r.account.id !== account.id);
+    const updatedAll = [record, ...otherRecords].slice(0, 100);
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedAll));
+    
+    // Refresh display
+    loadBackup();
   };
 
   const handleRestore = async (record: BackupRecord) => {
     try {
-      // TODO: Implement server-side reactivation if supported
-      // Attempting to reset deleted flag
       await accountService.updateAccount(record.account.id, { deleted: false } as any);
-      
       toast.success(t("common.update_success"));
-      // Remove from backup
-      const updated = backupList.filter(r => r.account.id !== record.account.id);
-      setBackupList(updated);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      
+      // Remove from global storage
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const all: BackupRecord[] = JSON.parse(raw);
+        const filtered = all.filter(r => r.account.id !== record.account.id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+      }
+      
+      loadBackup();
       fetchData();
     } catch (error: any) {
       if (error.status === 403 || error.status === 501 || error.status === 400) {
         toast.info(t("admin.robots.backup.info"));
-        // User asked to clean from localStorage to avoid confusion even if fails
-        const updated = backupList.filter(r => r.account.id !== record.account.id);
-        setBackupList(updated);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const all: BackupRecord[] = JSON.parse(raw);
+          const filtered = all.filter(r => r.account.id !== record.account.id);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+        }
+        loadBackup();
       } else {
         toast.error(t("admin.robots.backup.error"));
       }
     }
   };
 
-  const handlePermanentDelete = async (record: BackupRecord) => {
-    if (!window.confirm(t('common.confirm_permanent_delete') || "Are you sure you want to permanently delete this account? This action cannot be undone.")) return;
-    
-    try {
-      setLoading(true);
-      await accountService.deleteAccount(record.account.id);
-      toast.success(t("common.delete_success"));
-      
-      const updated = backupList.filter(r => r.account.id !== record.account.id);
-      setBackupList(updated);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      fetchData();
-    } catch (error: any) {
-      toast.error(t("common.error"));
-    } finally {
-      setLoading(false);
-    }
+  const handlePermanentDelete = (record: BackupRecord) => {
+    setConfirmDelete({
+      isOpen: true,
+      title: t('common.confirm_permanent_delete') || "Permanently Delete Account?",
+      description: "This action is irreversible. All data associated with this account will be lost forever.",
+      onConfirm: async () => {
+        try {
+          setConfirmDelete(prev => ({ ...prev, isLoading: true }));
+          await accountService.deleteAccount(record.account.id);
+          toast.success(t("common.delete_success"));
+          
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const all: BackupRecord[] = JSON.parse(raw);
+            const filtered = all.filter(r => r.account.id !== record.account.id);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+          }
+          
+          loadBackup();
+          fetchData();
+        } catch (error: any) {
+          toast.error(t("common.error"));
+        } finally {
+          setConfirmDelete(prev => ({ ...prev, isOpen: false, isLoading: false }));
+        }
+      }
+    });
   };
 
-  const handleDelete = async (account: AccountResponse) => {
-     if (!confirm(t('confirm_delete') || "Are you sure?")) return;
-     try {
-        await accountService.updateAccount(account.id, { deleted: true });
-        saveToBackup(account);
-        toast.success(t("common.delete_success"));
-        fetchData();
-     } catch (err) {
-        toast.error(t("common.error"));
-     }
+  const handleDelete = (account: AccountResponse) => {
+    setConfirmDelete({
+      isOpen: true,
+      title: t('common.confirm_delete') || "Delete Account?",
+      description: "Are you sure you want to deactivate this account? You can restore it from the history within 24 hours.",
+      onConfirm: async () => {
+        try {
+          setConfirmDelete(prev => ({ ...prev, isLoading: true }));
+          await accountService.updateAccount(account.id, { deleted: true });
+          saveToBackup(account);
+          toast.success(t("common.delete_success"));
+          fetchData();
+        } catch (err) {
+          toast.error(t("common.error"));
+        } finally {
+          setConfirmDelete(prev => ({ ...prev, isOpen: false, isLoading: false }));
+        }
+      }
+    });
   };
 
   // -- Filtering & Sorting --
@@ -544,6 +613,40 @@ export default function UserManagementPage() {
           </div>
         </div>
       )}
+
+      {/* Premium Confirm Dialog */}
+      <AlertDialog 
+        open={confirmDelete.isOpen} 
+        onOpenChange={(open) => setConfirmDelete(prev => ({ ...prev, isOpen: open }))}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <AlertDialogTitle className="text-center text-xl font-bold">{confirmDelete.title}</AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-slate-500 font-medium">
+              {confirmDelete.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogCancel className="rounded-xl font-bold">
+              {t('common.cancel') || 'Cancel'}
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete.onConfirm();
+              }}
+              className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold gap-2"
+              disabled={confirmDelete.isLoading}
+            >
+              {confirmDelete.isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {t('common.confirm') || 'Confirm'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

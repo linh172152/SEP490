@@ -150,7 +150,14 @@ export function ManagerDashboard() {
 
   // Filter only confirmed packages for revenue calculations
   const confirmedPackages = useMemo(() => {
-    return userPackages.filter(up => !pendingPackages.some(pending => pending.id === up.id));
+    return userPackages.filter(up => {
+      // 1. Check if the ID is in the dedicated pending list (if available)
+      const inPendingList = pendingPackages.some(pending => pending.id === up.id);
+      if (inPendingList) return false;
+      
+      // 2. Safety filter: explicitly check status if BE supports it
+      return up.status !== 'PENDING';
+    });
   }, [userPackages, pendingPackages]);
 
   // Group and calculate real revenue trend for the last N months

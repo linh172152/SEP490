@@ -47,6 +47,7 @@ class PaymentService {
           servicePackageId: 1, 
           assignedAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(), // 45 mins ago
           expiredAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          status: 'PENDING',
         },
         {
           id: 819,
@@ -55,6 +56,7 @@ class PaymentService {
           servicePackageId: 2, 
           assignedAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(), // 2 hours ago
           expiredAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          status: 'PENDING',
         },
         {
           id: 903,
@@ -63,6 +65,7 @@ class PaymentService {
           servicePackageId: 3,
           assignedAt: new Date(Date.now() - 1000 * 60 * 300).toISOString(), // 5 hours ago
           expiredAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          status: 'PENDING',
         }
       ];
     }

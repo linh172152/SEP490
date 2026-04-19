@@ -627,8 +627,9 @@ export default function SubscriptionsUnifiedPage() {
                                           item.elderlyProfileId?.toString().includes(query);
                       
                       const matchesLevel = filterPackageLevel === 'ALL' || (pkg && pkg.level === filterPackageLevel);
+                      const hasValidPrice = pkg && (pkg.price || 0) > 0;
                       
-                      return matchesSearch && matchesLevel;
+                      return matchesSearch && matchesLevel && hasValidPrice;
                     })
                     .sort((a, b) => {
                       const dateA = new Date(a.assignedAt || 0).getTime();

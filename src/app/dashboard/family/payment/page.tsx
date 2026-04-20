@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, QrCode } from 'lucide-react';
-import { useI18nStore } from '@/store/useI18nStore';
 
 const FAMILY_PAYMENT_STORAGE_KEY = 'family-payment-preview';
 
@@ -28,7 +27,6 @@ type FamilyPaymentPreview = {
 };
 
 export default function FamilyPaymentPage() {
-  const { t } = useI18nStore();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const fetchDashboardData = useFamilyStore((state) => state.fetchDashboardData);
@@ -43,7 +41,7 @@ export default function FamilyPaymentPage() {
 
     const raw = window.sessionStorage.getItem(FAMILY_PAYMENT_STORAGE_KEY);
     if (!raw) {
-      toast.error(t('family.payment.toasts.no_data'));
+      toast.error('Không tìm thấy dữ liệu thanh toán.');
       router.replace('/dashboard/family/packages');
       return;
     }
@@ -54,10 +52,10 @@ export default function FamilyPaymentPage() {
       setStatusText('QR đã sẵn sàng. Hệ thống đang tự xác nhận thanh toán...');
     } catch {
       window.sessionStorage.removeItem(FAMILY_PAYMENT_STORAGE_KEY);
-      toast.error(t('family.payment.toasts.data_error'));
+      toast.error('Dữ liệu thanh toán bị lỗi.');
       router.replace('/dashboard/family/packages');
     }
-  }, [router, t]);
+  }, [router]);
 
   useEffect(() => {
     if (!paymentPreview || confirming) {
@@ -84,7 +82,7 @@ export default function FamilyPaymentPage() {
 
         if (responseMessage.toLowerCase().includes('payment confirmed') || responseMessage.toLowerCase().includes('package created')) {
           setStatusText('Payment confirmed & package created');
-          toast.success(t('family.payment.toasts.success_redirect'));
+          toast.success('Thanh toán thành công. Đang quay về danh sách elderly...');
           if (typeof window !== 'undefined') {
             window.sessionStorage.removeItem(FAMILY_PAYMENT_STORAGE_KEY);
           }
@@ -102,7 +100,7 @@ export default function FamilyPaymentPage() {
       } catch {
         if (!cancelled) {
           setStatusText('Auto confirm failed. Please try again.');
-          toast.error(t('family.payment.toasts.confirm_failed'));
+          toast.error('Xác nhận thanh toán tự động thất bại.');
         }
       } finally {
         if (!cancelled) {
@@ -116,7 +114,7 @@ export default function FamilyPaymentPage() {
     return () => {
       cancelled = true;
     };
-  }, [confirming, fetchDashboardData, paymentPreview, router, user?.id, t]);
+  }, [confirming, fetchDashboardData, paymentPreview, router, user?.id]);
 
   const formattedAmount = useMemo(() => {
     if (!paymentPreview) {
@@ -140,12 +138,12 @@ export default function FamilyPaymentPage() {
     <div className="space-y-6 pb-12 animate-in fade-in slide-in-from-top-4 duration-500">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('family.payment.title')}</h1>
-          <p className="mt-1 text-muted-foreground">{t('family.payment.desc')}</p>
+          <h1 className="text-3xl font-bold tracking-tight">Payment</h1>
+          <p className="mt-1 text-muted-foreground">Quét QR ngay trong trang này. Hệ thống sẽ tự gọi confirm để hoàn tất trước khi quay về danh sách elderly.</p>
         </div>
         <Button asChild variant="outline">
           <Link href="/dashboard/family/packages">
-            <ArrowLeft className="mr-2 h-4 w-4" /> {t('family.payment.back_to_plans')}
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Service Plans
           </Link>
         </Button>
       </div>
@@ -154,8 +152,8 @@ export default function FamilyPaymentPage() {
         <Card className="overflow-hidden border-sky-200 bg-gradient-to-br from-sky-50 via-white to-cyan-50 shadow-sm">
           <div className="h-2 w-full bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500" />
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><QrCode className="h-5 w-5 text-sky-600" /> {t('family.payment.qr_title')}</CardTitle>
-            <CardDescription>{t('family.payment.qr_desc')}</CardDescription>
+            <CardTitle className="flex items-center gap-2"><QrCode className="h-5 w-5 text-sky-600" /> QR Payment</CardTitle>
+            <CardDescription>QR được hiển thị ngay bên trong trang payment, không còn chuyển ra ngoài nên người dùng luôn quay lại được luồng cũ.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-3xl border bg-white p-4 shadow-inner">
@@ -172,7 +170,7 @@ export default function FamilyPaymentPage() {
               <div className="flex items-start gap-3">
                 {confirming ? <Loader2 className="mt-0.5 h-4 w-4 animate-spin text-sky-600" /> : <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />}
                 <div>
-                  <div className="font-semibold">{t('manager.packages.table.status')}</div>
+                  <div className="font-semibold">Payment Status</div>
                   <p className="mt-1 text-sky-800/90">{statusText}</p>
                 </div>
               </div>
@@ -183,35 +181,35 @@ export default function FamilyPaymentPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>{t('family.payment.summary_title')}</CardTitle>
-              <CardDescription>{t('family.payment.summary_desc')}</CardDescription>
+              <CardTitle>Payment Summary</CardTitle>
+              <CardDescription>Thông tin cuối cùng của giao dịch được giữ lại để dùng cho API confirm.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
-              <InfoRow label={t('caregiver.reminders.table.elderly')} value={paymentPreview.elderlyName || `EL #${paymentPreview.elderlyId}`} />
+              <InfoRow label="Elderly" value={paymentPreview.elderlyName || `EL #${paymentPreview.elderlyId}`} />
               <InfoRow label="EL ID" value={`#${paymentPreview.elderlyId}`} />
-              <InfoRow label={t('manager.packages.table.name')} value={paymentPreview.servicePackageName || `Package #${paymentPreview.servicePackageId}`} />
-              <InfoRow label={t('manager.packages.table.level')} value={paymentPreview.servicePackageLevel || 'Unknown'} />
-              <InfoRow label={t('manager.packages.table.price')} value={`${formattedAmount} VND`} />
-              <InfoRow label={t('manager.packages.table.desc')} value={paymentPreview.description} mono />
+              <InfoRow label="Package" value={paymentPreview.servicePackageName || `Package #${paymentPreview.servicePackageId}`} />
+              <InfoRow label="Level" value={paymentPreview.servicePackageLevel || 'Unknown'} />
+              <InfoRow label="Amount" value={`${formattedAmount} VND`} />
+              <InfoRow label="Description" value={paymentPreview.description} mono />
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>{t('family.payment.auto_confirm_title')}</CardTitle>
-              <CardDescription>{t('family.payment.auto_confirm_desc')}</CardDescription>
+              <CardTitle>Auto Confirm</CardTitle>
+              <CardDescription>BE chưa tự động xử lý nên frontend gọi trước POST /api/payments/confirm bằng chính `description` và `amount` từ response tạo payment.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 <Badge className="bg-slate-900 text-white hover:bg-slate-900">POST /api/payments/confirm</Badge>
-                <Badge variant="outline">{t('manager.packages.table.desc')}: {paymentPreview.description}</Badge>
-                <Badge variant="outline">{t('manager.packages.table.price')}: {formattedAmount}</Badge>
+                <Badge variant="outline">description: {paymentPreview.description}</Badge>
+                <Badge variant="outline">amount: {formattedAmount}</Badge>
               </div>
               <div className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">
-                {t('family.payment.auto_confirm_note')}
+                Khi response trả về `Payment confirmed & package created`, hệ thống sẽ hiện thông báo thành công và quay về [src/app/dashboard/family/elderly/page.tsx](src/app/dashboard/family/elderly/page.tsx).
               </div>
               <Button onClick={() => router.push('/dashboard/family/elderly')} variant="outline">
-                {t('common.back')}
+                Skip and return to elderly list
               </Button>
             </CardContent>
           </Card>

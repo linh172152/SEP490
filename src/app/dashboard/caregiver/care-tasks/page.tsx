@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useI18nStore } from '@/store/useI18nStore';
 import { getReminderPatternLabel, getReminderTypeLabel, normalizeReminderType, REMINDER_PATTERN_OPTIONS, REMINDER_TYPE_OPTIONS } from '@/lib/reminderOptions';
+import { caregiverService } from '@/services/api/caregiverService';
+import { reminderService } from '@/services/api/reminderService';
 import { exerciseService } from '@/services/api/exerciseService';
 import { roomService } from '@/services/api/roomService';
 import type { CaregiverProfileResponse, ExerciseScriptResponse, ReminderRequest, ReminderResponse, RoomElderlySummary } from '@/services/api/types';
@@ -52,7 +53,6 @@ const createDefaultReminderForm = (caregiverId = 0, elderlyId = 0): ReminderRequ
 
 export default function CaregiverCareTasksPage() {
   const { user } = useAuthStore();
-  const { t } = useI18nStore();
   const [profile, setProfile] = useState<CaregiverProfileResponse | null>(null);
   const [reminders, setReminders] = useState<ReminderResponse[]>([]);
   const [elderlies, setElderlies] = useState<RoomElderlySummary[]>([]);
@@ -99,6 +99,8 @@ export default function CaregiverCareTasksPage() {
             : Promise.resolve([] as RoomElderlySummary[]),
         ]);
 
+        scriptData = loadedScripts;
+        elderlyData = loadedElderlies;
         setScripts(loadedScripts);
         setElderlies(loadedElderlies);
       }
@@ -118,6 +120,7 @@ export default function CaregiverCareTasksPage() {
       setReminders(
         relevantReminders.filter((item) => elderlyIds.has(item.elderlyId))
       );
+      setScripts(scriptData);
       setElderlies(elderlyData);
     } catch (loadError: unknown) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load caregiver care tasks.');
@@ -233,8 +236,8 @@ export default function CaregiverCareTasksPage() {
   return (
     <div className="space-y-6 pb-10">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t('caregiver.dashboard.title')}</h1>
-        <p className="mt-1 text-muted-foreground">{t('caregiver.dashboard.subtitle')}</p>
+        <h1 className="text-3xl font-bold tracking-tight">Care Tasks</h1>
+        <p className="mt-1 text-muted-foreground">Central workspace for reminders and exercise support for the elderly in your assigned room.</p>
       </div>
 
       {error ? (
@@ -244,21 +247,21 @@ export default function CaregiverCareTasksPage() {
       ) : null}
 
       {loading ? (
-        <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> {t('common.loading')}...</div>
+        <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading care tasks...</div>
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-3">
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm uppercase text-muted-foreground">{t('manager.residents.title')}</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-sm uppercase text-muted-foreground">Assigned Elderly</CardTitle></CardHeader>
               <CardContent className="flex items-center justify-between"><div className="text-3xl font-bold">{elderlies.length}</div><Users className="h-5 w-5 text-sky-500" /></CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm uppercase text-muted-foreground">{t('sidebar.reminders')}</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-sm uppercase text-muted-foreground">Reminders</CardTitle></CardHeader>
               <CardContent className="flex items-center justify-between"><div className="text-3xl font-bold">{reminders.length}</div><Bell className="h-5 w-5 text-amber-500" /></CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm uppercase text-muted-foreground">{t('caregiver.dashboard.robot_actions')}</CardTitle></CardHeader>
-              <CardContent className="flex items-center justify-between"><div className="text-3xl font-bold">{scripts.length}</div><Dumbbell className="h-5 w-5 text-indigo-500" /></CardContent>
+              <CardHeader className="pb-2"><CardTitle className="text-sm uppercase text-muted-foreground">Exercise Options</CardTitle></CardHeader>
+              <CardContent className="flex items-center justify-between"><div className="text-3xl font-bold">{scripts.length}</div><Dumbbell className="h-5 w-5 text-emerald-500" /></CardContent>
             </Card>
           </div>
 
@@ -315,25 +318,25 @@ export default function CaregiverCareTasksPage() {
                               <div className="flex flex-wrap items-center gap-2">
                                 <div className="font-semibold text-foreground">{reminder.title}</div>
                                 <Badge variant={reminder.active ? 'default' : 'secondary'}>
-                                  {reminder.active ? t('caregiver.reminders.status.active') : t('caregiver.reminders.status.inactive')}
+                                  {reminder.active ? 'Active' : 'Inactive'}
                                 </Badge>
-                                {isOverdue ? <Badge variant="destructive">{t('caregiver.reminders.status.overdue')}</Badge> : null}
+                                {isOverdue ? <Badge variant="destructive">Overdue</Badge> : null}
                               </div>
                               <div className="text-sm text-muted-foreground">
                                 {reminder.elderlyName || `Elderly #${reminder.elderlyId}`} • {getReminderTypeLabel(reminder.reminderType)} • {getReminderPatternLabel(reminder.repeatPattern)}
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                {t('caregiver.dashboard.stats.scheduled')}: {new Date(reminder.scheduleTime).toLocaleString()}
+                                Scheduled: {new Date(reminder.scheduleTime).toLocaleString()}
                               </div>
                             </div>
 
                             <div className="flex flex-wrap gap-2">
                               <Button size="sm" variant="outline" onClick={() => handleOpenEditReminder(reminder)} disabled={isBusy}>
-                                <Edit className="mr-2 h-4 w-4" /> {t('caregiver.dashboard.stats.edit')}
+                                <Edit className="mr-2 h-4 w-4" /> Edit
                               </Button>
                               <Button size="sm" variant="outline" asChild>
                                 <Link href={`/dashboard/caregiver/elderly/${reminder.elderlyId}/reminders`}>
-                                  <ExternalLink className="mr-2 h-4 w-4" /> {t('caregiver.dashboard.stats.open_elderly')}
+                                  <ExternalLink className="mr-2 h-4 w-4" /> Open Elderly
                                 </Link>
                               </Button>
                               <Button size="sm" variant="destructive" onClick={() => handleDeleteReminder(reminder.id)} disabled={isBusy}>
@@ -353,14 +356,14 @@ export default function CaregiverCareTasksPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-indigo-100">
+            <Card className="border-emerald-100">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5 text-indigo-500" /> {t('caregiver.dashboard.action_library.title')}</CardTitle>
-                <CardDescription>{t('caregiver.dashboard.action_library.description')}</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Activity className="h-5 w-5 text-emerald-500" /> Exercise</CardTitle>
+                <CardDescription>Review the exercise library and run suitable activities based on the elderly profile and package.</CardDescription>
               </CardHeader>
               <CardContent>
                 <Button asChild variant="outline" className="w-full justify-between">
-                  <Link href="/dashboard/caregiver/wellness">{t('caregiver.dashboard.action_library.link')} <ArrowRight className="h-4 w-4" /></Link>
+                  <Link href="/dashboard/caregiver/exercises">Open Exercise Library <ArrowRight className="h-4 w-4" /></Link>
                 </Button>
               </CardContent>
             </Card>

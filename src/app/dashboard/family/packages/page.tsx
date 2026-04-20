@@ -34,10 +34,13 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
+import { useI18nStore } from '@/store/useI18nStore';
+
 const SELECTED_ELDERLY_STORAGE_KEY = 'family-selected-elderly-package-context';
 const FAMILY_PAYMENT_STORAGE_KEY = 'family-payment-preview';
 
 export default function PackagesPage() {
+  const { t } = useI18nStore();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuthStore();
@@ -117,7 +120,7 @@ export default function PackagesPage() {
 
   const handlePurchase = async (packageId: number) => {
     if (!selectedElderlyId) {
-      toast.error('Vui lòng chọn một elderly profile trước khi thanh toán.');
+      toast.error(t('family.packages.toasts.select_elderly'));
       return;
     }
     
@@ -140,10 +143,10 @@ export default function PackagesPage() {
         );
       }
 
-      toast.success(`Đã tạo thanh toán cho EL #${selectedElderlyId}. Chuyển sang trang payment...`);
+      toast.success(t('common.processing'));
       router.push('/dashboard/family/payment');
     } catch {
-      toast.error('Lỗi khi tạo thanh toán. Vui lòng thử lại.');
+      toast.error(t('family.packages.toasts.create_failed'));
     } finally {
       setPurchasingId(null);
     }

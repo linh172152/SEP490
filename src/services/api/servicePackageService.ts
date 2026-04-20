@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { ExerciseScriptResponse, ServicePackageRequest, ServicePackageResponse } from './types';
+import { RobotActionLibrary, ServicePackageRequest, ServicePackageResponse } from './types';
 
 class ServicePackageService {
   async getAll(): Promise<ServicePackageResponse[]> {
@@ -22,12 +22,23 @@ class ServicePackageService {
     return apiClient.delete<void>(`/api/service-packages/${id}`);
   }
 
-  async getExercises(pkgId: number): Promise<ExerciseScriptResponse[]> {
-    return apiClient.get<ExerciseScriptResponse[]>(`/api/service-packages/${pkgId}/exercises`);
+  // Cập nhật gọi endpoint /robot-actions theo cấu trúc BE mới
+  async getActions(pkgId: number): Promise<RobotActionLibrary[]> {
+    return apiClient.get<RobotActionLibrary[]>(`/api/service-packages/${pkgId}/robot-actions`);
   }
 
-  async updateExercises(pkgId: number, exerciseIds: number[]): Promise<void> {
-    return apiClient.put<void>(`/api/service-packages/${pkgId}/exercises`, { exerciseIds });
+  async updateActions(pkgId: number, actionIds: number[], pkgData: ServicePackageResponse): Promise<void> {
+    // BE hiện tại xử lý mapping thông qua endpoint update package chính
+    const updateData: ServicePackageRequest = {
+      name: pkgData.name,
+      description: pkgData.description,
+      level: pkgData.level,
+      price: pkgData.price,
+      active: pkgData.active,
+      durationDays: pkgData.durationDays,
+      robotActionIds: actionIds
+    };
+    return apiClient.put<void>(`/api/service-packages/${pkgId}`, updateData);
   }
 
   async createAuto(data: ServicePackageRequest): Promise<ServicePackageResponse> {

@@ -11,6 +11,7 @@ export { robotService } from "./robotService";
 export { reminderService } from "./reminderService";
 export { elderlyService } from "./elderlyService";
 export { alertService } from "./alertService";
+export { robotActionService } from "./robotActionService";
 export { exerciseService } from "./exerciseService";
 export { caregiverService } from "./caregiverService";
 export { interactionLogService } from "./interactionLogService";

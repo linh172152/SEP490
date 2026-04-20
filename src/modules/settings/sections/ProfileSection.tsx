@@ -163,10 +163,10 @@ export function ProfileSection({ settings, capabilities, updateProfile, isSaving
         }
       }
 
-      toast.success('All profile details updated successfully!');
+      toast.success(t('settings.profile.toasts.save_success_all'));
       form.reset(data);
     } catch {
-       toast.error('Failed to update one or more profile sections.');
+       toast.error(t('settings.profile.toasts.save_error_sections'));
     }
   }
 

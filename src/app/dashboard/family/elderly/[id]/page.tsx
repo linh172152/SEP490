@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { differenceInYears } from 'date-fns';
+import { useI18nStore } from '@/store/useI18nStore';
 import {
   Area,
   AreaChart,
@@ -55,6 +56,7 @@ import {
 
 export default function FamilyElderlyDetailPage() {
   const params = useParams();
+  const { t } = useI18nStore();
   const id = params.id as string;
   const elderlyId = Number(id);
 
@@ -226,9 +228,9 @@ export default function FamilyElderlyDetailPage() {
   return (
     <div className="space-y-6 pb-10">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/dashboard/family" className="transition-colors hover:text-foreground">Dashboard</Link>
+        <Link href="/dashboard/family" className="transition-colors hover:text-foreground">{t('sidebar.dashboard')}</Link>
         <ChevronRight className="h-4 w-4" />
-        <Link href="/dashboard/family/elderly" className="transition-colors hover:text-foreground">My Elderly</Link>
+        <Link href="/dashboard/family/elderly" className="transition-colors hover:text-foreground">{t('sidebar.residents')}</Link>
         <ChevronRight className="h-4 w-4" />
         <span className="font-medium text-foreground">{profile.name}</span>
       </div>
@@ -269,7 +271,7 @@ export default function FamilyElderlyDetailPage() {
             </Button>
             <Button asChild variant="secondary" className="justify-start border-none bg-white/15 text-white hover:bg-white/20">
               <Link href={`/dashboard/family/packages?elderlyId=${profile.id}&elderlyName=${encodeURIComponent(profile.name)}`}>
-                <Package className="mr-2 h-4 w-4" /> Review Service Plans
+                <Package className="mr-2 h-4 w-4" /> {t('landing.features.items.subscription.name')}
               </Link>
             </Button>
             <Button asChild variant="secondary" className="justify-start border-none bg-white/15 text-white hover:bg-white/20">
@@ -279,12 +281,12 @@ export default function FamilyElderlyDetailPage() {
             </Button>
             <Button asChild variant="secondary" className="justify-start border-none bg-white/15 text-white hover:bg-white/20">
               <Link href={`/dashboard/family/elderly/${profile.id}/exercises`}>
-                <Dumbbell className="mr-2 h-4 w-4" /> View Exercises
+                <Zap className="mr-2 h-4 w-4" /> {t('family.elderly_detail.view_actions')}
               </Link>
             </Button>
             <Button asChild variant="secondary" className="justify-start border-none bg-white/15 text-white hover:bg-white/20">
               <Link href="/dashboard/family/elderly">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to My Elderly
+                <ArrowLeft className="mr-2 h-4 w-4" /> {t('common.cancel')}
               </Link>
             </Button>
           </div>
@@ -358,20 +360,20 @@ export default function FamilyElderlyDetailPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Included Exercises</CardTitle>
-              <CardDescription>Exercises provided by the active service plans.</CardDescription>
+              <CardTitle>{t('family.elderly_detail.included_actions.title')}</CardTitle>
+              <CardDescription>{t('family.elderly_detail.included_actions.description')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {eligibleExercises.length === 0 ? (
                 <div className="space-y-3 rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">
-                  No exercises available. Please purchase a service plan with exercises.
+                  {t('family.elderly_detail.included_actions.empty')}
                 </div>
               ) : (
                 eligibleExercises.map(({ script, packageNames }) => (
                   <div key={script.id} className="rounded-2xl border bg-slate-50 p-4">
                     <div className="flex items-center gap-3">
-                      <div className="rounded-xl bg-purple-100 p-2 dark:bg-purple-900/30">
-                        <Dumbbell className="h-4 w-4 text-purple-600" />
+                      <div className="rounded-xl bg-amber-100 p-2 dark:bg-amber-900/30">
+                        <Zap className="h-4 w-4 text-amber-600" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="font-semibold text-slate-900 line-clamp-1">{script.name}</div>

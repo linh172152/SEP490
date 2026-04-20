@@ -4,18 +4,20 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { elderlyService } from '@/services/api/elderlyService';
+import { useI18nStore } from '@/store/useI18nStore';
 import { servicePackageService } from '@/services/api/servicePackageService';
 import { userPackageService } from '@/services/api/userPackageService';
 import type { ElderlyProfileResponse, ServicePackageResponse, UserPackageResponse, ExerciseScriptResponse } from '@/services/api/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, ChevronRight, Dumbbell, Loader2 } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Zap, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getServicePackageTheme } from '@/lib/servicePackageThemes';
 
 export default function FamilyElderlyExercisesPage() {
   const params = useParams();
+  const { t } = useI18nStore();
   const elderlyId = Number(params.id);
 
   const [profile, setProfile] = useState<ElderlyProfileResponse | null>(null);
@@ -128,20 +130,20 @@ export default function FamilyElderlyExercisesPage() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-            <Link href="/dashboard/family" className="transition-colors hover:text-foreground">Dashboard</Link>
+            <Link href="/dashboard/family" className="transition-colors hover:text-foreground">{t('sidebar.dashboard')}</Link>
             <ChevronRight className="h-4 w-4" />
-            <Link href="/dashboard/family/elderly" className="transition-colors hover:text-foreground">My Elderly</Link>
+            <Link href="/dashboard/family/elderly" className="transition-colors hover:text-foreground">{t('sidebar.residents')}</Link>
             <ChevronRight className="h-4 w-4" />
             <Link href={`/dashboard/family/elderly/${profile.id}`} className="transition-colors hover:text-foreground">{profile.name}</Link>
             <ChevronRight className="h-4 w-4" />
-            <span className="font-medium text-foreground">Exercises</span>
+            <span className="font-medium text-foreground">{t('family.elderly_detail.actions_page.breadcrumb')}</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Assigned Exercises</h1>
-          <p className="text-muted-foreground mt-1">Exercises available for {profile.name} based on purchased packages.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">{t('family.elderly_detail.actions_page.title')}</h1>
+          <p className="text-muted-foreground mt-1">{t('family.elderly_detail.actions_page.description', { name: profile.name })}</p>
         </div>
         <Button asChild variant="outline">
           <Link href={`/dashboard/family/elderly/${profile.id}`}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Profile
+            <ArrowLeft className="mr-2 h-4 w-4" /> {t('common.cancel')}
           </Link>
         </Button>
       </div>
@@ -150,13 +152,13 @@ export default function FamilyElderlyExercisesPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Exercises by Purchased Packages</CardTitle>
-              <CardDescription>View all exercises unlocked by active packages.</CardDescription>
+              <CardTitle>{t('family.elderly_detail.actions_page.package_group')}</CardTitle>
+              <CardDescription>{t('family.elderly_detail.actions_page.package_desc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {packageExerciseDetails.length === 0 ? (
                 <div className="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-                  This elderly profile does not have any active package with exercise entitlement yet.
+                  {t('family.elderly_detail.actions_page.no_packages')}
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -182,15 +184,15 @@ export default function FamilyElderlyExercisesPage() {
                         <div className="p-5">
                           {exercises.length === 0 ? (
                             <div className="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-                              No exercises included in this package.
+                              {t('family.elderly_detail.actions_page.no_actions')}
                             </div>
                           ) : (
                             <div className="grid gap-3 sm:grid-cols-2">
                               {exercises.map((exercise) => (
                                 <div key={`${userPackage.id}-${exercise.id}`} className="flex flex-col rounded-2xl border border-slate-100 bg-slate-50 p-4 transition-colors hover:bg-slate-100/50">
                                   <div className="flex items-center gap-3">
-                                    <div className="rounded-full bg-sky-100 p-2 text-sky-600">
-                                      <Dumbbell className="h-4 w-4" />
+                                    <div className="rounded-full bg-amber-100 p-2 text-amber-600">
+                                      <Zap className="h-4 w-4" />
                                     </div>
                                     <div className="min-w-0">
                                       <div className="truncate font-semibold text-slate-900">{exercise.name}</div>

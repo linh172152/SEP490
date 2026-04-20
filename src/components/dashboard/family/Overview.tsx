@@ -22,7 +22,8 @@ import {
   AlertCircle,
   TrendingUp,
   HeartPulse,
-  Plus
+  Plus,
+  Zap
 } from 'lucide-react';
 import Link from 'next/link';
 

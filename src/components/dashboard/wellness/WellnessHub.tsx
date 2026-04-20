@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useI18nStore } from "@/store/useI18nStore";
-import { ExerciseLibrary } from "./ExerciseLibrary";
+import { ActionLibrary } from "./ActionLibrary";
 
 
 export function WellnessHub({ readOnly = false }: { readOnly?: boolean }) {
@@ -24,10 +24,10 @@ export function WellnessHub({ readOnly = false }: { readOnly?: boolean }) {
         <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 to-violet-500/20 blur-2xl opacity-50 group-hover:opacity-100 transition duration-1000"></div>
         <div className="relative space-y-2">
           <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
-             {t("wellness.title")}
+             {t('wellness.title_hub')}
           </h1>
           <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed font-medium">
-            {t("wellness.subtitle")}
+             {t('wellness.subtitle_hub')}
           </p>
         </div>
       </div>
@@ -40,8 +40,8 @@ export function WellnessHub({ readOnly = false }: { readOnly?: boolean }) {
               value="library" 
               className="rounded-xl px-8 h-11 data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-lg gap-2 transition-all duration-300"
             >
-              <Code className={`h-4 w-4 ${activeTab === "library" ? "text-indigo-500" : "opacity-50"}`} />
-              <span className="font-bold">{t("wellness.library_tab")}</span>
+              <Terminal className={`h-4 w-4 ${activeTab === "library" ? "text-indigo-500" : "opacity-50"}`} />
+              <span className="font-bold">{t('wellness.sidebar_label')}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -51,7 +51,7 @@ export function WellnessHub({ readOnly = false }: { readOnly?: boolean }) {
 
         <TabsContent value="library" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
           <div className="animate-in fade-in slide-in-from-left-4 duration-500">
-            <ExerciseLibrary readOnly={readOnly} />
+            <ActionLibrary readOnly={readOnly} />
           </div>
         </TabsContent>
 

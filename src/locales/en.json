@@ -84,25 +84,7 @@
     },
     "view_all": "View all fleet",
     "selected": "Selected",
-    "items": "items"
-  },
-  "sidebar": {
-    "dashboard": "Dashboard",
-    "overview": "Overview",
-    "user_mgt": "User Management",
-    "fleet": "Robot Fleet",
-    "robot_mgt": "Robot Management",
-    "robot_fleet": "Robot Fleet Hub",
-    "subscriptions": "Subscriptions",
-    "rooms": "Room Management",
-    "wellness": "Wellness Hub",
-    "settings": "Settings",
-    "logout": "Log Out",
-    "data_security": "Data Security",
-    "staff_mgt": "Staff Management",
-    "reminders": "Reminders",
-    "service_plans": "Service Plans",
-    "exercises": "Exercises"
+    "items": "actions"
   },
   "auth": {
     "login": {
@@ -188,7 +170,11 @@
       "select_gender": "Select gender",
       "male": "Male",
       "female": "Female",
-      "other": "Other"
+      "other": "Other",
+      "toasts": {
+        "save_success_all": "All profile details updated successfully!",
+        "save_error_sections": "Failed to update one or more profile sections."
+      }
     },
     "audit_logs": "System Activity Logs",
     "data_export": "Export Data Logs",
@@ -200,7 +186,11 @@
       "risk_management": "Risk Management",
       "role_access": "Role Access",
       "data_export": "Data Export",
-      "audit_logs": "Audit Logs"
+      "audit_logs": "Audit Logs",
+      "toasts": {
+        "initiated": "Your data export has been initiated and will arrive via email shortly.",
+        "admin_required": "Account deletion simulation: Admin approval explicitly required in this demo."
+      }
     },
     "preferences": {
       "title": "System Preferences",
@@ -227,6 +217,9 @@
       "confirm_password": "Confirm New Password",
       "button_update": "Update Password",
       "button_updating": "Updating...",
+      "validation": {
+        "password_min_6": "New password must be at least 6 characters"
+      },
       "success_update": "Password updated successfully",
       "error_mismatch": "New passwords do not match",
       "error_invalid": "Invalid current password or new password too short",
@@ -260,24 +253,28 @@
     }
   },
   "sidebar": {
+    "dashboard": "Dashboard",
     "overview": "Overview",
-    "staff_mgt": "User Management",
+    "user_mgt": "User Management",
+    "staff_mgt": "Staff Management",
+    "fleet": "Robot Fleet",
     "robot_mgt": "Robot Management",
-    "robot_fleet": "Robot Fleet",
-    "service_plans": "Service Plans",
-    "user_mgt": "Users",
-    "reminders": "Reminders",
-    "system_logs": "System Logs",
-    "usage_analytics": "Usage Analytics",
-    "ops_insights": "Operations Insights",
-    "data_security": "Data & Security",
-    "audit_logs": "Audit Logs",
-    "settings": "Settings",
-    "subscriptions": "Subscription Management",
-    "exercises": "Exercise Library",
+    "robot_fleet": "Fleet Hub",
+    "subscriptions": "Subscriptions",
     "rooms": "Room Management",
-    "residents": "Elderly Directory",
-    "logout": "Log out"
+    "wellness": "Wellness Hub",
+    "settings": "Settings",
+    "logout": "Logout",
+    "data_security": "Data Security",
+    "reminders": "Reminders",
+    "service_plans": "Service Plans",
+    "exercises": "Robot Actions",
+    "residents": "Residents",
+    "health_activity": "Health & Activity",
+    "alerts": "Alerts",
+    "reports": "Reports",
+    "robot_interaction": "Robot Interaction",
+    "care_tasks": "Care Tasks"
   },
   "admin": {
     "dashboard": {
@@ -317,7 +314,7 @@
         "total_accounts": "Infrastructure Users",
         "robots_status": "Robot Assets",
         "security_records": "Security Records",
-        "wellness_scripts": "Wellness Scripts"
+        "wellness_scripts": "Action Scripts"
       }
     },
     "fleet": {
@@ -550,10 +547,25 @@
     }
   },
   "caregiver": {
+    "dashboard": {
+      "title": "Care Tasks",
+      "subtitle": "Central workspace for reminders and robot action support for the elderly in your assigned room.",
+      "robot_actions": "Robot Actions",
+      "action_library": {
+        "title": "Action Library",
+        "description": "Review the available robot actions and support activities based on the elderly profile.",
+        "link": "View action library"
+      },
+      "stats": {
+        "scheduled": "Scheduled",
+        "edit": "Edit",
+        "open_elderly": "Open Profile"
+      }
+    },
     "reminders": {
       "title": "Reminder Management",
       "subtitle": "Manage and track daily tasks and medication schedules.",
-      "desc": "Monitor and set reminders for medication, exercise, and meals for the elderly.",
+      "desc": "Monitor and set reminders for medication, robot actions, and meals for the elderly.",
       "create": "Create Reminder",
       "search": "Search by title or elderly name...",
       "empty_title": "No Reminders Found",
@@ -581,7 +593,7 @@
       "types": {
         "medication": "Medication",
         "hydration": "Hydration",
-        "exercise": "Exercise",
+        "exercise": "Robot Action",
         "meal": "Meal",
         "appointment": "Appointment",
         "other": "Other"
@@ -595,7 +607,18 @@
       },
       "status": {
         "active": "Active",
-        "inactive": "Inactive"
+        "inactive": "Inactive",
+        "overdue": "Overdue"
+      },
+      "exercises": {
+        "toasts": {
+          "load_error": "Could not load robot action library.",
+          "trigger_error": "Could not send command to robot.",
+          "load_detail_error": "Could not load robot action details."
+        }
+      },
+      "toasts": {
+        "profile_missing": "Caregiver profile not found. Please sync your profile first."
       }
     }
   },
@@ -648,17 +671,17 @@
     },
     "subscriptions": {
       "title": "Subscription Management",
-      "subtitle": "Define package tiers and map specialized exercises to each level.",
+      "subtitle": "Set up service levels and map specific robot actions to each plan.",
       "tab_packages": "Package Levels",
-      "tab_sessions": "Exercise Mapping",
+      "tab_sessions": "Action Mapping",
       "tab_payments": "Payment Confirmation",
-      "assign_exercises": "Configure Exercises",
-      "no_exercises": "No exercises assigned to this package.",
+      "assign_exercises": "Map Actions",
+      "no_exercises": "No actions have been mapped to this package yet.",
       "package_select": "Select a package to configure",
-      "exercises_title": "Assigned Exercises",
-      "add_exercise": "Add Exercise",
+      "exercises_title": "Robot Action List",
+      "add_exercise": "Map Action",
       "remove_exercise": "Remove",
-      "quota_hint": "Recommended exercise allocation for",
+      "quota_hint": "Recommended action allocation for",
       "payment_confirm_title": "Manual Transaction Verification",
       "payment_confirm_desc": "Enter details from the bank transfer receipt to activate service packages for the elderly.",
       "field_description": "Transaction Description Code",
@@ -669,7 +692,29 @@
       "confirm_success": "Payment confirmed and package activated successfully!",
       "confirm_error": "Confirmation failed. Please check the code and amount.",
       "pending_list_title": "Pending Transactions",
-      "choose_btn": "Select"
+      "choose_btn": "Select",
+      "auto_generate": {
+        "label": "Auto-generate actions",
+        "description": "The system will automatically select random actions based on the package level instead of manual mapping.",
+        "badge": "NEW"
+      },
+      "action_selector": {
+        "title": "Robot Action Setup",
+        "subtitle": "Select sample action codes for package",
+        "search_placeholder": "Search action code or name..."
+      },
+      "action_mapping": {
+        "title": "Map Robot Actions to Package",
+        "assign_btn": "Assign Actions",
+        "table": {
+          "name": "Action Name",
+          "code": "Code",
+          "type": "Type",
+          "status": "Status",
+          "ready": "Ready",
+          "empty_actions": "No actions assigned to this package yet"
+        }
+      }
     },
     "nav": {
       "rooms": "Manage via Rooms"
@@ -850,22 +895,64 @@
     "cancel_btn": "Cancel"
   },
   "wellness": {
-    "title": "Exercise Library",
-    "sidebar_label": "Exercise Plans",
+    "title": "Robot Action Library",
+    "title_hub": "Robot Action Center",
+    "subtitle_hub": "Manage and configure intelligent action scripts for the entire robot fleet.",
+    "sidebar_label": "Action Library",
+    "add_action": "Add Action",
+    "search_placeholder": "Search actions or codes...",
+    "types": {
+      "ACTION": "Action",
+      "DANCE": "Dance",
+      "EMOTION": "Emotion"
+    },
+    "table": {
+      "code": "Code",
+      "name": "Action",
+      "type": "Type",
+      "duration": "Duration",
+      "desc": "Description",
+      "actions": "Operations",
+      "pagination": "{{count}} result pages"
+    },
+    "modal": {
+      "edit_title": "Edit Action",
+      "create_title": "Add New Action",
+      "subtitle": "Enter robot action information from local environment.",
+      "fields": {
+        "code": "Robot Code",
+        "code_placeholder": "e.g. 012",
+        "type": "Action Type",
+        "type_placeholder": "Select type",
+        "name": "Action Name",
+        "name_placeholder": "e.g. Pushups, Greeting...",
+        "duration": "Duration (Seconds)",
+        "duration_placeholder": "0",
+        "description": "Detailed Description",
+        "description_placeholder": "Specific description of this action..."
+      },
+      "validation": {
+        "name_min": "Name must be at least 2 characters",
+        "code_required": "Code is required"
+      }
+    },
+    "toasts": {
+      "fetch_error": "Error loading action list",
+      "create_success": "New action added",
+      "create_error": "Error adding action",
+      "delete_success": "Action deleted",
+      "delete_error": "Error deleting action",
+      "trigger_success": "Execution command sent: {{code}}",
+      "trigger_error": "Error sending command to robot",
+      "load_error": "Could not load exercise library.",
+      "update_success": "Exercise script updated successfully.",
+      "update_error": "Failed to update exercise script."
+    },
     "subtitle": "Manage Robot control scripts and monitor system-wide execution logs.",
     "desc": "Global Scripts",
     "library_tab": "Script Library",
     "exercise_tab": "Activity History",
     "headers": {},
-    "toasts": {
-      "load_error": "Could not load exercise library.",
-      "create_success": "Exercise script created successfully.",
-      "create_error": "Failed to create exercise script.",
-      "update_success": "Exercise script updated successfully.",
-      "update_error": "Failed to update exercise script.",
-      "delete_success": "Exercise library deleted.",
-      "delete_error": "Failed to delete exercise script."
-    },
     "library": {
       "add_btn": "Initialize New Script",
       "edit_btn": "Configure Script",
@@ -953,7 +1040,7 @@
         },
         "wellness": {
           "name": "Wellness Library",
-          "desc": "Master catalog of physical and therapeutic exercise protocols (scripts) used by robotic care units."
+          "desc": "Master catalog of physical and therapeutic robotic action protocols (scripts) used by robotic care units."
         },
         "subscription": {
           "name": "Subscription Control",
@@ -1030,6 +1117,23 @@
     }
   },
   "family": {
+    "elderly_detail": {
+      "view_actions": "View Robot Actions",
+      "included_actions": {
+        "title": "Included Robot Actions",
+        "description": "Robot actions provided by the active service plans.",
+        "empty": "No actions available. Please purchase a service plan to unlock robot features."
+      },
+      "actions_page": {
+        "breadcrumb": "Robot Actions",
+        "title": "Assigned Robot Actions",
+        "description": "Robot actions available for {{name}} based on purchased packages.",
+        "package_group": "Actions by Service Package",
+        "package_desc": "List of actions that can be triggered from the Robot.",
+        "no_packages": "This elderly profile does not have any active package with actions assigned yet.",
+        "no_actions": "No actions included in this package."
+      }
+    },
     "elderly": {
       "create": {
         "title": "New Care Profile",
@@ -1071,6 +1175,30 @@
           "submit": "Finalize & Create",
           "submitting": "Creating Profile..."
         }
+      }
+    },
+    "payment": {
+      "title": "Payment",
+      "desc": "Scan the QR code on this page. The system will automatically confirm the transaction before returning to the elderly profile list.",
+      "qr_title": "QR Payment",
+      "qr_desc": "The QR code is displayed directly on this page for a seamless experience.",
+      "summary_title": "Payment Summary",
+      "summary_desc": "Final transaction details for verification.",
+      "auto_confirm_title": "Auto Confirmation",
+      "auto_confirm_desc": "The system is automatically verifying your transaction details.",
+      "auto_confirm_note": "A success notification will appear once the service package is activated.",
+      "back_to_plans": "Back to Service Plans",
+      "toasts": {
+        "no_data": "Payment data not found.",
+        "data_error": "Corrupted payment data.",
+        "success_redirect": "Payment successful. Returning to elderly list...",
+        "confirm_failed": "Automatic payment confirmation failed."
+      }
+    },
+    "packages": {
+      "toasts": {
+        "select_elderly": "Please select an elderly profile before checking out.",
+        "create_failed": "Error creating payment. Please try again."
       }
     }
   }

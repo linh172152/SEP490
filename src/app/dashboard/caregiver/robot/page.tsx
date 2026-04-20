@@ -6,7 +6,6 @@ import { caregiverService } from '@/services/api/caregiverService';
 import { roomService } from '@/services/api/roomService';
 import { interactionLogService } from '@/services/api/interactionLogService';
 import { reminderService } from '@/services/api/reminderService';
-import { exerciseService } from '@/services/api/exerciseService';
 import { robotService } from '@/services/api/robotService';
 import type {
   InteractionLogResponse,
@@ -261,7 +260,7 @@ export default function CaregiverRobotPage() {
             </div>
 
             <div className="rounded-2xl border p-4">
-              <div className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">Robot Actions On This Page</div>
+              <div className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">Wellness Scripts On This Page</div>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Badge variant="outline">Interaction Logs</Badge>
                 <Badge variant="outline">Reminder Delivery</Badge>

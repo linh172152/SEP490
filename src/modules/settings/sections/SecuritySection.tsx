@@ -39,7 +39,7 @@ export function SecuritySection({ isSaving }: SecuritySectionProps) {
     }
 
     if (newPassword.length < 6) {
-      toast.error("Mật khẩu mới phải có ít nhất 6 ký tự");
+      toast.error(t('settings.security.validation.password_min_6'));
       return;
     }
 

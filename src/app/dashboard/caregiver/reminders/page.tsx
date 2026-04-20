@@ -206,7 +206,7 @@ export default function CaregiverRemindersPage() {
     const realCaregiverId = effectiveCaregiverId;
 
     if (!realCaregiverId) {
-      toast.error("Caregiver profile not found. Please sync your profile first.");
+      toast.error(t('caregiver.reminders.toasts.profile_missing'));
       return;
     }
 

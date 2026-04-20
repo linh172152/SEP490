@@ -65,6 +65,7 @@ export interface UserPackageRequest {
 
 export interface UserPackageResponse extends UserPackageRequest {
   id: number;
+  description?: string;
 }
 
 export interface RoomElderlySummary {
@@ -93,11 +94,27 @@ export interface ServicePackageRequest {
   price: number;
   active: boolean;
   durationDays?: number;
-  exerciseIds?: number[];
+  robotActionIds?: number[];
 }
 
 export interface ServicePackageResponse extends ServicePackageRequest {
   id: number;
+  robotActions?: RobotActionLibrary[];
+}
+
+export interface RobotActionLibrary {
+  id: number;
+  name: string;
+  code: string;
+  type: string;
+  description?: string;
+  duration?: number;
+}
+
+export interface RobotAction {
+  id: number;
+  action: string;
+  executed: boolean;
 }
 
 export interface PaymentCreateResponse {

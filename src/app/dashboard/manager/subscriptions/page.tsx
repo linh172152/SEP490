@@ -12,7 +12,7 @@ import { paymentService } from '@/services/api/paymentService';
 import {
   ServicePackageResponse,
   ServicePackageRequest,
-  ExerciseScriptResponse,
+  RobotAction,
   UserPackageResponse
 } from '@/services/api/types';
 import { PackageExerciseSelector } from './PackageExerciseSelector';
@@ -45,7 +45,7 @@ export default function SubscriptionsUnifiedPage() {
   // Data State
   const [packages, setPackages] = useState<ServicePackageResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [packageExercises, setPackageExercises] = useState<ExerciseScriptResponse[]>([]);
+  const [packageExercises, setPackageExercises] = useState<RobotAction[]>([]);
   const [exerciseLoading, setExerciseLoading] = useState(false);
   const [pendingPayments, setPendingPayments] = useState<UserPackageResponse[]>([]);
   const [paymentLoading, setPaymentLoading] = useState(false);
@@ -99,7 +99,7 @@ export default function SubscriptionsUnifiedPage() {
   const fetchPackageExercises = async (id: number) => {
     setExerciseLoading(true);
     try {
-      const data = await servicePackageService.getExercises(id);
+      const data = await servicePackageService.getRobotActions(id);
       setPackageExercises(data || []);
     } catch (e) {
       console.error(e);
@@ -381,7 +381,7 @@ export default function SubscriptionsUnifiedPage() {
                     <TableRow className="hover:bg-transparent border-none">
                       <TableHead className="pl-6 pt-4">{t('wellness.scripts.table.name')}</TableHead>
                       <TableHead className="pt-4">{t('wellness.scripts.table.duration')}</TableHead>
-                      <TableHead className="pt-4">{t('wellness.scripts.table.level') || 'Level'}</TableHead>
+                      <TableHead className="pt-4">{t('wellness.scripts.table.type') || 'Type'}</TableHead>
                       <TableHead className="pt-4 text-center">Preview</TableHead>
                       <TableHead className="text-right pr-6 pt-4">{t('common.actions')}</TableHead>
                     </TableRow>
@@ -403,10 +403,10 @@ export default function SubscriptionsUnifiedPage() {
                       packageExercises.map((ex) => (
                         <TableRow key={ex.id} className="group hover:bg-slate-50 transition-colors border-slate-50">
                           <TableCell className="pl-6 font-bold text-slate-700">{ex.name}</TableCell>
-                          <TableCell>{ex.durationMinutes}m</TableCell>
+                          <TableCell>{ex.duration}m</TableCell>
                           <TableCell>
                             <Badge variant="secondary" className="bg-slate-100 text-slate-600 uppercase text-[10px] font-bold">
-                              {ex.level}
+                              {ex.type}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-center">

@@ -100,9 +100,17 @@ export default function ElderlyListPage() {
 
             return (
             <Card key={elderly.id} className={cn(
-              'group overflow-hidden border shadow-sm transition-all duration-300 hover:shadow-xl',
+              'group relative overflow-hidden border shadow-sm transition-all duration-300 hover:shadow-xl',
               hasPackage ? packageTheme.surfaceClassName : unpurchasedTheme.surfaceClassName
             )}>
+              {activeUserPackage?.status === 'PENDING' && (
+                <div className="absolute inset-0 bg-amber-500/5 backdrop-blur-[0.5px] z-10 flex items-center justify-center pointer-events-none">
+                  <div className="bg-amber-500 text-white font-black px-8 py-3 rounded-2xl shadow-[0_20px_50px_rgba(245,158,11,0.3)] rotate-[-12deg] border-4 border-white flex flex-col items-center gap-0 animate-in fade-in zoom-in duration-500 scale-110">
+                    <span className="text-2xl tracking-tighter">PENDING</span>
+                    <span className="text-[10px] opacity-80 uppercase tracking-widest mt-0.5">Wait Approval</span>
+                  </div>
+                </div>
+              )}
               <div className={cn('h-1.5 w-full', hasPackage ? packageTheme.accentClassName : unpurchasedTheme.accentClassName)} />
               <CardHeader className="flex flex-row items-start justify-between pb-4">
                 <div className="flex items-center gap-4">

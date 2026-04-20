@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { ExerciseScriptResponse, ServicePackageRequest, ServicePackageResponse } from './types';
+import { RobotAction, ServicePackageRequest, ServicePackageResponse } from './types';
 
 class ServicePackageService {
   async getAll(): Promise<ServicePackageResponse[]> {
@@ -22,8 +22,12 @@ class ServicePackageService {
     return apiClient.delete<void>(`/api/service-packages/${id}`);
   }
 
-  async getExercises(pkgId: number): Promise<ExerciseScriptResponse[]> {
-    return apiClient.get<ExerciseScriptResponse[]>(`/api/service-packages/${pkgId}/exercises`);
+  async getRobotActions(pkgId: number): Promise<RobotAction[]> {
+    return apiClient.get<RobotAction[]>(`/api/service-packages/${pkgId}/robot-actions`);
+  }
+
+  async getByLevel(level: string): Promise<ServicePackageResponse[]> {
+    return apiClient.get<ServicePackageResponse[]>(`/api/service-packages/level/${level}`);
   }
 
   async updateExercises(pkgId: number, exerciseIds: number[]): Promise<void> {

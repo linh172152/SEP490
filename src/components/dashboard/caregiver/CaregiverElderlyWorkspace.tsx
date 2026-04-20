@@ -20,7 +20,8 @@ import type {
   AlertNotificationResponse,
   CaregiverProfileResponse,
   ElderlyProfileResponse,
-  ExerciseScriptResponse,
+  ExerciseScriptResponse, // Keep for other uses if any
+  RobotAction,
   InteractionLogResponse,
   ReminderLogResponse,
   ReminderRequest,
@@ -135,7 +136,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   const [roomRobot, setRoomRobot] = useState<RobotDTO | null>(null);
   const [userPackages, setUserPackages] = useState<UserPackageResponse[]>([]);
   const [servicePackages, setServicePackages] = useState<ServicePackageResponse[]>([]);
-  const [packageExercisesByPackageId, setPackageExercisesByPackageId] = useState<Record<number, ExerciseScriptResponse[]>>({});
+  const [packageExercisesByPackageId, setPackageExercisesByPackageId] = useState<Record<number, RobotAction[]>>({});
   const [reminderForm, setReminderForm] = useState(defaultReminderForm);
   const [reminderFilter, setReminderFilter] = useState<'all' | 'active' | 'missed' | 'completed'>('all');
 
@@ -258,7 +259,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
       const uniquePackageIds = Array.from(new Set(packages.map((item) => item.servicePackageId)));
       const packageExercises = await Promise.all(
         uniquePackageIds.map(async (packageId) => {
-          const exercises = await servicePackageService.getExercises(packageId).catch(() => [] as ExerciseScriptResponse[]);
+          const exercises = await servicePackageService.getRobotActions(packageId).catch(() => [] as RobotAction[]);
           return [packageId, exercises] as const;
         })
       );
@@ -364,7 +365,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     }));
   }, [activePackages, packageExercisesByPackageId, servicePackages]);
   const eligibleExercises = useMemo(() => {
-    const mappedScripts = new Map<number, { script: ExerciseScriptResponse; packageNames: string[] }>();
+    const mappedScripts = new Map<number, { script: RobotAction; packageNames: string[] }>();
 
     packageExerciseDetails.forEach(({ servicePackage: matchedPackage, exercises }) => {
       if (!matchedPackage) return;
@@ -886,9 +887,9 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                               <div className="min-w-0">
                                 <div className="font-semibold text-slate-900">{exercise.name}</div>
                                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                  <span>{exercise.durationMinutes} min</span>
+                                  <span>{exercise.duration} min</span>
                                   <span>•</span>
-                                  <span>{exercise.level || 'Unknown level'}</span>
+                                  <span>{exercise.type || 'Action'}</span>
                                 </div>
                               </div>
                               <Button size="sm" onClick={() => handleRunExercise(exercise.id)} disabled={runningExerciseId === exercise.id || !roomRobot}>

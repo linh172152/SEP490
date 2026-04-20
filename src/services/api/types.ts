@@ -86,6 +86,15 @@ export interface SystemLogResponse extends SystemLogRequest {
 }
 
 // Service Package Types
+export interface RobotAction {
+  id: number;
+  name: string;
+  code: string;
+  type: string;
+  duration: number;
+  description?: string;
+}
+
 export interface ServicePackageRequest {
   name: string;
   description: string;
@@ -96,8 +105,15 @@ export interface ServicePackageRequest {
   exerciseIds?: number[];
 }
 
-export interface ServicePackageResponse extends ServicePackageRequest {
+export interface ServicePackageResponse {
   id: number;
+  name: string;
+  description: string;
+  level: string;
+  price: number;
+  active: boolean;
+  durationDays: number;
+  robotActions: RobotAction[];
 }
 
 export interface PaymentCreateResponse {

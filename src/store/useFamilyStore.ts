@@ -123,9 +123,9 @@ export const useFamilyStore = create<FamilyState>()(
         ];
 
         const mockServicePackages: ServicePackageResponse[] = [
-          { id: 1, name: 'Basic Care', description: 'Goi co ban', level: 'BASIC', price: 29, active: true, durationDays: 30 },
-          { id: 2, name: 'Standard Care', description: 'Goi tieu chuan', level: 'STANDARD', price: 59, active: true, durationDays: 30 },
-          { id: 3, name: 'Premium Care', description: 'Goi nang cao', level: 'PREMIUM', price: 99, active: true, durationDays: 30 },
+          { id: 1, name: 'Basic Care', description: 'Goi co ban', level: 'BASIC', price: 29, active: true, durationDays: 30, robotActions: [] },
+          { id: 2, name: 'Standard Care', description: 'Goi tieu chuan', level: 'STANDARD', price: 59, active: true, durationDays: 30, robotActions: [] },
+          { id: 3, name: 'Premium Care', description: 'Goi nang cao', level: 'PREMIUM', price: 99, active: true, durationDays: 30, robotActions: [] },
         ];
 
         set({

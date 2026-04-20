@@ -8,7 +8,9 @@ import { caregiverService } from '@/services/api/caregiverService';
 import { reminderService } from '@/services/api/reminderService';
 import { exerciseService } from '@/services/api/exerciseService';
 import { roomService } from '@/services/api/roomService';
-import type { CaregiverProfileResponse, ExerciseScriptResponse, ReminderRequest, ReminderResponse, RoomElderlySummary } from '@/services/api/types';
+import type { CaregiverProfileResponse, ExerciseScriptResponse, ReminderLogResponse, ReminderRequest, ReminderResponse, RoomElderlySummary } from '@/services/api/types';
+import { getReminderDetailedStatus } from '@/utils/reminderStatus';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -55,7 +57,9 @@ export default function CaregiverCareTasksPage() {
   const { user } = useAuthStore();
   const [profile, setProfile] = useState<CaregiverProfileResponse | null>(null);
   const [reminders, setReminders] = useState<ReminderResponse[]>([]);
+  const [reminderLogs, setReminderLogs] = useState<ReminderLogResponse[]>([]);
   const [elderlies, setElderlies] = useState<RoomElderlySummary[]>([]);
+
   const [scripts, setScripts] = useState<ExerciseScriptResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshingReminders, setRefreshingReminders] = useState(false);
@@ -98,6 +102,12 @@ export default function CaregiverCareTasksPage() {
             ? roomService.getElderliesByRoom(currentProfile.roomId).catch(() => [] as RoomElderlySummary[])
             : Promise.resolve([] as RoomElderlySummary[]),
         ]);
+
+        const loadedLogs = currentProfile?.roomId 
+          ? await Promise.all(loadedElderlies.map(e => reminderService.getLogsByElderlyId(e.id).catch(() => [] as ReminderLogResponse[]))).then(res => res.flat())
+          : [];
+        setReminderLogs(loadedLogs);
+
 
         scriptData = loadedScripts;
         elderlyData = loadedElderlies;
@@ -144,11 +154,25 @@ export default function CaregiverCareTasksPage() {
     [reminders]
   );
 
-  const activeReminderCount = useMemo(() => reminders.filter((item) => item.active).length, [reminders]);
+  const activeReminderCount = useMemo(() => reminders.filter((item) => {
+    if (!item.active) return false;
+    const elderly = elderlies.find(e => e.id === item.elderlyId);
+    const info = getReminderDetailedStatus(item, reminderLogs, elderly?.gender);
+    return info.status !== 'COMPLETED';
+  }).length, [reminders, reminderLogs, elderlies]);
+
+
   const overdueReminderCount = useMemo(
-    () => reminders.filter((item) => item.active && new Date(item.scheduleTime).getTime() < Date.now()).length,
-    [reminders]
+    () => reminders.filter((item) => {
+      if (!item.active) return false;
+      const elderly = elderlies.find(e => e.id === item.elderlyId);
+      const info = getReminderDetailedStatus(item, reminderLogs, elderly?.gender);
+      return info.status === 'ROBOT_NOT_RESPONDING' || info.status === 'MISSED_USER_NO_RESPONSE';
+    }).length,
+    [reminders, reminderLogs, elderlies]
   );
+
+
 
   const resetReminderForm = () => {
     setEditingReminder(null);
@@ -317,11 +341,22 @@ export default function CaregiverCareTasksPage() {
                             <div className="space-y-2">
                               <div className="flex flex-wrap items-center gap-2">
                                 <div className="font-semibold text-foreground">{reminder.title}</div>
-                                <Badge variant={reminder.active ? 'default' : 'secondary'}>
-                                  {reminder.active ? 'Active' : 'Inactive'}
-                                </Badge>
-                                {isOverdue ? <Badge variant="destructive">Overdue</Badge> : null}
-                              </div>
+                                  <Badge variant={reminder.active ? 'default' : 'secondary'}>
+                                    {reminder.active ? 'Active' : 'Inactive'}
+                                  </Badge>
+                                  {(() => {
+                                    const elderly = elderlies.find(e => e.id === reminder.elderlyId);
+                                    const info = getReminderDetailedStatus(reminder, reminderLogs, elderly?.gender);
+                                    if (info.status === 'ROBOT_NOT_RESPONDING' || info.status === 'MISSED_USER_NO_RESPONSE') {
+                                      return <Badge variant="destructive" className="animate-pulse">{info.message || 'Overdue'}</Badge>;
+                                    }
+                                    if (info.status === 'WAITING_ROBOT' || info.status === 'WAITING_USER_RESPONSE') {
+                                      return <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 animate-pulse">Waiting...</Badge>;
+                                    }
+                                    return null;
+                                  })()}
+                                </div>
+
                               <div className="text-sm text-muted-foreground">
                                 {reminder.elderlyName || `Elderly #${reminder.elderlyId}`} • {getReminderTypeLabel(reminder.reminderType)} • {getReminderPatternLabel(reminder.repeatPattern)}
                               </div>

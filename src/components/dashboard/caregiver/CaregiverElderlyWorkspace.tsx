@@ -3,7 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { differenceInYears } from 'date-fns';
+import { getReminderDetailedStatus } from '@/utils/reminderStatus';
 import { cn } from '@/lib/utils';
+
 import { getReminderPatternLabel, getReminderTypeLabel, normalizeReminderPattern, normalizeReminderType, REMINDER_PATTERN_OPTIONS, REMINDER_TYPE_OPTIONS } from '@/lib/reminderOptions';
 import { useAuthStore } from '@/store/useAuthStore';
 import { caregiverService } from '@/services/api/caregiverService';
@@ -326,13 +328,27 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
       .slice(0, 6);
   }, [selectedAlerts, selectedInteractions, selectedReminderLogs]);
   const reminderGroups = useMemo(() => {
-    const now = Date.now();
     return {
-      active: selectedReminders.filter((item) => item.active && new Date(item.scheduleTime).getTime() >= now),
-      missed: selectedReminders.filter((item) => item.active && new Date(item.scheduleTime).getTime() < now),
-      completed: selectedReminders.filter((item) => !item.active),
+      active: selectedReminders.filter((item) => {
+        if (!item.active) return false;
+        const info = getReminderDetailedStatus(item, selectedReminderLogs, selectedProfile?.gender);
+        return info.status === 'UPCOMING' || info.status === 'WAITING_ROBOT' || info.status === 'WAITING_USER_RESPONSE';
+      }),
+      missed: selectedReminders.filter((item) => {
+        if (!item.active) return false;
+        const info = getReminderDetailedStatus(item, selectedReminderLogs, selectedProfile?.gender);
+        return info.status === 'ROBOT_NOT_RESPONDING' || info.status === 'MISSED_USER_NO_RESPONSE';
+      }),
+      completed: selectedReminders.filter((item) => {
+        if (!item.active) return true;
+        const info = getReminderDetailedStatus(item, selectedReminderLogs, selectedProfile?.gender);
+        return info.status === 'COMPLETED';
+      }),
     };
-  }, [selectedReminders]);
+  }, [selectedReminders, selectedReminderLogs, selectedProfile]);
+
+
+
   const sortedSelectedReminders = useMemo(
     () => selectedReminders.slice().sort((left, right) => new Date(right.scheduleTime).getTime() - new Date(left.scheduleTime).getTime()),
     [selectedReminders]
@@ -588,12 +604,15 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     );
 
     const filteredReminders = sortedSelectedReminders.filter(item => {
-      const isMissed = item.active && new Date(item.scheduleTime).getTime() < Date.now();
-      if (reminderFilter === 'active') return item.active && !isMissed;
-      if (reminderFilter === 'missed') return isMissed;
-      if (reminderFilter === 'completed') return !item.active;
+      const info = getReminderDetailedStatus(item, selectedReminderLogs, selectedProfile?.gender);
+      if (reminderFilter === 'active') return info.status === 'UPCOMING' || info.status === 'WAITING_ROBOT' || info.status === 'WAITING_USER_RESPONSE';
+      if (reminderFilter === 'missed') return info.status === 'ROBOT_NOT_RESPONDING' || info.status === 'MISSED_USER_NO_RESPONSE';
+      if (reminderFilter === 'completed') return info.status === 'COMPLETED';
       return true;
     });
+
+
+
 
     return (
       <div className="space-y-6">
@@ -693,11 +712,13 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                   </TableHeader>
                   <TableBody>
                     {filteredReminders.map((item) => {
-                      const isMissed = item.active && new Date(item.scheduleTime).getTime() < Date.now();
-                      const statusLabel = !item.active ? 'Completed' : isMissed ? 'Missed' : 'Active';
-                      const statusClassName = !item.active
+                      const info = getReminderDetailedStatus(item, selectedReminderLogs, selectedProfile?.gender);
+                      const statusLabel = info.status === 'COMPLETED' ? 'Completed' : (info.status === 'ROBOT_NOT_RESPONDING' || info.status === 'MISSED_USER_NO_RESPONSE') ? 'Missed' : (info.status === 'UPCOMING' ? 'Active' : 'Waiting...');
+
+
+                      const statusClassName = info.status === 'COMPLETED'
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                        : isMissed
+                        : (info.status === 'ROBOT_NOT_RESPONDING' || info.status === 'MISSED_USER_NO_RESPONSE')
                           ? 'bg-rose-50 text-rose-700 border-rose-100'
                           : 'bg-sky-50 text-sky-700 border-sky-100';
 
@@ -716,8 +737,14 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                              <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider">{getReminderPatternLabel(item.repeatPattern)}</Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={cn("font-bold px-2.5 py-0.5", statusClassName)}>{statusLabel}</Badge>
+                             <div className="flex flex-col gap-1">
+                               <Badge variant="outline" className={cn("font-bold px-2.5 py-0.5", statusClassName, (info.status === 'WAITING_ROBOT' || info.status === 'WAITING_USER_RESPONSE') && "animate-pulse")}>
+                                 {statusLabel}
+                               </Badge>
+                               {info.message && <span className="text-[10px] text-rose-600 font-medium">{info.message}</span>}
+                             </div>
                           </TableCell>
+
                           <TableCell className="text-right pr-6">
                             <div className="flex justify-end gap-1">
                               <Button size="sm" variant="outline" onClick={() => handleReminderEdit(item)}>Edit</Button>

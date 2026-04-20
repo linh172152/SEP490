@@ -33,6 +33,8 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { PackageExercisesModal } from '@/components/dashboard/family/PackageExercisesModal';
+
 
 const SELECTED_ELDERLY_STORAGE_KEY = 'family-selected-elderly-package-context';
 const FAMILY_PAYMENT_STORAGE_KEY = 'family-payment-preview';
@@ -45,6 +47,18 @@ export default function PackagesPage() {
   const [purchasingId, setPurchasingId] = useState<number | null>(null);
   const [selectedElderlyId, setSelectedElderlyId] = useState<number | null>(null);
   const [selectedElderlyName, setSelectedElderlyName] = useState('');
+
+  // Exercise Modal State
+  const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
+  const [viewingPkgId, setViewingPkgId] = useState<number | null>(null);
+  const [viewingPkgName, setViewingPkgName] = useState('');
+
+  const openExerciseModal = (id: number, name: string) => {
+    setViewingPkgId(id);
+    setViewingPkgName(name);
+    setIsExerciseModalOpen(true);
+  };
+
 
   useEffect(() => {
     if (user?.id) {
@@ -306,6 +320,15 @@ export default function PackagesPage() {
                     </p>
                  </div>
               </CardContent>
+               <CardFooter className="bg-white/5 border-t border-white/10 flex justify-end p-4">
+                  <Button 
+                    variant="ghost" 
+                    className="text-white hover:bg-white/10 font-bold"
+                    onClick={() => openExerciseModal(activePackage.servicePackageId, activePackageInfo?.name || 'Current Package')}
+                  >
+                    View Exercises <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+               </CardFooter>
            </Card>
             ) : !selectedElderlyId ? (
               <Card className="border-2 border-dashed border-slate-200 bg-slate-50/50 p-8 text-center rounded-3xl">
@@ -402,7 +425,14 @@ export default function PackagesPage() {
                   </ul>
                 </CardContent>
                 
-                <CardFooter className="pt-2">
+                <CardFooter className="pt-2 flex flex-col gap-2">
+                  <Button 
+                    variant="ghost" 
+                    className={cn("w-full h-10 rounded-xl font-bold", pkgTheme.badgeClassName)}
+                    onClick={() => openExerciseModal(pkg.id, pkg.name)}
+                  >
+                    <Activity className="mr-2 h-4 w-4" /> View Exercises
+                  </Button>
                   <Button 
                     variant={isCurrent ? 'outline' : 'default'}
                     className={`w-full h-12 rounded-2xl font-bold shadow-lg transition-all ${
@@ -448,6 +478,14 @@ export default function PackagesPage() {
             </Button>
          </div>
       </section>
+
+      <PackageExercisesModal 
+        isOpen={isExerciseModalOpen}
+        onClose={() => setIsExerciseModalOpen(false)}
+        packageId={viewingPkgId}
+        packageName={viewingPkgName}
+      />
     </div>
+
   );
 }

@@ -7,21 +7,10 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useCaregiverStore } from '@/store/useCaregiverStore';
 import { useI18nStore } from '@/store/useI18nStore';
 import { roomService } from '@/services/api/roomService';
+import { reminderService } from '@/services/api/reminderService';
 import { toast } from 'react-toastify';
-import { 
-  Plus, 
-  Calendar, 
-  Clock, 
-  Trash2, 
-  CheckCircle2, 
-  XCircle,
-  Loader2,
-  Search,
-  Bell,
-  Edit,
-  RefreshCcw,
-  Info
-} from 'lucide-react';
+import { AlertTriangle, Plus, Calendar, Clock, Trash2, CheckCircle2, XCircle, Loader2, Search, Bell, Edit, RefreshCcw, Info } from 'lucide-react';
+
 import { 
   Card, 
   CardContent, 
@@ -54,8 +43,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from '@/components/ui/badge';
-import { ReminderRequest, ReminderResponse, RoomElderlySummary } from '@/services/api/types';
+import { ReminderLogResponse, ReminderRequest, ReminderResponse, RoomElderlySummary } from '@/services/api/types';
 import { format } from 'date-fns';
+import { getReminderDetailedStatus } from '@/utils/reminderStatus';
+
 
 const getCaregiverIdentifiers = (profile: { id?: number | null; accountId?: number | null } | null, userId?: string) => {
   return Array.from(
@@ -73,6 +64,8 @@ export default function CaregiverRemindersPage() {
   const { reminders, fetchReminders, createReminder, updateReminder, deleteReminder, isLoading } = useReminderStore();
   const { currentProfile, fetchProfileByAccountId } = useCaregiverStore();
   const [roomElderlies, setRoomElderlies] = useState<RoomElderlySummary[]>([]);
+  const [reminderLogs, setReminderLogs] = useState<ReminderLogResponse[]>([]);
+
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingReminder, setEditingReminder] = useState<ReminderResponse | null>(null);
@@ -121,10 +114,18 @@ export default function CaregiverRemindersPage() {
       }
 
       setRoomElderlies(data || []);
-      await fetchReminders({
-        caregiverIds: getCaregiverIdentifiers(currentProfile, user?.id),
-      });
+      
+      const [allLogs] = await Promise.all([
+        data.length > 0 
+          ? Promise.all(data.map(e => reminderService.getLogsByElderlyId(e.id).catch(() => [] as ReminderLogResponse[]))).then(res => res.flat())
+          : Promise.resolve([] as ReminderLogResponse[]),
+        fetchReminders({
+          caregiverIds: getCaregiverIdentifiers(currentProfile, user?.id),
+        })
+      ]);
+      setReminderLogs(allLogs);
     };
+
 
     void loadRoomElderlies();
   }, [currentProfile, fetchReminders, user?.id]);
@@ -375,11 +376,46 @@ export default function CaregiverRemindersPage() {
                           <span>{getTranslatedReminderPatternLabel(reminder.repeatPattern)}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant={reminder.active ? "default" : "secondary"} className={`rounded-full px-3.5 py-1 font-bold tracking-wide ${reminder.active ? 'bg-emerald-500 shadow-sm shadow-emerald-100' : ''}`}>
-                          {reminder.active ? t('caregiver.reminders.status.active') : t('caregiver.reminders.status.inactive')}
-                        </Badge>
+                      <TableCell className="text-center lowercase">
+                        {(() => {
+                           const elderly = roomElderlies.find(e => e.id === reminder.elderlyId);
+                           const info = getReminderDetailedStatus(reminder, reminderLogs, elderly?.gender);
+
+                           if (!reminder.active) {
+                             return (
+                               <Badge variant="secondary" className="rounded-full px-3.5 py-1 font-bold tracking-wide">
+                                 {t('caregiver.reminders.status.inactive')}
+                               </Badge>
+                             );
+                           }
+                           
+                           if (info.status === 'UPCOMING') {
+                             return (
+                               <Badge className="rounded-full px-3.5 py-1 font-bold tracking-wide bg-emerald-500 shadow-sm shadow-emerald-100">
+                                 {t('caregiver.reminders.status.active')}
+                               </Badge>
+                             );
+                           }
+
+                           if (info.status === 'WAITING_ROBOT' || info.status === 'WAITING_USER_RESPONSE') {
+                             return (
+                               <Badge variant="outline" className="rounded-full px-3.5 py-1 font-bold tracking-wide text-amber-600 border-amber-200 bg-amber-50 animate-pulse flex items-center justify-center gap-1">
+                                 <Clock className="h-3 w-3" /> Waiting...
+                               </Badge>
+                             );
+                           }
+
+                           return (
+                             <div className="flex flex-col items-center gap-1">
+                               <Badge variant="destructive" className="rounded-full px-3.5 py-1 font-bold tracking-wide animate-pulse flex items-center justify-center gap-1">
+                                 <AlertTriangle className="h-3 w-3" /> {info.status === 'ROBOT_NOT_RESPONDING' ? 'No Robot' : 'No User Response'}
+                               </Badge>
+                               <span className="text-[10px] text-rose-500 font-medium whitespace-nowrap">{info.message}</span>
+                             </div>
+                           );
+                        })()}
                       </TableCell>
+
                       <TableCell className="text-right pr-8">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
                           <Button variant="ghost" size="icon" onClick={() => handleViewDetail(reminder)} className="h-9 w-9 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950 rounded-xl transition-all">

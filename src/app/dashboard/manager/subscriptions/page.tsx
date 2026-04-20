@@ -416,66 +416,13 @@ export default function SubscriptionsUnifiedPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-<<<<<<< HEAD
-                <Table>
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent border-none">
-                      <TableHead className="pl-6 pt-4">{t('wellness.scripts.table.name')}</TableHead>
-                      <TableHead className="pt-4">{t('wellness.scripts.table.duration')}</TableHead>
-                      <TableHead className="pt-4">{t('wellness.scripts.table.type') || 'Type'}</TableHead>
-                      <TableHead className="pt-4 text-center">Preview</TableHead>
-                      <TableHead className="text-right pr-6 pt-4">{t('common.actions')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {exerciseLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-20 text-muted-foreground">
-                          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 opacity-20" />
-                          {t('common.loading')}
-                        </TableCell>
-                      </TableRow>
-                    ) : packageExercises.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic">
-                          {t('manager.subscriptions.no_exercises')}
-                        </TableCell>
-                      </TableRow>) : (
-                      packageExercises.map((ex) => (
-                        <TableRow key={ex.id} className="group hover:bg-slate-50 transition-colors border-slate-50">
-                          <TableCell className="pl-6 font-bold text-slate-700">{ex.name}</TableCell>
-                          <TableCell>{ex.duration}m</TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className="bg-slate-100 text-slate-600 uppercase text-[10px] font-bold">
-                              {ex.type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                            >
-                              <Play className="h-5 w-5 fill-current" />
-                            </Button>
-                          </TableCell>
-                          <TableCell className="text-right pr-6">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleRemoveExerciseFromPkg(ex.id)}
-                              className="text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-=======
                 <ScrollArea className="h-[400px] lg:h-[500px]">
                   <Table>
                     <TableHeader className="sticky top-0 bg-slate-50 z-10 shadow-sm">
                       <TableRow className="hover:bg-transparent border-none">
                         <TableHead className="pl-6 pt-4">{t('wellness.scripts.table.name')}</TableHead>
                         <TableHead className="pt-4">{t('wellness.scripts.table.duration')}</TableHead>
-                        <TableHead className="pt-4">{t('wellness.scripts.table.level') || 'Level'}</TableHead>
+                        <TableHead className="pt-4">{t('wellness.scripts.table.type') || 'Type'}</TableHead>
                         <TableHead className="pt-4 text-center">Preview</TableHead>
                         <TableHead className="text-right pr-6 pt-4">{t('common.actions')}</TableHead>
                       </TableRow>
@@ -486,7 +433,6 @@ export default function SubscriptionsUnifiedPage() {
                           <TableCell colSpan={5} className="text-center py-20 text-muted-foreground">
                             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 opacity-20" />
                             {t('common.loading')}
->>>>>>> d9cc1fa559a52962c1ebb5409fc0db784b86d72d
                           </TableCell>
                         </TableRow>
                       ) : packageExercises.length === 0 ? (
@@ -498,10 +444,10 @@ export default function SubscriptionsUnifiedPage() {
                         packageExercises.map((ex) => (
                           <TableRow key={ex.id} className="group hover:bg-slate-50 transition-colors border-slate-50">
                             <TableCell className="pl-6 font-bold text-slate-700">{ex.name}</TableCell>
-                            <TableCell>{ex.durationMinutes}m</TableCell>
+                            <TableCell>{ex.duration}m</TableCell>
                             <TableCell>
                               <Badge variant="secondary" className="bg-slate-100 text-slate-600 uppercase text-[10px] font-bold">
-                                {ex.level}
+                                {ex.type}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-center">

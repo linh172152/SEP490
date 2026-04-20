@@ -64,7 +64,7 @@ export default function AdminFleetPage() {
   // Dialog States
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
-    type: 'delete' | 'ota';
+    type: 'delete';
     targetId?: number;
   }>({ open: false, type: 'delete' });
 
@@ -116,21 +116,7 @@ export default function AdminFleetPage() {
     fetchRobots();
   }, [fetchRobots]);
 
-  const handleUpdateFirmware = async (robotId: number) => {
-    toast.promise(
-      robotService.updateFirmware(robotId, "v2.5.0"),
-      {
-        pending: t('admin.fleet.ota.loading'),
-        success: {
-          render: () => {
-            fetchRobots();
-            return t('admin.fleet.ota.success');
-          }
-        },
-        error: t('admin.fleet.ota.error')
-      }
-    );
-  };
+
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -363,15 +349,7 @@ export default function AdminFleetPage() {
                        </TableCell>
                       <TableCell className="text-right pr-6">
                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="h-9 w-9 text-indigo-600 hover:bg-indigo-50 rounded-full"
-                              onClick={() => setConfirmDialog({ open: true, type: 'ota', targetId: robot.id })}
-                              title="OTA Update"
-                            >
-                              <RefreshCw className="h-4 w-4" />
-                            </Button>
+
                             <Button 
                               size="icon" 
                               variant="ghost" 
@@ -417,12 +395,10 @@ export default function AdminFleetPage() {
            <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl font-bold">
                 <Settings2 className="h-6 w-6 text-indigo-500" />
-                {confirmDialog.type === 'delete' && t('admin.fleet.dialogs.confirm_delete')}
-                {confirmDialog.type === 'ota' && t('admin.fleet.dialogs.confirm_ota')}
+                {t('admin.fleet.dialogs.confirm_delete')}
               </DialogTitle>
-              <DialogDescription className="py-4 font-medium text-slate-600 dark:text-slate-400">
-                {confirmDialog.type === 'delete' && t('admin.fleet.dialogs.confirm_delete_desc')}
-                {confirmDialog.type === 'ota' && t('admin.fleet.dialogs.confirm_ota_desc', { version: 'v2.5.0', id: confirmDialog.targetId ?? 0 })}
+               <DialogDescription className="py-4 font-medium text-slate-600 dark:text-slate-400">
+                {t('admin.fleet.dialogs.confirm_delete_desc')}
               </DialogDescription>
            </DialogHeader>
            <DialogFooter className="gap-2 pt-2">
@@ -430,12 +406,11 @@ export default function AdminFleetPage() {
                 {t('common.cancel')}
               </Button>
               <Button 
-                variant={confirmDialog.type === 'delete' ? "destructive" : "default"}
+                variant="destructive"
                 className="font-bold rounded-xl px-6"
                 onClick={() => {
                    setConfirmDialog(prev => ({ ...prev, open: false }));
-                   if (confirmDialog.type === 'delete' && confirmDialog.targetId) handleDelete(confirmDialog.targetId);
-                   if (confirmDialog.type === 'ota' && confirmDialog.targetId) handleUpdateFirmware(confirmDialog.targetId);
+                   if (confirmDialog.targetId) handleDelete(confirmDialog.targetId);
                 }}
               >
                 {t('common.confirm')}

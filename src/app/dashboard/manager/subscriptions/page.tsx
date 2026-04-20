@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Package, Plus, Loader2, Trash2, Edit2, Activity, ChevronRight, Play, CreditCard, CheckCircle2, AlertCircle, Copy, Clock, Filter } from 'lucide-react';
+import { Package, Plus, Loader2, Trash2, Edit2, Activity, ChevronRight, Play, CreditCard, CheckCircle2, AlertCircle, Copy, Clock, Filter, AlertTriangle } from 'lucide-react';
 import { useI18nStore } from '@/store/useI18nStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-toastify';
@@ -34,9 +34,17 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
-
-// Removed MOCK_PENDING_PAYMENTS
 
 export default function SubscriptionsUnifiedPage() {
   const { t } = useI18nStore();
@@ -67,6 +75,20 @@ export default function SubscriptionsUnifiedPage() {
   const [searchPaymentQuery, setSearchPaymentQuery] = useState('');
   const [filterPackageLevel, setFilterPackageLevel] = useState('ALL');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+
+  // Confirm Dialog State
+  const [confirmDelete, setConfirmDelete] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+    isLoading?: boolean;
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    onConfirm: () => {},
+  });
 
   const fetchData = async () => {
     setLoading(true);
@@ -151,15 +173,23 @@ export default function SubscriptionsUnifiedPage() {
   };
 
   const handleDeletePackage = async (id: number) => {
-    if (!confirm(t('common.confirm_delete'))) return;
-    try {
-      await servicePackageService.delete(id);
-      toast.success(t('common.delete_success'));
-      fetchData();
-    } catch (e) {
-      console.error(e);
-      toast.error(t('common.error'));
-    }
+    setConfirmDelete({
+      isOpen: true,
+      title: t('common.confirm_delete') || "Are you sure?",
+      description: "This action will permanently remove the service package. This cannot be undone.",
+      onConfirm: async () => {
+        try {
+          setConfirmDelete(prev => ({ ...prev, isLoading: true }));
+          await servicePackageService.delete(id);
+          toast.success(t('common.delete_success') || 'Deleted successfully');
+          fetchData();
+        } catch (error) {
+          toast.error(t('common.error') || 'An error occurred');
+        } finally {
+          setConfirmDelete(prev => ({ ...prev, isOpen: false, isLoading: false }));
+        }
+      }
+    });
   };
 
   const handleUpdateExercises = async (exerciseIds: number[]) => {
@@ -175,19 +205,29 @@ export default function SubscriptionsUnifiedPage() {
   };
 
   const handleRemoveExerciseFromPkg = async (exerciseId: number) => {
-    if (!selectedPkgId || !confirm(t('common.confirm_delete'))) return;
-    try {
-      const updatedExerciseIds = packageExercises
-        .map(ex => ex.id)
-        .filter(id => id !== exerciseId);
+    if (!selectedPkgId) return;
 
-      await servicePackageService.updateExercises(selectedPkgId, updatedExerciseIds);
-      toast.success(t('common.update_success'));
-      fetchPackageExercises(selectedPkgId);
-    } catch (e) {
-      console.error(e);
-      toast.error(t('common.error'));
-    }
+    setConfirmDelete({
+      isOpen: true,
+      title: t('common.confirm_delete') || "Are you sure?",
+      description: "Do you want to remove this exercise from the current service package?",
+      onConfirm: async () => {
+        try {
+          setConfirmDelete(prev => ({ ...prev, isLoading: true }));
+          const updatedExerciseIds = packageExercises
+            .map(ex => ex.id)
+            .filter(id => id !== exerciseId);
+
+          await servicePackageService.updateExercises(selectedPkgId, updatedExerciseIds);
+          toast.success(t('common.update_success') || 'Updated successfully');
+          fetchPackageExercises(selectedPkgId);
+        } catch (error) {
+          toast.error(t('common.error') || 'An error occurred');
+        } finally {
+          setConfirmDelete(prev => ({ ...prev, isOpen: false, isLoading: false }));
+        }
+      }
+    });
   };
 
   const handleManualConfirm = async () => {
@@ -376,6 +416,7 @@ export default function SubscriptionsUnifiedPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
+<<<<<<< HEAD
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent border-none">
@@ -427,12 +468,67 @@ export default function SubscriptionsUnifiedPage() {
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
+=======
+                <ScrollArea className="h-[400px] lg:h-[500px]">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-slate-50 z-10 shadow-sm">
+                      <TableRow className="hover:bg-transparent border-none">
+                        <TableHead className="pl-6 pt-4">{t('wellness.scripts.table.name')}</TableHead>
+                        <TableHead className="pt-4">{t('wellness.scripts.table.duration')}</TableHead>
+                        <TableHead className="pt-4">{t('wellness.scripts.table.level') || 'Level'}</TableHead>
+                        <TableHead className="pt-4 text-center">Preview</TableHead>
+                        <TableHead className="text-right pr-6 pt-4">{t('common.actions')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {exerciseLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-20 text-muted-foreground">
+                            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 opacity-20" />
+                            {t('common.loading')}
+>>>>>>> d9cc1fa559a52962c1ebb5409fc0db784b86d72d
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : packageExercises.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic">
+                            {t('manager.subscriptions.no_exercises')}
+                          </TableCell>
+                        </TableRow>) : (
+                        packageExercises.map((ex) => (
+                          <TableRow key={ex.id} className="group hover:bg-slate-50 transition-colors border-slate-50">
+                            <TableCell className="pl-6 font-bold text-slate-700">{ex.name}</TableCell>
+                            <TableCell>{ex.durationMinutes}m</TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="bg-slate-100 text-slate-600 uppercase text-[10px] font-bold">
+                                {ex.level}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                              >
+                                <Play className="h-5 w-5 fill-current" />
+                              </Button>
+                            </TableCell>
+                            <TableCell className="text-right pr-6">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRemoveExerciseFromPkg(ex.id)}
+                                className="text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
               </CardContent>
             </Card>
           </div>
@@ -585,8 +681,9 @@ export default function SubscriptionsUnifiedPage() {
                                           item.elderlyProfileId?.toString().includes(query);
                       
                       const matchesLevel = filterPackageLevel === 'ALL' || (pkg && pkg.level === filterPackageLevel);
+                      const hasValidPrice = pkg && (pkg.price || 0) > 0;
                       
-                      return matchesSearch && matchesLevel;
+                      return matchesSearch && matchesLevel && hasValidPrice;
                     })
                     .sort((a, b) => {
                       const dateA = new Date(a.assignedAt || 0).getTime();
@@ -673,6 +770,39 @@ export default function SubscriptionsUnifiedPage() {
         onSave={handleUpdateExercises}
         packageLevel={currentConfigPkg?.level || ''}
       />
+
+      <AlertDialog 
+        open={confirmDelete.isOpen} 
+        onOpenChange={(open) => setConfirmDelete(prev => ({ ...prev, isOpen: open }))}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <AlertDialogTitle className="text-center text-xl font-bold">{confirmDelete.title}</AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-slate-500 font-medium">
+              {confirmDelete.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogCancel className="rounded-xl font-bold">
+              {t('common.cancel') || 'Cancel'}
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete.onConfirm();
+              }}
+              className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold gap-2"
+              disabled={confirmDelete.isLoading}
+            >
+              {confirmDelete.isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {t('common.confirm') || 'Confirm'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

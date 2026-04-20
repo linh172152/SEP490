@@ -103,8 +103,8 @@ export function PackageExerciseSelector({
           </DialogHeader>
         </div>
 
-        <div className="p-6 space-y-6 bg-white overflow-hidden flex flex-col flex-1">
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="p-6 space-y-6 bg-white overflow-hidden flex flex-col flex-1 min-h-0">
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between shrink-0">
             <div className="relative w-full sm:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input 
@@ -117,7 +117,7 @@ export function PackageExerciseSelector({
           </div>
 
 
-          <ScrollArea className="flex-1 rounded-xl border border-slate-100 bg-slate-50/30">
+          <ScrollArea className="h-[400px] sm:h-[450px] rounded-xl border border-slate-100 bg-slate-50/30">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-3">
                  <Loader2 className="h-8 w-8 animate-spin text-slate-300" />

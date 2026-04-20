@@ -135,13 +135,34 @@ export class ApiClient {
     };
   }
 
+  // Helper for retrying requests
+  private async requestWithRetry<T>(
+    requestFn: () => Promise<T>,
+    retries: number = 2,
+    delayMs: number = 1000
+  ): Promise<T> {
+    try {
+      return await requestFn();
+    } catch (error: any) {
+      const isRetryable = error.statusCode === 500 || !error.statusCode; // 500 or Network error
+      
+      if (retries > 0 && isRetryable) {
+        console.warn(`⚠️ API Retry: Retrying request in ${delayMs}ms... (${retries} attempts left)`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        return this.requestWithRetry(requestFn, retries - 1, delayMs * 1.5); // Exponential backoff
+      }
+      throw error;
+    }
+  }
+
   // GET request
   async get<T>(
     endpoint: string,
     config?: AxiosRequestConfig
   ): Promise<T> {
-    const response = await this.client.get<T>(normalizeEndpoint(endpoint), config);
-    return response.data;
+    return this.requestWithRetry(() => 
+      this.client.get<T>(normalizeEndpoint(endpoint), config).then(res => res.data)
+    );
   }
 
   // POST request

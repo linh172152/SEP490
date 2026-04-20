@@ -32,7 +32,7 @@ import type {
   RoomResponse,
   ServicePackageResponse,
   UserPackageResponse,
-  ExerciseScriptResponse,
+  RobotAction,
 } from '@/services/api/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -65,7 +65,7 @@ export default function FamilyElderlyDetailPage() {
   const [robot, setRobot] = useState<RobotDTO | null>(null);
   const [servicePackages, setServicePackages] = useState<ServicePackageResponse[]>([]);
   const [ownedPackages, setOwnedPackages] = useState<UserPackageResponse[]>([]);
-  const [packageExercisesByPackageId, setPackageExercisesByPackageId] = useState<Record<number, ExerciseScriptResponse[]>>({});
+  const [packageExercisesByPackageId, setPackageExercisesByPackageId] = useState<Record<number, RobotAction[]>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -90,7 +90,7 @@ export default function FamilyElderlyDetailPage() {
         const uniquePackageIds = Array.from(new Set(userPackages.map((item) => item.servicePackageId)));
         const packageExercises = await Promise.all(
           uniquePackageIds.map(async (packageId) => {
-            const exercises = await servicePackageService.getExercises(packageId).catch(() => [] as ExerciseScriptResponse[]);
+            const exercises = await servicePackageService.getRobotActions(packageId).catch(() => [] as RobotAction[]);
             return [packageId, exercises] as const;
           })
         );
@@ -127,7 +127,7 @@ export default function FamilyElderlyDetailPage() {
   );
 
   const eligibleExercises = useMemo(() => {
-    const mappedScripts = new Map<number, { script: ExerciseScriptResponse; packageNames: string[] }>();
+    const mappedScripts = new Map<number, { script: RobotAction; packageNames: string[] }>();
 
     activePackageDetails.forEach(({ catalog }) => {
       if (!catalog) return;
@@ -378,9 +378,9 @@ export default function FamilyElderlyDetailPage() {
                       <div className="min-w-0 flex-1">
                         <div className="font-semibold text-slate-900 line-clamp-1">{script.name}</div>
                         <div className="mt-1 flex items-center gap-2 text-[10px] uppercase tracking-wider text-slate-500">
-                          <span>{script.level || 'BEGINNER'}</span>
+                          <span>{script.type || 'ACTION'}</span>
                           <span>•</span>
-                          <span>{script.durationMinutes || 0} MINS</span>
+                          <span>{script.duration || 0} MINS</span>
                         </div>
                       </div>
                     </div>

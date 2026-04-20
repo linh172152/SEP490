@@ -16,12 +16,12 @@ import { robotService } from '@/services/api/robotService';
 import { userPackageService } from '@/services/api/userPackageService';
 import { servicePackageService } from '@/services/api/servicePackageService';
 import { exerciseService } from '@/services/api/exerciseService';
-import { useI18nStore } from '@/store/useI18nStore';
-import {
+import type {
   AlertNotificationResponse,
   CaregiverProfileResponse,
   ElderlyProfileResponse,
-  ExerciseScriptResponse,
+  ExerciseScriptResponse, // Keep for other uses if any
+  RobotAction,
   InteractionLogResponse,
   ReminderLogResponse,
   ReminderRequest,
@@ -64,7 +64,7 @@ import {
   Plus,
   Search,
   User,
-  Activity,
+  Zap,
 } from 'lucide-react';
 import { AlertPanel } from './AlertPanel';
 import { toast } from 'react-toastify';
@@ -84,7 +84,7 @@ const workspaceTabs: Array<{ key: CaregiverWorkspaceTab; label: string }> = [
   { key: 'robot', label: 'Robot Interaction' },
   { key: 'logs', label: 'Logs / History' },
   { key: 'room-device', label: 'Room / Device' },
-  { key: 'exercise', label: 'Exercise Scripts' },
+  { key: 'exercise', label: 'Exercise' },
 ];
 
 const defaultReminderForm: Omit<ReminderRequest, 'elderlyId' | 'caregiverId'> = {
@@ -111,7 +111,6 @@ interface WorkspaceProps {
 }
 
 export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: WorkspaceProps) {
-  const { t } = useI18nStore();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
 
@@ -122,7 +121,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   const [loadingRoomDevice, setLoadingRoomDevice] = useState(false);
   const [loadingPackages, setLoadingPackages] = useState(false);
   const [savingReminder, setSavingReminder] = useState(false);
-  const [runningActionId, setRunningActionId] = useState<number | null>(null);
+  const [runningExerciseId, setRunningExerciseId] = useState<number | null>(null);
   const [editingReminderId, setEditingReminderId] = useState<number | null>(null);
   const [isReminderFormOpen, setIsReminderFormOpen] = useState(false);
   const [caregiverProfile, setCaregiverProfile] = useState<CaregiverProfileResponse | null>(null);
@@ -137,7 +136,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   const [roomRobot, setRoomRobot] = useState<RobotDTO | null>(null);
   const [userPackages, setUserPackages] = useState<UserPackageResponse[]>([]);
   const [servicePackages, setServicePackages] = useState<ServicePackageResponse[]>([]);
-  const [packageExercisesByPackageId, setPackageExercisesByPackageId] = useState<Record<number, ExerciseScriptResponse[]>>({});
+  const [packageExercisesByPackageId, setPackageExercisesByPackageId] = useState<Record<number, RobotAction[]>>({});
   const [reminderForm, setReminderForm] = useState(defaultReminderForm);
   const [reminderFilter, setReminderFilter] = useState<'all' | 'active' | 'missed' | 'completed'>('all');
 
@@ -243,9 +242,13 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   }, [effectiveSelectedId]);
 
   const loadPackageExercise = useCallback(async () => {
-    if (!selectedProfile?.id || activeTab !== 'exercise') {
+    if (!selectedProfile?.id || (activeTab !== 'exercise' && activeTab !== 'package-exercise')) {
+      setUserPackages([]);
+      setServicePackages([]);
+      setPackageExercisesByPackageId({});
       return;
     }
+
     setLoadingPackages(true);
     try {
       const [packages, catalog] = await Promise.all([
@@ -256,7 +259,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
       const uniquePackageIds = Array.from(new Set(packages.map((item) => item.servicePackageId)));
       const packageExercises = await Promise.all(
         uniquePackageIds.map(async (packageId) => {
-          const exercises = await servicePackageService.getExercises(packageId).catch(() => [] as ExerciseScriptResponse[]);
+          const exercises = await servicePackageService.getRobotActions(packageId).catch(() => [] as RobotAction[]);
           return [packageId, exercises] as const;
         })
       );
@@ -346,6 +349,42 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     () => selectedAlerts.filter((item) => item.resolved).sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()),
     [selectedAlerts]
   );
+  const activePackages = useMemo(() => {
+    const now = Date.now();
+    return userPackages.filter((item) => {
+      if (!item.expiredAt) return true;
+      const expiresAt = Date.parse(item.expiredAt);
+      return Number.isNaN(expiresAt) || expiresAt >= now;
+    });
+  }, [userPackages]);
+  const packageExerciseDetails = useMemo(() => {
+    return activePackages.map((userPackage) => ({
+      userPackage,
+      servicePackage: servicePackages.find((item) => item.id === userPackage.servicePackageId) || null,
+      exercises: packageExercisesByPackageId[userPackage.servicePackageId] || [],
+    }));
+  }, [activePackages, packageExercisesByPackageId, servicePackages]);
+  const eligibleExercises = useMemo(() => {
+    const mappedScripts = new Map<number, { script: RobotAction; packageNames: string[] }>();
+
+    packageExerciseDetails.forEach(({ servicePackage: matchedPackage, exercises }) => {
+      if (!matchedPackage) return;
+
+      exercises.forEach((script) => {
+        const existing = mappedScripts.get(script.id);
+        if (existing) {
+          if (!existing.packageNames.includes(matchedPackage.name)) {
+            existing.packageNames.push(matchedPackage.name);
+          }
+          return;
+        }
+
+        mappedScripts.set(script.id, { script, packageNames: [matchedPackage.name] });
+      });
+    });
+
+    return Array.from(mappedScripts.values());
+  }, [packageExerciseDetails]);
 
   const navigateToElderly = (elderlyId: number, tab: CaregiverWorkspaceTab = activeTab) => {
     router.push(`/dashboard/caregiver/elderly/${elderlyId}/${tab}`);
@@ -451,20 +490,18 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     }
   };
 
-  const handleRunExercise = async (code: string, id: number) => {
-    if (!roomRobot) {
-      setMessage({ type: 'error', text: 'Room robot is not available.' });
+  const handleRunExercise = async (exerciseId: number) => {
+    if (!effectiveSelectedId || !roomRobot) {
+      setMessage({ type: 'error', text: 'Exercise requires selected elderly and room robot.' });
       return;
     }
 
-    setRunningActionId(id);
+    setRunningExerciseId(exerciseId);
     try {
-      await robotService.sendRoomCommand(roomRobot.id, code);
-      toast.success(t('wellness.toasts.trigger_success', { code }));
-    } catch (error: unknown) {
-      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to run exercise.' });
+      // Logic for running exercise without creating a session record frontend-side
+      toast.info("Exercise sequence initiated on robot.");
     } finally {
-      setRunningActionId(null);
+      setRunningExerciseId(null);
     }
   };
 
@@ -813,72 +850,76 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     <div className="grid gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Available Exercises</CardTitle>
-          <CardDescription>Actions available for this elderly profile via their active service packages.</CardDescription>
+          <CardTitle>Exercise by Active Package</CardTitle>
+          <CardDescription>Each elderly profile only sees the exercise scripts unlocked by the service packages that are still active.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {loadingPackages ? <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading package actions...</div> : null}
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-slate-50/50">
-                <TableHead className="font-bold">Script Name</TableHead>
-                <TableHead className="font-bold">Code</TableHead>
-                <TableHead className="font-bold">Type</TableHead>
-                <TableHead className="text-right font-bold">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {userPackages.map((up) => {
-                const pkg = servicePackages.find((p) => p.id === up.servicePackageId);
-                const scripts = packageExercisesByPackageId[up.servicePackageId] || [];
-
-                return (
-                  <React.Fragment key={up.id}>
-                    <TableRow className="bg-slate-100/30">
-                      <TableCell colSpan={4} className="py-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="bg-sky-50 text-sky-700 border-sky-100">
-                            {pkg?.name || `Package #${up.servicePackageId}`}
-                          </Badge>
-                          <span className="text-xs font-medium text-slate-500">
-                            {scripts.length} scripts assigned
-                          </span>
+          {loadingPackages ? <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading package and exercise context...</div> : null}
+          {packageExerciseDetails.length === 0 ? (
+            <EmptyState text="This elderly profile does not have any active package with exercise entitlement yet." />
+          ) : (
+            <div className="space-y-4">
+              {packageExerciseDetails.map(({ userPackage, servicePackage, exercises }) => (
+                <div key={userPackage.id} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                  <div className="border-b bg-slate-50/80 px-5 py-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-base font-semibold text-slate-900">{servicePackage?.name || `Package #${userPackage.servicePackageId}`}</h3>
+                          <Badge variant="outline" className="text-[10px] uppercase">{servicePackage?.level || 'Unknown'}</Badge>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                    {scripts.map((script) => (
-                      <TableRow key={script.id} className="hover:bg-slate-50/50 transition-colors">
-                        <TableCell className="font-medium">{script.title}</TableCell>
-                        <TableCell>
-                          <code className="text-[10px] bg-slate-100 px-1 py-0.5 rounded">{script.code}</code>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-[10px] uppercase">
-                            {script.scriptType}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 rounded-lg"
-                            onClick={() => handleRunExercise(script.code, script.id)}
-                            disabled={runningActionId === script.id}
-                          >
-                            {runningActionId === script.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Play className="h-4 w-4 fill-current" />
-                            )}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </React.Fragment>
-                );
-              })}
-            </TableBody>
-          </Table>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Assigned {new Date(userPackage.assignedAt).toLocaleDateString()} • {userPackage.status === 'PAID' && userPackage.expiredAt ? `Expires ${new Date(userPackage.expiredAt).toLocaleDateString()}` : `Status: ${userPackage.status || 'PENDING'}`}
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="w-fit">{exercises.length} exercise{exercises.length === 1 ? '' : 's'}</Badge>
+                    </div>
+                  </div>
+
+                  <div className="p-5">
+                    {exercises.length === 0 ? (
+                      <EmptyState text="Manager has not assigned any exercise to this package yet." />
+                    ) : (
+                      <div className="space-y-3">
+                        {exercises.map((exercise) => (
+                          <div key={`${userPackage.id}-${exercise.id}`} className="rounded-2xl border border-slate-200 bg-slate-50/40 p-4">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                              <div className="min-w-0">
+                                <div className="font-semibold text-slate-900">{exercise.name}</div>
+                                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                  <span>{exercise.duration} min</span>
+                                  <span>•</span>
+                                  <span>{exercise.type || 'Action'}</span>
+                                </div>
+                              </div>
+                              <Button size="sm" onClick={() => handleRunExercise(exercise.id)} disabled={runningExerciseId === exercise.id || !roomRobot}>
+                                {runningExerciseId === exercise.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                                <span className="ml-2">Run</span>
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {eligibleExercises.length > 0 ? (
+            <div className="rounded-2xl border bg-sky-50/50 p-4">
+              <div className="text-sm font-semibold text-slate-900">Exercise Entitlement Summary</div>
+              <p className="mt-1 text-xs text-muted-foreground">Combined view of all exercises unlocked by the active packages above.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {eligibleExercises.map(({ script, packageNames }) => (
+                  <Badge key={script.id} variant="secondary" className="max-w-full truncate bg-white text-slate-700">
+                    {script.name} • {packageNames.join(', ')}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </div>

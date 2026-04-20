@@ -7,7 +7,7 @@ import { elderlyService } from '@/services/api/elderlyService';
 import { useI18nStore } from '@/store/useI18nStore';
 import { servicePackageService } from '@/services/api/servicePackageService';
 import { userPackageService } from '@/services/api/userPackageService';
-import type { ElderlyProfileResponse, ServicePackageResponse, UserPackageResponse, ExerciseScriptResponse } from '@/services/api/types';
+import type { ElderlyProfileResponse, ServicePackageResponse, UserPackageResponse, RobotAction } from '@/services/api/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +23,7 @@ export default function FamilyElderlyExercisesPage() {
   const [profile, setProfile] = useState<ElderlyProfileResponse | null>(null);
   const [servicePackages, setServicePackages] = useState<ServicePackageResponse[]>([]);
   const [userPackages, setUserPackages] = useState<UserPackageResponse[]>([]);
-  const [packageExercises, setPackageExercises] = useState<Record<number, ExerciseScriptResponse[]>>({});
+  const [packageExercises, setPackageExercises] = useState<Record<number, RobotAction[]>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function FamilyElderlyExercisesPage() {
         const uniquePackageIds = Array.from(new Set(owned.map((item) => item.servicePackageId)));
         const exercisesData = await Promise.all(
           uniquePackageIds.map(async (packageId) => {
-            const exercises = await servicePackageService.getExercises(packageId).catch(() => [] as ExerciseScriptResponse[]);
+            const exercises = await servicePackageService.getRobotActions(packageId).catch(() => [] as RobotAction[]);
             return [packageId, exercises] as const;
           })
         );
@@ -81,7 +81,7 @@ export default function FamilyElderlyExercisesPage() {
   }, [activePackages, packageExercises, servicePackages]);
 
   const eligibleExercises = useMemo(() => {
-    const mappedScripts = new Map<number, { script: ExerciseScriptResponse; packageNames: string[] }>();
+    const mappedScripts = new Map<number, { script: RobotAction; packageNames: string[] }>();
 
     packageExerciseDetails.forEach(({ servicePackage: matchedPackage, exercises }) => {
       if (!matchedPackage) return;
@@ -197,9 +197,9 @@ export default function FamilyElderlyExercisesPage() {
                                     <div className="min-w-0">
                                       <div className="truncate font-semibold text-slate-900">{exercise.name}</div>
                                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                        <span>{exercise.durationMinutes} min</span>
+                                        <span>{exercise.duration} min</span>
                                         <span>•</span>
-                                        <span>{exercise.level || 'Unknown level'}</span>
+                                        <span>{exercise.type || 'Action'}</span>
                                       </div>
                                     </div>
                                   </div>

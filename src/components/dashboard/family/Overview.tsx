@@ -136,8 +136,13 @@ export function FamilyOverview() {
           </CardHeader>
           <CardContent className="flex justify-between items-end">
             <div>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold flex items-center gap-2">
                 {activePackageInfo?.name || (activePackage ? `Package #${activePackage.servicePackageId}` : 'None Active')}
+                {activePackage?.status === 'PENDING' && (
+                  <Badge className="bg-amber-500 text-white animate-pulse border-none shadow-sm shadow-amber-200">
+                    PENDING
+                  </Badge>
+                )}
               </div>
               {activePackage && (
                 <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
@@ -145,7 +150,9 @@ export function FamilyOverview() {
                   {activePackageInfo?.level ? `${activePackageInfo.level} • ` : ''}
                   {activePackage.expiredAt 
                     ? `Expires: ${new Date(activePackage.expiredAt).toLocaleDateString()}` 
-                    : `Status: ${activePackage.status || 'PENDING'}`}
+                    : activePackage.status === 'PENDING' 
+                        ? 'Awaiting manager confirmation' 
+                        : `Status: ${activePackage.status}`}
                 </p>
               )}
             </div>

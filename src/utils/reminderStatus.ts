@@ -1,4 +1,5 @@
 import { ReminderResponse, ReminderLogResponse } from "@/services/api/types";
+import { parseServerDate } from "@/lib/utils";
 
 export type ReminderDetailedStatus = 
   | 'UPCOMING'
@@ -18,7 +19,7 @@ export function getReminderDetailedStatus(
   }
 
   const now = Date.now();
-  const scheduledTime = new Date(reminder.scheduleTime).getTime();
+  const scheduledTime = parseServerDate(reminder.scheduleTime).getTime();
   
   // Addressing prefix: Ông for male, Bà for female, Ông/Bà if unknown
   const prefix = gender?.toLowerCase() === 'male' ? 'ông' : (gender?.toLowerCase() === 'female' ? 'bà' : 'ông/bà');
@@ -27,7 +28,7 @@ export function getReminderDetailedStatus(
   // We look for a log triggered around the scheduled time (+/- 30 minutes to be safe for late triggers)
   const relevantLog = logs.find(log => {
     if (log.reminderId !== reminder.id) return false;
-    const triggeredTime = new Date(log.triggeredTime).getTime();
+    const triggeredTime = parseServerDate(log.triggeredTime).getTime();
     return Math.abs(triggeredTime - scheduledTime) < 30 * 60 * 1000;
   });
 

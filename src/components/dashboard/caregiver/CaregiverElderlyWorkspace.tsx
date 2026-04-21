@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { differenceInYears } from 'date-fns';
 import { getReminderDetailedStatus } from '@/utils/reminderStatus';
-import { cn } from '@/lib/utils';
+import { cn, parseServerDate } from '@/lib/utils';
 
 import { getReminderPatternLabel, getReminderTypeLabel, normalizeReminderPattern, normalizeReminderType, REMINDER_PATTERN_OPTIONS, REMINDER_TYPE_OPTIONS } from '@/lib/reminderOptions';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -350,7 +350,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
 
 
   const sortedSelectedReminders = useMemo(
-    () => selectedReminders.slice().sort((left, right) => new Date(right.scheduleTime).getTime() - new Date(left.scheduleTime).getTime()),
+    () => selectedReminders.slice().sort((left, right) => parseServerDate(right.scheduleTime).getTime() - parseServerDate(left.scheduleTime).getTime()),
     [selectedReminders]
   );
   const sortedReminderLogs = useMemo(
@@ -600,7 +600,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
 
   const renderReminders = () => {
     const sortedSelectedReminders = [...selectedReminders].sort(
-      (left, right) => new Date(left.scheduleTime).getTime() - new Date(right.scheduleTime).getTime()
+      (left, right) => parseServerDate(left.scheduleTime).getTime() - parseServerDate(right.scheduleTime).getTime()
     );
 
     const filteredReminders = sortedSelectedReminders.filter(item => {
@@ -731,7 +731,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                             </div>
                           </TableCell>
                           <TableCell className="text-slate-600 text-xs text-nowrap">
-                             <div className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> {new Date(item.scheduleTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</div>
+                             <div className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> {parseServerDate(item.scheduleTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</div>
                           </TableCell>
                           <TableCell>
                              <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider">{getReminderPatternLabel(item.repeatPattern)}</Badge>
@@ -1189,7 +1189,7 @@ function LogCard({ title, items }: { title: string; items: Array<{ id: number; p
 }
 
 function toDateTimeLocal(value: string) {
-  const date = new Date(value);
+  const date = parseServerDate(value);
   if (Number.isNaN(date.getTime())) return '';
   const offset = date.getTimezoneOffset();
   const local = new Date(date.getTime() - offset * 60_000);

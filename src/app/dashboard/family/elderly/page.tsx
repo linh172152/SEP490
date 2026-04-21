@@ -310,9 +310,14 @@ export default function ElderlyListPage() {
       <AlertDialog open={deleteConfirmId !== null} onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận xoá hồ sơ</AlertDialogTitle>
-            <AlertDialogDescription>
-              Hành động này không thể hoàn tác. Toàn bộ dữ liệu của hồ sơ này sẽ bị xoá vĩnh viễn.
+            <AlertDialogTitle>Xác nhận xoá hồ sơ người cao tuổi</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>Bạn có chắc muốn xoá hồ sơ này?</p>
+                <p className="font-semibold text-red-600">
+                  ⚠️ Lưu ý: Toàn bộ thông tin hồ sơ, lịch sử chăm sóc, lời nhắc và <strong>tất cả các gói dịch vụ đang gắn với hồ sơ</strong> sẽ bị xoá vĩnh viễn. Hành động này không thể hoàn tác và <strong>không được hoàn tiền</strong> cho bất kỳ gói nào.
+                </p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

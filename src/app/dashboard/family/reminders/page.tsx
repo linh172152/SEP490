@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { formatDate } from '@/lib/utils';
+import { formatDate, parseServerDate } from '@/lib/utils';
 import type { AlertNotificationResponse, ReminderLogResponse, ReminderResponse, ElderlyProfileResponse } from '@/services/api/types';
 import { getReminderDetailedStatus } from '@/utils/reminderStatus';
 
@@ -189,7 +189,7 @@ export default function RemindersPage() {
   const openAlerts = useMemo(() => filteredAlerts.filter((item) => !item.resolved), [filteredAlerts]);
 
   const sortedReminders = useMemo(
-    () => filteredReminders.slice().sort((left, right) => new Date(right.scheduleTime).getTime() - new Date(left.scheduleTime).getTime()),
+    () => filteredReminders.slice().sort((left, right) => parseServerDate(left.scheduleTime).getTime() - parseServerDate(right.scheduleTime).getTime()),
     [filteredReminders]
   );
 

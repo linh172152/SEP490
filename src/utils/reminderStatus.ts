@@ -21,9 +21,6 @@ export function getReminderDetailedStatus(
   const now = Date.now();
   const scheduledTime = parseServerDate(reminder.scheduleTime).getTime();
   
-  // Addressing prefix: Ông for male, Bà for female, Ông/Bà if unknown
-  const prefix = gender?.toLowerCase() === 'male' ? 'ông' : (gender?.toLowerCase() === 'female' ? 'bà' : 'ông/bà');
-
   // Find a log for this specific reminder instance
   // We look for a log triggered around the scheduled time (+/- 30 minutes to be safe for late triggers)
   const relevantLog = logs.find(log => {
@@ -47,7 +44,7 @@ export function getReminderDetailedStatus(
     if (now >= scheduledTime + 5 * 60 * 1000) {
       return { 
         status: 'ROBOT_NOT_RESPONDING', 
-        message: `Robot không nhắc nhở ${prefix} ${reminder.elderlyName || 'Elderly'}` 
+        message: 'Robot không nhắc nhở' 
       };
     }
     return { status: 'WAITING_ROBOT' };
@@ -64,7 +61,7 @@ export function getReminderDetailedStatus(
   } else {
     return { 
       status: 'MISSED_USER_NO_RESPONSE', 
-      message: `${prefix} ${reminder.elderlyName || 'Elderly'} không phản hồi` 
+      message: 'Không có phản hồi' 
     };
   }
 }

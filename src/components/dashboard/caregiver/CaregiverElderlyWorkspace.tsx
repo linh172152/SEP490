@@ -324,7 +324,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     ];
 
     return activities
-      .sort((left, right) => new Date(right.time).getTime() - new Date(left.time).getTime())
+      .sort((left, right) => parseServerDate(right.time).getTime() - parseServerDate(left.time).getTime())
       .slice(0, 6);
   }, [selectedAlerts, selectedInteractions, selectedReminderLogs]);
   const reminderGroups = useMemo(() => {
@@ -354,15 +354,15 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     [selectedReminders]
   );
   const sortedReminderLogs = useMemo(
-    () => selectedReminderLogs.slice().sort((left, right) => new Date(right.triggeredTime).getTime() - new Date(left.triggeredTime).getTime()),
+    () => selectedReminderLogs.slice().sort((left, right) => parseServerDate(right.triggeredTime).getTime() - parseServerDate(left.triggeredTime).getTime()),
     [selectedReminderLogs]
   );
   const openAlerts = useMemo(
-    () => selectedAlerts.filter((item) => !item.resolved).sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()),
+    () => selectedAlerts.filter((item) => !item.resolved).sort((left, right) => parseServerDate(right.createdAt).getTime() - parseServerDate(left.createdAt).getTime()),
     [selectedAlerts]
   );
   const resolvedAlerts = useMemo(
-    () => selectedAlerts.filter((item) => item.resolved).sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()),
+    () => selectedAlerts.filter((item) => item.resolved).sort((left, right) => parseServerDate(right.createdAt).getTime() - parseServerDate(left.createdAt).getTime()),
     [selectedAlerts]
   );
   const activePackages = useMemo(() => {
@@ -587,7 +587,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
               <div key={item.id} className="rounded-2xl border p-4">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-semibold">{item.label}</span>
-                  <span className="text-xs text-muted-foreground">{new Date(item.time).toLocaleString()}</span>
+                  <span className="text-xs text-muted-foreground">{parseServerDate(item.time).toLocaleString()}</span>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">{item.detail}</p>
               </div>
@@ -789,7 +789,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
               <div className="rounded-xl border bg-white p-3">
                 <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Latest Interaction</div>
                 <div className="mt-2 text-sm font-semibold text-foreground">
-                  {selectedInteractions[0] ? new Date(selectedInteractions[0].createdAt).toLocaleString() : 'No history yet'}
+                  {selectedInteractions[0] ? parseServerDate(selectedInteractions[0].createdAt).toLocaleString() : 'No history yet'}
                 </div>
               </div>
             </div>
@@ -808,7 +808,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
           ) : (
             selectedInteractions
               .slice()
-              .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+              .sort((left, right) => parseServerDate(right.createdAt).getTime() - parseServerDate(left.createdAt).getTime())
               .map((item) => (
                 <div key={item.id} className="rounded-2xl border p-4 shadow-sm">
                   <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
@@ -820,13 +820,13 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                       </div>
                       <p className="mt-2 text-xs text-muted-foreground">Interaction ID #{item.id} • Elderly: {item.elderlyName}</p>
                     </div>
-                    <div className="text-xs font-medium text-muted-foreground">{new Date(item.createdAt).toLocaleString()}</div>
+                    <div className="text-xs font-medium text-muted-foreground">{parseServerDate(item.createdAt).toLocaleString()}</div>
                   </div>
                   <div className="mt-4 space-y-3">
                     <div className="rounded-2xl bg-slate-50 p-3 text-sm">
                       <div className="flex items-center justify-between gap-2">
                         <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Elderly</div>
-                        <div className="text-[11px] text-slate-500">{new Date(item.createdAt).toLocaleTimeString()}</div>
+                        <div className="text-[11px] text-slate-500">{parseServerDate(item.createdAt).toLocaleTimeString()}</div>
                       </div>
                       <p className="mt-1">{item.userInputText}</p>
                     </div>
@@ -896,7 +896,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                           <Badge variant="outline" className="text-[10px] uppercase">{servicePackage?.level || 'Unknown'}</Badge>
                         </div>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          Assigned {new Date(userPackage.assignedAt).toLocaleDateString()} • {userPackage.status === 'PAID' && userPackage.expiredAt ? `Expires ${new Date(userPackage.expiredAt).toLocaleDateString()}` : `Status: ${userPackage.status || 'PENDING'}`}
+                          Assigned {parseServerDate(userPackage.assignedAt).toLocaleDateString()} • {userPackage.status === 'PAID' && userPackage.expiredAt ? `Expires ${parseServerDate(userPackage.expiredAt).toLocaleDateString()}` : `Status: ${userPackage.status || 'PENDING'}`}
                         </p>
                       </div>
                       <Badge variant="secondary" className="w-fit">{exercises.length} exercise{exercises.length === 1 ? '' : 's'}</Badge>
@@ -1174,12 +1174,12 @@ function LogCard({ title, items }: { title: string; items: Array<{ id: number; p
         ) : (
           items
             .slice()
-            .sort((left, right) => new Date(right.time).getTime() - new Date(left.time).getTime())
+            .sort((left, right) => parseServerDate(right.time).getTime() - parseServerDate(left.time).getTime())
             .map((item) => (
               <div key={item.id} className="rounded-2xl border p-4">
                 <div className="font-semibold">{item.primary}</div>
                 <div className="mt-1 text-sm text-muted-foreground">{item.secondary}</div>
-                <div className="mt-2 text-xs text-muted-foreground">{new Date(item.time).toLocaleString()}</div>
+                <div className="mt-2 text-xs text-muted-foreground">{parseServerDate(item.time).toLocaleString()}</div>
               </div>
             ))
         )}

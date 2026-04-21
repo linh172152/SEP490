@@ -149,7 +149,7 @@ export function FamilyOverview() {
                   <Calendar className="h-3 w-3" />
                   {activePackageInfo?.level ? `${activePackageInfo.level} • ` : ''}
                   {activePackage.expiredAt 
-                    ? `Expires: ${new Date(activePackage.expiredAt).toLocaleDateString()}` 
+                    ? `Expires: ${parseServerDate(activePackage.expiredAt).toLocaleDateString()}` 
                     : activePackage.status === 'PENDING' 
                         ? 'Awaiting manager confirmation' 
                         : `Status: ${activePackage.status}`}
@@ -198,7 +198,7 @@ export function FamilyOverview() {
                     <div className="text-right">
                       <div className="flex items-center gap-1 font-mono text-sm font-bold text-slate-700">
                         <Clock className="h-3 w-3" />
-                        {new Date(reminder.scheduleTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {parseServerDate(reminder.scheduleTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                       <Badge variant="outline" className="text-[10px] uppercase font-bold mt-1">
                         {reminder.repeatPattern}

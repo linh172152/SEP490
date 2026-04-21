@@ -16,6 +16,7 @@ import {
   UserPackageResponse
 } from '@/services/api/types';
 import { PackageExerciseSelector } from './PackageExerciseSelector';
+import { parseServerDate } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -632,8 +633,8 @@ export default function SubscriptionsUnifiedPage() {
                       return matchesSearch && matchesLevel && hasValidPrice;
                     })
                     .sort((a, b) => {
-                      const dateA = new Date(a.assignedAt || 0).getTime();
-                      const dateB = new Date(b.assignedAt || 0).getTime();
+                      const dateA = parseServerDate(a.assignedAt || '1970-01-01T00:00:00Z').getTime();
+                      const dateB = parseServerDate(b.assignedAt || '1970-01-01T00:00:00Z').getTime();
                       return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
                     })
                     .map((item) => {
@@ -661,7 +662,7 @@ export default function SubscriptionsUnifiedPage() {
                                    {description}
                                  </code>
                                  <span className="text-[11px] font-bold text-slate-400">
-                                   {item.assignedAt ? new Date(item.assignedAt).toLocaleString() : ''}
+                                   {item.assignedAt ? parseServerDate(item.assignedAt).toLocaleString() : ''}
                                  </span>
                               </div>
                             </div>

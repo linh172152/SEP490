@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn, parseServerDate } from '@/lib/utils';
 import { getActiveUserPackageForElderly, getCatalogPackageForUserPackage, getOrderedServicePackages, getServicePackageTheme, getUnpurchasedPackageTheme } from '@/lib/servicePackageThemes';
 import { 
   Package, 
@@ -412,7 +412,7 @@ export default function PackagesPage() {
                     </div>
                     <div>
                        <p className="text-[10px] uppercase font-bold text-emerald-100">Assigned At</p>
-                       <p className="text-sm font-bold">{new Date(activePackage.assignedAt).toLocaleDateString()}</p>
+                       <p className="text-sm font-bold">{parseServerDate(activePackage.assignedAt).toLocaleDateString()}</p>
                     </div>
                  </div>
                  <div className="flex items-center gap-4 bg-black/10 p-4 rounded-2xl backdrop-blur-sm shadow-inner">
@@ -422,7 +422,7 @@ export default function PackagesPage() {
                     <div>
                        <p className="text-[10px] uppercase font-bold text-emerald-100">Expires At</p>
                        <p className="text-sm font-bold">
-                         {activePackage.expiredAt ? new Date(activePackage.expiredAt).toLocaleDateString() : 'Waiting for manager confirm'}
+                         {activePackage.expiredAt ? parseServerDate(activePackage.expiredAt).toLocaleDateString() : 'Waiting for manager confirm'}
                        </p>
                     </div>
                  </div>

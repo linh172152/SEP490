@@ -194,12 +194,12 @@ export default function RemindersPage() {
   );
 
   const sortedLogs = useMemo(
-    () => filteredReminderLogs.slice().sort((left, right) => new Date(right.triggeredTime).getTime() - new Date(left.triggeredTime).getTime()),
+    () => filteredReminderLogs.slice().sort((left, right) => parseServerDate(right.triggeredTime).getTime() - parseServerDate(left.triggeredTime).getTime()),
     [filteredReminderLogs]
   );
 
   const sortedAlerts = useMemo(
-    () => filteredAlerts.slice().sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()),
+    () => filteredAlerts.slice().sort((left, right) => parseServerDate(right.createdAt).getTime() - parseServerDate(left.createdAt).getTime()),
     [filteredAlerts]
   );
 

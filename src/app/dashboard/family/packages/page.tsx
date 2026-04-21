@@ -508,8 +508,7 @@ export default function PackagesPage() {
                       `Level: ${pkg.level}`,
                       pkg.active ? 'Dang mo ban' : 'Tam dong',
                       `Package ID: ${pkg.id}`,
-                      `Duration: ${pkg.durationDays || 30} days`,
-                      selectedElderlyId ? `Apply to EL #${selectedElderlyId}` : 'Select elderly first',
+                      `Duration: ${pkg.durationDays ?? 0} days`,
                     ].map((feat, i) => (
                       <li key={i} className="flex items-start gap-3 text-sm font-medium">
                         <div className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full border', pkgTheme.badgeClassName)}>

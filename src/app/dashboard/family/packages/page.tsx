@@ -133,6 +133,27 @@ export default function PackagesPage() {
   const activePackageTheme = getServicePackageTheme(activePackageInfo, servicePackages);
   const unpurchasedTheme = getUnpurchasedPackageTheme();
 
+  const allPackagesForElderly = useMemo(() => {
+    if (!selectedElderlyId) return [];
+    return userPackages.filter((up) => up.elderlyProfileId === selectedElderlyId);
+  }, [selectedElderlyId, userPackages]);
+
+  const totalDays = useMemo(() => {
+    return allPackagesForElderly.reduce((sum, up) => {
+      const catalog = servicePackages.find((sp) => sp.id === up.servicePackageId);
+      return sum + (catalog?.durationDays ?? 0);
+    }, 0);
+  }, [allPackagesForElderly, servicePackages]);
+
+  const totalExercises = useMemo(() => {
+    const ids = new Set<number>();
+    allPackagesForElderly.forEach((up) => {
+      const catalog = servicePackages.find((sp) => sp.id === up.servicePackageId);
+      catalog?.robotActions?.forEach((a) => ids.add(a.id));
+    });
+    return ids.size;
+  }, [allPackagesForElderly, servicePackages]);
+
   const handlePurchase = async (packageId: number) => {
     if (!selectedElderlyId) {
       toast.error('Vui lòng chọn một elderly profile trước khi thanh toán.');
@@ -168,13 +189,19 @@ export default function PackagesPage() {
   };
 
   const availablePackages = useMemo(() => {
+    const purchasedIds = new Set(
+      userPackages
+        .filter((up) => up.elderlyProfileId === selectedElderlyId)
+        .map((up) => up.servicePackageId)
+    );
     return getOrderedServicePackages(servicePackages)
       .filter((item) => item.active)
       .map((pkg) => ({
         ...pkg,
         isCurrent: activePackage?.servicePackageId === pkg.id,
+        isAlreadyPurchased: purchasedIds.has(pkg.id),
       }));
-  }, [activePackage?.servicePackageId, servicePackages]);
+  }, [activePackage?.servicePackageId, servicePackages, userPackages, selectedElderlyId]);
 
   return (
     <div className="space-y-10 pb-20 animate-in fade-in slide-in-from-top-4 duration-700">
@@ -216,6 +243,25 @@ export default function PackagesPage() {
                     <div className="mt-2 font-semibold text-slate-900">{activePackageInfo?.name || 'Chưa mua gói'}</div>
                   </div>
                 </div>
+                {allPackagesForElderly.length > 0 && (
+                  <div className="mt-3 rounded-xl border border-sky-200 bg-gradient-to-r from-emerald-50 via-sky-50 to-violet-50 p-4 flex flex-wrap gap-x-6 gap-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="h-4 w-4 text-sky-600" />
+                      <span className="text-xs font-bold uppercase tracking-wider text-sky-700">Tổng ngày:</span>
+                      <span className="font-black text-sky-900">{totalDays} ngày</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Activity className="h-4 w-4 text-emerald-600" />
+                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">Tổng bài tập:</span>
+                      <span className="font-black text-emerald-900">{totalExercises} bài</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Package className="h-4 w-4 text-violet-600" />
+                      <span className="text-xs font-bold uppercase tracking-wider text-violet-700">Số gói:</span>
+                      <span className="font-black text-violet-900">{allPackagesForElderly.length} gói</span>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">
@@ -376,6 +422,7 @@ export default function PackagesPage() {
         <div className="grid gap-6 md:grid-cols-3">
           {availablePackages.map((pkg, idx) => {
             const isCurrent = pkg.isCurrent;
+            const isAlreadyPurchased = pkg.isAlreadyPurchased;
             const isUltimate = idx === availablePackages.length - 1;
             const Icon = isUltimate ? Gem : pkg.id === 1 ? Zap : pkg.id === 2 ? Crown : ShieldCheck;
             const pkgTheme = getServicePackageTheme(pkg, servicePackages);
@@ -483,24 +530,24 @@ export default function PackagesPage() {
                     <Activity className="mr-2 h-4 w-4" /> View Exercises
                   </Button>
                   <Button 
-                    variant={isCurrent ? 'outline' : 'default'}
+                    variant={isAlreadyPurchased ? 'outline' : 'default'}
                     className={cn(
                       'w-full h-12 rounded-2xl font-bold shadow-lg transition-all',
-                      isCurrent
+                      isAlreadyPurchased
                         ? `${pkgTheme.badgeClassName} scale-95 opacity-50 cursor-default`
                         : isUltimate
                           ? 'bg-gradient-to-r from-orange-700 via-orange-500 to-amber-500 text-white hover:from-orange-800 hover:via-orange-600 hover:to-amber-600 shadow-[0_4px_20px_rgba(194,65,12,0.38),0_2px_12px_rgba(245,158,11,0.28)] hover:shadow-[0_6px_32px_rgba(194,65,12,0.52),0_4px_16px_rgba(245,158,11,0.38)] border-0'
                           : 'bg-slate-900 text-white hover:bg-slate-800 shadow-slate-200',
                     )}
-                    disabled={isCurrent || purchasingId !== null || !selectedElderlyId}
+                    disabled={isAlreadyPurchased || purchasingId !== null || !selectedElderlyId}
                     onClick={() => handlePurchase(pkg.id)}
                   >
                     {purchasingId === pkg.id ? (
                       <div className="flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" /> Processing...
                       </div>
-                    ) : isCurrent ? (
-                      'Already Active'
+                    ) : isAlreadyPurchased ? (
+                      'Đã đăng ký'
                     ) : !selectedElderlyId ? (
                       'Select Elderly First'
                     ) : isUltimate ? (

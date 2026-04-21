@@ -139,10 +139,12 @@ export default function PackagesPage() {
   }, [selectedElderlyId, userPackages]);
 
   const totalDays = useMemo(() => {
-    return allPackagesForElderly.reduce((sum, up) => {
-      const catalog = servicePackages.find((sp) => sp.id === up.servicePackageId);
-      return sum + (catalog?.durationDays ?? 0);
-    }, 0);
+    return allPackagesForElderly
+      .filter((up) => up.status === 'PAID')
+      .reduce((sum, up) => {
+        const catalog = servicePackages.find((sp) => sp.id === up.servicePackageId);
+        return sum + (catalog?.durationDays ?? 0);
+      }, 0);
   }, [allPackagesForElderly, servicePackages]);
 
   const totalExercises = useMemo(() => {

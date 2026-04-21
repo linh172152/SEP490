@@ -147,10 +147,12 @@ export default function FamilyElderlyDetailPage() {
 
   const totalDays = useMemo(
     () =>
-      ownedPackages.reduce((sum, up) => {
-        const catalog = servicePackages.find((sp) => sp.id === up.servicePackageId);
-        return sum + (catalog?.durationDays ?? 0);
-      }, 0),
+      ownedPackages
+        .filter((up) => up.status === 'PAID')
+        .reduce((sum, up) => {
+          const catalog = servicePackages.find((sp) => sp.id === up.servicePackageId);
+          return sum + (catalog?.durationDays ?? 0);
+        }, 0),
     [ownedPackages, servicePackages]
   );
 

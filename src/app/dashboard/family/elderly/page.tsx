@@ -134,14 +134,7 @@ export default function ElderlyListPage() {
               'group relative overflow-hidden border shadow-sm transition-all duration-300 hover:shadow-xl',
               hasPackage ? packageTheme.surfaceClassName : unpurchasedTheme.surfaceClassName
             )}>
-              {activeUserPackage?.status === 'PENDING' && (
-                <div className="absolute inset-0 bg-amber-500/5 backdrop-blur-[0.5px] z-10 flex items-center justify-center pointer-events-none">
-                  <div className="bg-amber-500 text-white font-black px-8 py-3 rounded-2xl shadow-[0_20px_50px_rgba(245,158,11,0.3)] rotate-[-12deg] border-4 border-white flex flex-col items-center gap-0 animate-in fade-in zoom-in duration-500 scale-110">
-                    <span className="text-2xl tracking-tighter">PENDING</span>
-                    <span className="text-[10px] opacity-80 uppercase tracking-widest mt-0.5">Wait Approval</span>
-                  </div>
-                </div>
-              )}
+
               <div className={cn('h-1.5 w-full', hasPackage ? packageTheme.accentClassName : unpurchasedTheme.accentClassName)} />
               <CardHeader className="flex flex-row items-start justify-between pb-4">
                 <div className="flex items-center gap-4">
@@ -158,6 +151,13 @@ export default function ElderlyListPage() {
                     <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
                        <Calendar className="h-3 w-3" /> Born: {new Date(elderly.dateOfBirth).toLocaleDateString()}
                     </p>
+                    {activeUserPackage?.status === 'PENDING' && activePackage && (
+                      <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2 py-0.5">
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500 animate-pulse" />
+                        <span className="text-[11px] font-semibold text-amber-800">{activePackage.name}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-amber-500">• Pending</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <DropdownMenu>

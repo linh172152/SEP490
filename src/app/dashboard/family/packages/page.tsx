@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useFamilyStore } from '@/store/useFamilyStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { paymentService } from '@/services/api/paymentService';
+import { userPackageService } from '@/services/api/userPackageService';
 import { 
   Card, 
   CardContent, 
@@ -35,9 +36,20 @@ import {
   Gem,
   Sparkles,
   Star,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { PackageExercisesModal } from '@/components/dashboard/family/PackageExercisesModal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 
 const SELECTED_ELDERLY_STORAGE_KEY = 'family-selected-elderly-package-context';
@@ -51,6 +63,8 @@ export default function PackagesPage() {
   const [purchasingId, setPurchasingId] = useState<number | null>(null);
   const [selectedElderlyId, setSelectedElderlyId] = useState<number | null>(null);
   const [selectedElderlyName, setSelectedElderlyName] = useState('');
+  const [deleteConfirmUpId, setDeleteConfirmUpId] = useState<number | null>(null);
+  const [deletingUpId, setDeletingUpId] = useState<number | null>(null);
 
   // Exercise Modal State
   const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
@@ -155,6 +169,21 @@ export default function PackagesPage() {
     });
     return ids.size;
   }, [allPackagesForElderly, servicePackages]);
+
+  const handleDeleteUserPackage = async () => {
+    if (!deleteConfirmUpId) return;
+    setDeletingUpId(deleteConfirmUpId);
+    setDeleteConfirmUpId(null);
+    try {
+      await userPackageService.delete(deleteConfirmUpId);
+      toast.success('Đã xoá gói thành công.');
+      if (user?.id) await fetchDashboardData(Number(user.id));
+    } catch {
+      toast.error('Xoá gói thất bại. Vui lòng thử lại.');
+    } finally {
+      setDeletingUpId(null);
+    }
+  };
 
   const handlePurchase = async (packageId: number) => {
     if (!selectedElderlyId) {
@@ -262,6 +291,40 @@ export default function PackagesPage() {
                       <span className="text-xs font-bold uppercase tracking-wider text-violet-700">Số gói:</span>
                       <span className="font-black text-violet-900">{allPackagesForElderly.length} gói</span>
                     </div>
+                  </div>
+                )}
+                {allPackagesForElderly.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <div className="text-xs font-bold uppercase tracking-wider text-slate-500 px-1">Gói đã đăng ký</div>
+                    {allPackagesForElderly.map((up) => {
+                      const catalog = servicePackages.find((sp) => sp.id === up.servicePackageId);
+                      const isPaid = up.status === 'PAID';
+                      return (
+                        <div key={up.id} className={cn(
+                          'flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5',
+                          isPaid ? 'border-emerald-200 bg-emerald-50/80' : 'border-amber-200 bg-amber-50/80'
+                        )}>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold text-sm text-slate-900 truncate">{catalog?.name || `Package #${up.servicePackageId}`}</div>
+                            <div className="text-[10px] text-slate-500 mt-0.5">{catalog?.durationDays ?? 0} ngày • {catalog?.level || ''}</div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Badge className={cn('text-[10px] font-bold px-2 py-0', isPaid ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-amber-100 text-amber-800 border-amber-300')}>
+                              {up.status}
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50"
+                              disabled={deletingUpId === up.id}
+                              onClick={() => setDeleteConfirmUpId(up.id)}
+                            >
+                              {deletingUpId === up.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -597,6 +660,27 @@ export default function PackagesPage() {
         packageId={viewingPkgId}
         packageName={viewingPkgName}
       />
+
+      <AlertDialog open={deleteConfirmUpId !== null} onOpenChange={(open) => { if (!open) setDeleteConfirmUpId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xoá gói dịch vụ</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">Bạn có chắc muốn xoá gói này khỏi hồ sơ người cao tuổi?</span>
+              <span className="block font-semibold text-red-600">⚠️ Lưu ý: Sau khi xoá, toàn bộ chức năng của gói (bài tập, robot) sẽ ngừng kích hoạt ngay lập tức. Hành động này không thể hoàn tác và <strong>không được hoàn tiền</strong>.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Huỷ</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              onClick={handleDeleteUserPackage}
+            >
+              Xoá gói
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
 
   );

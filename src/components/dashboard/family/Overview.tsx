@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import { parseServerDate } from '@/lib/utils';
 import { useFamilyStore } from '@/store/useFamilyStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { 
@@ -86,8 +87,8 @@ export function FamilyOverview() {
 
   // Next 5 upcoming reminders
   const upcomingReminders = [...reminders]
-    .filter(r => r.active && new Date(r.scheduleTime) >= new Date())
-    .sort((a, b) => new Date(a.scheduleTime).getTime() - new Date(b.scheduleTime).getTime())
+    .filter(r => r.active && parseServerDate(r.scheduleTime) >= new Date())
+    .sort((a, b) => parseServerDate(a.scheduleTime).getTime() - parseServerDate(b.scheduleTime).getTime())
     .slice(0, 5);
 
   return (

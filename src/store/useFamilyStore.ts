@@ -109,8 +109,8 @@ export const useFamilyStore = create<FamilyState>()(
 
       generateDemoData: (accountId) => {
         const mockElderly: ElderlyProfileResponse[] = [
-          { id: 101, accountId, name: 'Nguyễn Văn A', dateOfBirth: '1945-05-15', healthNotes: 'Cao huyết áp', preferredLanguage: 'Vietnamese', speakingSpeed: 'normal', deleted: false },
-          { id: 102, accountId, name: 'Trần Thị B', dateOfBirth: '1950-10-20', healthNotes: 'Tiểu đường type 2', preferredLanguage: 'Vietnamese', speakingSpeed: 'slow', deleted: false },
+          { id: 101, accountId, name: 'Nguyễn Văn A', dateOfBirth: '1945-05-15', healthNotes: 'Cao huyết áp', preferredLanguage: 'Vietnamese', speakingSpeed: 'normal', gender: 'male', deleted: false },
+          { id: 102, accountId, name: 'Trần Thị B', dateOfBirth: '1950-10-20', healthNotes: 'Tiểu đường type 2', preferredLanguage: 'Vietnamese', speakingSpeed: 'slow', gender: 'female', deleted: false },
         ];
 
         const mockReminders: ReminderResponse[] = [

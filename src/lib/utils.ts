@@ -5,6 +5,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * Parse a datetime string from the server.
+ * The backend returns UTC datetimes without a 'Z' suffix (e.g. "2026-04-21T11:21:27.578").
+ * Without a timezone indicator JS treats the string as local time, which causes a 7-hour
+ * offset for UTC+7 users. Appending 'Z' forces correct UTC interpretation.
+ */
+export function parseServerDate(value: string): Date {
+  if (!value) return new Date(NaN);
+  const hasTimezone = /Z|[+-]\d{2}:?\d{2}$/.test(value);
+  return new Date(hasTimezone ? value : value + 'Z');
+}
+
 export function formatDate(dateString: string | Date): string {
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return 'Invalid Date';

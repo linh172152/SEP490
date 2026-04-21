@@ -118,7 +118,7 @@ export interface ServicePackageResponse {
 }
 
 export interface PaymentCreateResponse {
-  qrCodeUrl: string;
+  checkoutUrl: string;
   amount: number;
   description: string;
 }

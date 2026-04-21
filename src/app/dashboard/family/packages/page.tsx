@@ -31,6 +31,7 @@ import {
   Loader2,
   UserRound,
   RefreshCw,
+  Activity,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { PackageExercisesModal } from '@/components/dashboard/family/PackageExercisesModal';

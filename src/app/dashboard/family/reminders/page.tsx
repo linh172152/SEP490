@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { formatDate } from '@/lib/utils';
-import type { AlertNotificationResponse, ReminderLogResponse, ReminderResponse } from '@/services/api/types';
+import type { AlertNotificationResponse, ReminderLogResponse, ReminderResponse, ElderlyProfileResponse } from '@/services/api/types';
 import { getReminderDetailedStatus } from '@/utils/reminderStatus';
 
 

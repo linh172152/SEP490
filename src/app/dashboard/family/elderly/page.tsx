@@ -28,6 +28,7 @@ import {
   Users
 } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from 'react-toastify';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { getActiveUserPackageForElderly, getCatalogPackageForUserPackage, getServicePackageTheme, getUnpurchasedPackageTheme } from '@/lib/servicePackageThemes';
@@ -35,13 +36,43 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
+  DropdownMenuSeparator,
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Trash2 } from 'lucide-react';
+import { elderlyService } from '@/services/api/elderlyService';
 
 export default function ElderlyListPage() {
   const { user } = useAuthStore();
   const { elderlyList, userPackages, servicePackages, roomNames, fetchDashboardData, generateDemoData, isUsingMock } = useFamilyStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirmId) return;
+    setDeletingId(deleteConfirmId);
+    setDeleteConfirmId(null);
+    try {
+      await elderlyService.delete(deleteConfirmId);
+      toast.success('Đã xoá hồ sơ người cao tuổi.');
+      if (user?.id) await fetchDashboardData(Number(user.id));
+    } catch {
+      toast.error('Xoá thất bại. Vui lòng thử lại.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
   const unpurchasedTheme = getUnpurchasedPackageTheme();
 
   useEffect(() => {
@@ -138,13 +169,21 @@ export default function ElderlyListPage() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
                       <Link href={`/dashboard/family/elderly/${elderly.id}`} className="flex items-center gap-2">
-                        <Eye className="h-4 w-4" /> View Details
+                        <Eye className="h-4 w-4" /> Xem chi tiết
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href={`/dashboard/family/elderly/${elderly.id}/edit`} className="flex items-center gap-2">
-                        <Edit2 className="h-4 w-4" /> Edit Profile
+                        <Edit2 className="h-4 w-4" /> Chỉnh sửa
                       </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="flex items-center gap-2 text-red-600 focus:text-red-600"
+                      disabled={deletingId === elderly.id}
+                      onSelect={() => setDeleteConfirmId(elderly.id)}
+                    >
+                      <Trash2 className="h-4 w-4" /> Xoá hồ sơ
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -266,6 +305,27 @@ export default function ElderlyListPage() {
           </div>
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteConfirmId !== null} onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xoá hồ sơ</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hành động này không thể hoàn tác. Toàn bộ dữ liệu của hồ sơ này sẽ bị xoá vĩnh viễn.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Huỷ</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              onClick={handleDeleteConfirm}
+            >
+              Xoá
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

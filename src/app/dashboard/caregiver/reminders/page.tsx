@@ -46,6 +46,14 @@ import { Badge } from '@/components/ui/badge';
 import { ReminderLogResponse, ReminderRequest, ReminderResponse, RoomElderlySummary } from '@/services/api/types';
 import { format } from 'date-fns';
 import { getReminderDetailedStatus } from '@/utils/reminderStatus';
+import { parseServerDate } from '@/lib/utils';
+
+const toDateTimeLocal = (isoString: string) => {
+  const d = parseServerDate(isoString);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
 
 
 const getCaregiverIdentifiers = (profile: { id?: number | null; accountId?: number | null } | null, userId?: string) => {
@@ -360,9 +368,9 @@ export default function CaregiverRemindersPage() {
                       <TableCell>
                         <div className="flex items-center text-slate-600 dark:text-slate-400">
                           <Clock className="h-4 w-4 mr-2 text-sky-500/80" />
-                          <span className="font-medium">{format(new Date(reminder.scheduleTime), 'HH:mm')}</span>
+                          <span className="font-medium">{format(parseServerDate(reminder.scheduleTime), 'HH:mm')}</span>
                           <span className="mx-1.5 opacity-30">|</span>
-                          <span className="text-xs">{format(new Date(reminder.scheduleTime), 'dd/MM')}</span>
+                          <span className="text-xs">{format(parseServerDate(reminder.scheduleTime), 'dd/MM')}</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -526,7 +534,7 @@ export default function CaregiverRemindersPage() {
                   <Input
                     id="time"
                     type="datetime-local"
-                    value={formData.scheduleTime.slice(0, 16)}
+                    value={toDateTimeLocal(formData.scheduleTime)}
                     onChange={(e) => setFormData({...formData, scheduleTime: new Date(e.target.value).toISOString()})}
                     required
                     className="h-11 bg-slate-50 dark:bg-slate-900 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-sky-500"
@@ -614,7 +622,7 @@ export default function CaregiverRemindersPage() {
               <div className="space-y-1">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('caregiver.reminders.table.time')}</span>
                 <p className="font-semibold text-slate-700 dark:text-slate-300">
-                  {viewingReminder && format(new Date(viewingReminder.scheduleTime), 'HH:mm | dd/MM/yyyy')}
+                  {viewingReminder && format(parseServerDate(viewingReminder.scheduleTime), 'HH:mm | dd/MM/yyyy')}
                 </p>
               </div>
             </div>

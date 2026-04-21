@@ -10,6 +10,7 @@ import { exerciseService } from '@/services/api/exerciseService';
 import { roomService } from '@/services/api/roomService';
 import type { CaregiverProfileResponse, ExerciseScriptResponse, ReminderLogResponse, ReminderRequest, ReminderResponse, RoomElderlySummary } from '@/services/api/types';
 import { getReminderDetailedStatus } from '@/utils/reminderStatus';
+import { parseServerDate } from '@/lib/utils';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -150,7 +151,7 @@ export default function CaregiverCareTasksPage() {
   }, [user?.id]);
 
   const sortedReminders = useMemo(
-    () => reminders.slice().sort((left, right) => new Date(left.scheduleTime).getTime() - new Date(right.scheduleTime).getTime()),
+    () => reminders.slice().sort((left, right) => parseServerDate(left.scheduleTime).getTime() - parseServerDate(right.scheduleTime).getTime()),
     [reminders]
   );
 

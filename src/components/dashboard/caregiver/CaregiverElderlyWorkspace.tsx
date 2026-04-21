@@ -350,7 +350,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
 
 
   const sortedSelectedReminders = useMemo(
-    () => selectedReminders.slice().sort((left, right) => parseServerDate(right.scheduleTime).getTime() - parseServerDate(left.scheduleTime).getTime()),
+    () => selectedReminders.slice().sort((left, right) => parseServerDate(left.scheduleTime).getTime() - parseServerDate(right.scheduleTime).getTime()),
     [selectedReminders]
   );
   const sortedReminderLogs = useMemo(

@@ -32,6 +32,9 @@ import {
   UserRound,
   RefreshCw,
   Activity,
+  Gem,
+  Sparkles,
+  Star,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { PackageExercisesModal } from '@/components/dashboard/family/PackageExercisesModal';
@@ -371,35 +374,79 @@ export default function PackagesPage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
-          {availablePackages.map((pkg) => {
+          {availablePackages.map((pkg, idx) => {
             const isCurrent = pkg.isCurrent;
-            const Icon = pkg.id === 1 ? Zap : pkg.id === 2 ? Crown : ShieldCheck;
+            const isUltimate = idx === availablePackages.length - 1;
+            const Icon = isUltimate ? Gem : pkg.id === 1 ? Zap : pkg.id === 2 ? Crown : ShieldCheck;
             const pkgTheme = getServicePackageTheme(pkg, servicePackages);
 
             return (
               <Card key={pkg.id} className={cn(
                 'group relative flex flex-col overflow-hidden rounded-3xl border-2 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl',
                 pkgTheme.surfaceClassName,
-                isCurrent ? 'scale-[1.02] shadow-xl' : 'hover:brightness-[1.02]'
+                isCurrent ? 'scale-[1.02] shadow-xl' : 'hover:brightness-[1.02]',
+                isUltimate && 'gold-glow-card hover:scale-[1.04] hover:-translate-y-3 md:scale-[1.03] md:shadow-2xl',
               )}>
-                <div className={cn('h-2 w-full', pkgTheme.accentClassName)} />
+                {/* Accent bar — thicker + shimmer for ultimate */}
+                <div className={cn(
+                  'w-full',
+                  isUltimate ? 'h-3' : 'h-2',
+                  pkgTheme.accentClassName,
+                )} />
+
+                {/* Ultimate decorative sparkles */}
+                {isUltimate && (
+                  <>
+                    <span className="gold-sparkle pointer-events-none absolute left-4 top-8 text-amber-400/60 text-lg select-none" style={{ animationDelay: '0s' }}>✦</span>
+                    <span className="gold-sparkle pointer-events-none absolute right-16 top-12 text-yellow-500/50 text-base select-none" style={{ animationDelay: '1.1s' }}>✦</span>
+                    <span className="gold-sparkle pointer-events-none absolute left-10 bottom-24 text-amber-300/40 text-sm select-none" style={{ animationDelay: '2.2s' }}>✦</span>
+                    {/* Top radial glow overlay */}
+                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,rgba(251,191,36,0.15),transparent_65%)]" />
+                  </>
+                )}
+
+                {/* CURRENT PLAN badge */}
                 {isCurrent && (
-                  <div className="absolute right-0 top-0 z-10 flex items-center gap-1 rounded-bl-2xl bg-slate-900 px-3 py-2 text-[10px] font-bold text-white shadow-lg">
+                  <div className={cn(
+                    'absolute right-0 top-0 z-10 flex items-center gap-1 rounded-bl-2xl px-3 py-2 text-[10px] font-bold shadow-lg',
+                    isUltimate
+                      ? 'bg-gradient-to-r from-amber-700 via-yellow-600 to-amber-700 text-yellow-100'
+                      : 'bg-slate-900 text-white',
+                  )}>
                     <Check className="h-3 w-3" /> CURRENT PLAN
+                  </div>
+                )}
+
+                {/* GOLD LUXURY badge — only for ultimate, only when not current */}
+                {isUltimate && !isCurrent && (
+                  <div className="absolute right-0 top-0 z-10 flex items-center gap-1.5 rounded-bl-2xl bg-gradient-to-r from-amber-700 via-yellow-500 to-amber-700 px-3 py-2 text-[10px] font-black tracking-widest text-yellow-50 shadow-lg uppercase">
+                    <Crown className="h-3 w-3" /> Gold Luxury
                   </div>
                 )}
                 
                 <CardHeader className="pb-4">
                   <div className={cn(
-                    'mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border transition-colors',
+                    'mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border transition-all',
                     pkgTheme.badgeClassName,
-                    isCurrent ? 'shadow-md' : 'group-hover:scale-105'
+                    isUltimate
+                      ? 'h-14 w-14 shadow-[0_0_16px_rgba(251,191,36,0.45)] group-hover:shadow-[0_0_28px_rgba(251,191,36,0.65)] group-hover:scale-110'
+                      : isCurrent ? 'shadow-md' : 'group-hover:scale-105',
                   )}>
-                    <Icon className="h-6 w-6" />
+                    <Icon className={cn('h-6 w-6', isUltimate && 'h-7 w-7')} />
                   </div>
-                  <CardTitle className="text-2xl font-black tracking-tight">{pkg.name}</CardTitle>
-                  <CardDescription className="text-lg font-semibold text-foreground/85">
+                  <div className="flex items-center gap-2">
+                    <CardTitle className={cn('font-black tracking-tight', isUltimate ? 'text-3xl' : 'text-2xl')}>
+                      {pkg.name}
+                    </CardTitle>
+                    {isUltimate && <Sparkles className="h-5 w-5 text-amber-500 gold-sparkle" style={{ animationDelay: '0.6s' }} />}
+                  </div>
+                  <CardDescription className={cn('font-semibold text-foreground/85', isUltimate ? 'text-xl' : 'text-lg')}>
                     {pkg.price.toLocaleString()} <span className="text-xs font-normal text-foreground/65"> / {pkg.level}</span>
+                    {isUltimate && (
+                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-amber-800 border border-amber-300">
+                        <Star className="h-2.5 w-2.5 fill-amber-500 text-amber-500" /> Best Value
+                      </span>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 
@@ -415,8 +462,8 @@ export default function PackagesPage() {
                       `Package ID: ${pkg.id}`,
                       `Duration: ${pkg.durationDays || 30} days`,
                       selectedElderlyId ? `Apply to EL #${selectedElderlyId}` : 'Select elderly first',
-                    ].map((feat, idx) => (
-                      <li key={idx} className="flex items-start gap-3 text-sm font-medium">
+                    ].map((feat, i) => (
+                      <li key={i} className="flex items-start gap-3 text-sm font-medium">
                         <div className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full border', pkgTheme.badgeClassName)}>
                            <Check className="h-3 w-3" strokeWidth={3} />
                         </div>
@@ -436,11 +483,14 @@ export default function PackagesPage() {
                   </Button>
                   <Button 
                     variant={isCurrent ? 'outline' : 'default'}
-                    className={`w-full h-12 rounded-2xl font-bold shadow-lg transition-all ${
-                      isCurrent 
-                        ? `${pkgTheme.badgeClassName} scale-95 opacity-50 cursor-default` 
-                        : 'bg-slate-900 text-white hover:bg-slate-800 shadow-slate-200'
-                    }`}
+                    className={cn(
+                      'w-full h-12 rounded-2xl font-bold shadow-lg transition-all',
+                      isCurrent
+                        ? `${pkgTheme.badgeClassName} scale-95 opacity-50 cursor-default`
+                        : isUltimate
+                          ? 'bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-amber-950 hover:from-amber-700 hover:via-yellow-600 hover:to-amber-700 shadow-[0_4px_20px_rgba(251,191,36,0.45)] hover:shadow-[0_6px_28px_rgba(251,191,36,0.65)] border-0'
+                          : 'bg-slate-900 text-white hover:bg-slate-800 shadow-slate-200',
+                    )}
                     disabled={isCurrent || purchasingId !== null || !selectedElderlyId}
                     onClick={() => handlePurchase(pkg.id)}
                   >
@@ -448,8 +498,20 @@ export default function PackagesPage() {
                       <div className="flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" /> Processing...
                       </div>
-                    ) : isCurrent ? 'Already Active' : !selectedElderlyId ? 'Select Elderly First' : 'Mua gói ngay !'}
-                    <ChevronRight className="ml-2 h-4 w-4" />
+                    ) : isCurrent ? (
+                      'Already Active'
+                    ) : !selectedElderlyId ? (
+                      'Select Elderly First'
+                    ) : isUltimate ? (
+                      <span className="flex items-center gap-2 font-black tracking-wide">
+                        <Crown className="h-4 w-4" /> Mua gói Ultimate
+                      </span>
+                    ) : (
+                      'Mua gói ngay !'
+                    )}
+                    {!purchasingId && !isCurrent && selectedElderlyId && !isUltimate && (
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    )}
                   </Button>
                 </CardFooter>
               </Card>

@@ -73,6 +73,27 @@ const packageThemes = [
     subtleClassName: 'bg-white/75 text-cyan-900 backdrop-blur-sm',
     ringClassName: 'ring-cyan-200',
   },
+  // ── Gold Luxury — Ultimate / most expensive package ──────────────────
+  {
+    surfaceClassName: [
+      'border-2 border-amber-400/80',
+      'bg-[radial-gradient(ellipse_at_8%_0%,rgba(255,253,230,0.98),transparent_55%),radial-gradient(ellipse_at_92%_100%,rgba(253,230,138,0.55),transparent_48%),linear-gradient(145deg,#fffbeb_0%,#fef3c7_20%,#fde68a_42%,#fef9c3_62%,#fffbeb_82%,#fef3c7_100%)]',
+      'text-amber-950',
+      'shadow-[0_0_0_1px_rgba(251,191,36,0.45),0_8px_40px_rgba(245,158,11,0.20),0_2px_8px_rgba(251,191,36,0.12),inset_0_1px_0_rgba(255,255,255,0.95)]',
+    ].join(' '),
+    accentClassName: [
+      'gold-shimmer-bar',
+      'bg-[linear-gradient(90deg,#78350f_0%,#b45309_10%,#d97706_20%,#f59e0b_30%,#fbbf24_40%,#fef08a_47%,#ffffff_50%,#fef08a_53%,#fbbf24_60%,#f59e0b_70%,#d97706_80%,#b45309_90%,#78350f_100%)]',
+    ].join(' '),
+    badgeClassName: [
+      'border-amber-500/60',
+      'bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-200',
+      'text-amber-900 font-bold',
+      'shadow-[0_1px_4px_rgba(251,191,36,0.35)]',
+    ].join(' '),
+    subtleClassName: 'bg-gradient-to-r from-amber-100/90 via-yellow-100/80 to-amber-200/90 text-amber-950',
+    ringClassName: 'ring-amber-400',
+  },
 ];
 
 export function getOrderedServicePackages(servicePackages: ServicePackageResponse[]) {

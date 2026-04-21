@@ -145,6 +145,17 @@ export default function FamilyElderlyDetailPage() {
     return Array.from(mappedScripts.values());
   }, [activePackageDetails, packageExercisesByPackageId]);
 
+  const totalDays = useMemo(
+    () =>
+      ownedPackages
+        .filter((up) => up.status === 'PAID')
+        .reduce((sum, up) => {
+          const catalog = servicePackages.find((sp) => sp.id === up.servicePackageId);
+          return sum + (catalog?.durationDays ?? 0);
+        }, 0),
+    [ownedPackages, servicePackages]
+  );
+
   const primaryPackage = activePackageDetails[0]?.catalog || null;
   const packageTheme = getServicePackageTheme(primaryPackage, servicePackages);
   const unpurchasedTheme = getUnpurchasedPackageTheme();
@@ -331,6 +342,25 @@ export default function FamilyElderlyDetailPage() {
               <CardDescription>Packages currently attached to elderly #{profile.id} - {profile.name}.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
+              {ownedPackages.length > 0 && (
+                <div className="rounded-xl border border-sky-200 bg-gradient-to-r from-emerald-50 via-sky-50 to-violet-50 p-3 flex flex-wrap gap-x-5 gap-y-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5 text-sky-600" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-sky-700">Tổng ngày:</span>
+                    <span className="font-black text-sky-900">{totalDays} ngày</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Activity className="h-3.5 w-3.5 text-emerald-600" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Tổng bài tập:</span>
+                    <span className="font-black text-emerald-900">{eligibleExercises.length} bài</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Package className="h-3.5 w-3.5 text-violet-600" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-violet-700">Số gói:</span>
+                    <span className="font-black text-violet-900">{ownedPackages.length} gói</span>
+                  </div>
+                </div>
+              )}
               {activePackageDetails.length === 0 ? (
                 <div className="space-y-3 rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">
                   <div>No active service plan yet.</div>

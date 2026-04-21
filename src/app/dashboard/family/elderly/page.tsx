@@ -28,6 +28,7 @@ import {
   Users
 } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from 'react-toastify';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { getActiveUserPackageForElderly, getCatalogPackageForUserPackage, getServicePackageTheme, getUnpurchasedPackageTheme } from '@/lib/servicePackageThemes';
@@ -35,13 +36,43 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
+  DropdownMenuSeparator,
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Trash2 } from 'lucide-react';
+import { elderlyService } from '@/services/api/elderlyService';
 
 export default function ElderlyListPage() {
   const { user } = useAuthStore();
   const { elderlyList, userPackages, servicePackages, roomNames, fetchDashboardData, generateDemoData, isUsingMock } = useFamilyStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirmId) return;
+    setDeletingId(deleteConfirmId);
+    setDeleteConfirmId(null);
+    try {
+      await elderlyService.delete(deleteConfirmId);
+      toast.success('Đã xoá hồ sơ người cao tuổi.');
+      if (user?.id) await fetchDashboardData(Number(user.id));
+    } catch {
+      toast.error('Xoá thất bại. Vui lòng thử lại.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
   const unpurchasedTheme = getUnpurchasedPackageTheme();
 
   useEffect(() => {
@@ -103,14 +134,7 @@ export default function ElderlyListPage() {
               'group relative overflow-hidden border shadow-sm transition-all duration-300 hover:shadow-xl',
               hasPackage ? packageTheme.surfaceClassName : unpurchasedTheme.surfaceClassName
             )}>
-              {activeUserPackage?.status === 'PENDING' && (
-                <div className="absolute inset-0 bg-amber-500/5 backdrop-blur-[0.5px] z-10 flex items-center justify-center pointer-events-none">
-                  <div className="bg-amber-500 text-white font-black px-8 py-3 rounded-2xl shadow-[0_20px_50px_rgba(245,158,11,0.3)] rotate-[-12deg] border-4 border-white flex flex-col items-center gap-0 animate-in fade-in zoom-in duration-500 scale-110">
-                    <span className="text-2xl tracking-tighter">PENDING</span>
-                    <span className="text-[10px] opacity-80 uppercase tracking-widest mt-0.5">Wait Approval</span>
-                  </div>
-                </div>
-              )}
+
               <div className={cn('h-1.5 w-full', hasPackage ? packageTheme.accentClassName : unpurchasedTheme.accentClassName)} />
               <CardHeader className="flex flex-row items-start justify-between pb-4">
                 <div className="flex items-center gap-4">
@@ -127,6 +151,13 @@ export default function ElderlyListPage() {
                     <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
                        <Calendar className="h-3 w-3" /> Born: {new Date(elderly.dateOfBirth).toLocaleDateString()}
                     </p>
+                    {activeUserPackage?.status === 'PENDING' && activePackage && (
+                      <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2 py-0.5">
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500 animate-pulse" />
+                        <span className="text-[11px] font-semibold text-amber-800">{activePackage.name}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-amber-500">• Pending</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <DropdownMenu>
@@ -138,13 +169,21 @@ export default function ElderlyListPage() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
                       <Link href={`/dashboard/family/elderly/${elderly.id}`} className="flex items-center gap-2">
-                        <Eye className="h-4 w-4" /> View Details
+                        <Eye className="h-4 w-4" /> Xem chi tiết
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href={`/dashboard/family/elderly/${elderly.id}/edit`} className="flex items-center gap-2">
-                        <Edit2 className="h-4 w-4" /> Edit Profile
+                        <Edit2 className="h-4 w-4" /> Chỉnh sửa
                       </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="flex items-center gap-2 text-red-600 focus:text-red-600"
+                      disabled={deletingId === elderly.id}
+                      onSelect={() => setDeleteConfirmId(elderly.id)}
+                    >
+                      <Trash2 className="h-4 w-4" /> Xoá hồ sơ
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -266,6 +305,32 @@ export default function ElderlyListPage() {
           </div>
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteConfirmId !== null} onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xoá hồ sơ người cao tuổi</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>Bạn có chắc muốn xoá hồ sơ này?</p>
+                <p className="font-semibold text-red-600">
+                  ⚠️ Lưu ý: Toàn bộ thông tin hồ sơ, lịch sử chăm sóc, lời nhắc và <strong>tất cả các gói dịch vụ đang gắn với hồ sơ</strong> sẽ bị xoá vĩnh viễn. Hành động này không thể hoàn tác và <strong>không được hoàn tiền</strong> cho bất kỳ gói nào.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Huỷ</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              onClick={handleDeleteConfirm}
+            >
+              Xoá
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

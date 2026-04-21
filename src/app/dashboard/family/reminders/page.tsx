@@ -32,8 +32,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { formatDate } from '@/lib/utils';
-import type { AlertNotificationResponse, ReminderLogResponse, ReminderResponse } from '@/services/api/types';
+import { formatDate, parseServerDate } from '@/lib/utils';
+import type { AlertNotificationResponse, ReminderLogResponse, ReminderResponse, ElderlyProfileResponse } from '@/services/api/types';
+import { getReminderDetailedStatus } from '@/utils/reminderStatus';
+
 
 const normalizeReminderType = (value: string) => {
   const normalized = value.trim().toLowerCase();
@@ -160,27 +162,44 @@ export default function RemindersPage() {
   const now = Date.now();
   const reminderStats = useMemo(
     () => ({
-      active: filteredReminders.filter((item) => item.active && new Date(item.scheduleTime).getTime() >= now).length,
-      missed: filteredReminders.filter((item) => item.active && new Date(item.scheduleTime).getTime() < now).length,
-      completed: filteredReminders.filter((item) => !item.active).length,
+      active: filteredReminders.filter((item) => {
+        if (!item.active) return false;
+        const elderly = elderlyList.find(e => e.id === item.elderlyId);
+        const info = getReminderDetailedStatus(item, reminderLogs, elderly?.gender);
+        return info.status === 'UPCOMING' || info.status === 'WAITING_ROBOT' || info.status === 'WAITING_USER_RESPONSE';
+      }).length,
+      missed: filteredReminders.filter((item) => {
+        if (!item.active) return false;
+        const elderly = elderlyList.find(e => e.id === item.elderlyId);
+        const info = getReminderDetailedStatus(item, reminderLogs, elderly?.gender);
+        return info.status === 'ROBOT_NOT_RESPONDING' || info.status === 'MISSED_USER_NO_RESPONSE';
+      }).length,
+      completed: filteredReminders.filter((item) => {
+        if (!item.active) return true;
+        const elderly = elderlyList.find(e => e.id === item.elderlyId);
+        const info = getReminderDetailedStatus(item, reminderLogs, elderly?.gender);
+        return info.status === 'COMPLETED';
+      }).length,
     }),
-    [filteredReminders, now]
+    [filteredReminders, reminderLogs, elderlyList]
   );
+
+
 
   const openAlerts = useMemo(() => filteredAlerts.filter((item) => !item.resolved), [filteredAlerts]);
 
   const sortedReminders = useMemo(
-    () => filteredReminders.slice().sort((left, right) => new Date(right.scheduleTime).getTime() - new Date(left.scheduleTime).getTime()),
+    () => filteredReminders.slice().sort((left, right) => parseServerDate(left.scheduleTime).getTime() - parseServerDate(right.scheduleTime).getTime()),
     [filteredReminders]
   );
 
   const sortedLogs = useMemo(
-    () => filteredReminderLogs.slice().sort((left, right) => new Date(right.triggeredTime).getTime() - new Date(left.triggeredTime).getTime()),
+    () => filteredReminderLogs.slice().sort((left, right) => parseServerDate(right.triggeredTime).getTime() - parseServerDate(left.triggeredTime).getTime()),
     [filteredReminderLogs]
   );
 
   const sortedAlerts = useMemo(
-    () => filteredAlerts.slice().sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()),
+    () => filteredAlerts.slice().sort((left, right) => parseServerDate(right.createdAt).getTime() - parseServerDate(left.createdAt).getTime()),
     [filteredAlerts]
   );
 
@@ -280,9 +299,9 @@ export default function RemindersPage() {
             {sortedReminders.length === 0 ? (
               <EmptyState text="No reminders found for the current filter." />
             ) : (
-              <div className="grid gap-3">
+              <div className="grid gap-4">
                 {sortedReminders.map((reminder) => (
-                  <ReminderItem key={reminder.id} reminder={reminder} />
+                  <ReminderItem key={reminder.id} reminder={reminder} logs={reminderLogs} elderlyList={elderlyList} />
                 ))}
               </div>
             )}
@@ -358,8 +377,12 @@ export default function RemindersPage() {
   );
 }
 
-function ReminderItem({ reminder }: { reminder: ReminderResponse }) {
-  const isMissed = reminder.active && new Date(reminder.scheduleTime).getTime() < Date.now();
+function ReminderItem({ reminder, logs, elderlyList }: { reminder: ReminderResponse, logs: ReminderLogResponse[], elderlyList: ElderlyProfileResponse[] }) {
+  const elderly = elderlyList.find(e => e.id === reminder.elderlyId);
+  const info = getReminderDetailedStatus(reminder, logs, elderly?.gender);
+
+  const isMissed = info.status === 'ROBOT_NOT_RESPONDING' || info.status === 'MISSED_USER_NO_RESPONSE';
+  const isWaiting = info.status === 'WAITING_ROBOT' || info.status === 'WAITING_USER_RESPONSE';
 
   return (
     <div className="group flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
@@ -379,6 +402,11 @@ function ReminderItem({ reminder }: { reminder: ReminderResponse }) {
           }`}>
             {getReminderTypeLabel(reminder.reminderType)}
           </Badge>
+          {info.message && (
+            <Badge variant="destructive" className="h-4 py-0 text-[10px] bg-rose-100 text-rose-600 border-none animate-pulse">
+              {info.message}
+            </Badge>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium text-muted-foreground">
           <span className="flex items-center gap-1"><User className="h-3 w-3" /> {reminder.elderlyName}</span>
@@ -392,8 +420,8 @@ function ReminderItem({ reminder }: { reminder: ReminderResponse }) {
           <span className="text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">Caregiver</span>
           <span className="text-xs font-semibold">{reminder.caregiverName || 'System'}</span>
         </div>
-        {reminder.active ? (
-          <div className={`flex h-8 w-8 items-center justify-center rounded-full border ${isMissed ? 'border-rose-100 bg-rose-50 text-rose-500' : 'border-amber-100 bg-amber-50 text-amber-500'}`}>
+        {reminder.active && info.status !== 'COMPLETED' ? (
+          <div className={`flex h-8 w-8 items-center justify-center rounded-full border ${isMissed ? 'border-rose-100 bg-rose-50 text-rose-500' : isWaiting ? 'border-amber-100 bg-amber-50 text-amber-500 animate-pulse' : 'border-slate-100 bg-slate-50 text-slate-400'}`}>
             {isMissed ? <AlertTriangle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
           </div>
         ) : (
@@ -406,6 +434,7 @@ function ReminderItem({ reminder }: { reminder: ReminderResponse }) {
     </div>
   );
 }
+
 
 function SummaryCard({ title, value, icon }: { title: string; value: number; icon: React.ReactNode }) {
   return (

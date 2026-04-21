@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import { parseServerDate } from '@/lib/utils';
 import { useFamilyStore } from '@/store/useFamilyStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { 
@@ -86,8 +87,8 @@ export function FamilyOverview() {
 
   // Next 5 upcoming reminders
   const upcomingReminders = [...reminders]
-    .filter(r => r.active && new Date(r.scheduleTime) >= new Date())
-    .sort((a, b) => new Date(a.scheduleTime).getTime() - new Date(b.scheduleTime).getTime())
+    .filter(r => r.active && parseServerDate(r.scheduleTime) >= new Date())
+    .sort((a, b) => parseServerDate(a.scheduleTime).getTime() - parseServerDate(b.scheduleTime).getTime())
     .slice(0, 5);
 
   return (
@@ -148,7 +149,7 @@ export function FamilyOverview() {
                   <Calendar className="h-3 w-3" />
                   {activePackageInfo?.level ? `${activePackageInfo.level} • ` : ''}
                   {activePackage.expiredAt 
-                    ? `Expires: ${new Date(activePackage.expiredAt).toLocaleDateString()}` 
+                    ? `Expires: ${parseServerDate(activePackage.expiredAt).toLocaleDateString()}` 
                     : activePackage.status === 'PENDING' 
                         ? 'Awaiting manager confirmation' 
                         : `Status: ${activePackage.status}`}
@@ -197,7 +198,7 @@ export function FamilyOverview() {
                     <div className="text-right">
                       <div className="flex items-center gap-1 font-mono text-sm font-bold text-slate-700">
                         <Clock className="h-3 w-3" />
-                        {new Date(reminder.scheduleTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {parseServerDate(reminder.scheduleTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                       <Badge variant="outline" className="text-[10px] uppercase font-bold mt-1">
                         {reminder.repeatPattern}

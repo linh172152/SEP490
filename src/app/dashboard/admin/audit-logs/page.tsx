@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, FileText, Download } from 'lucide-react';
 import { systemLogService } from '@/services/api/systemLogService';
 import { SystemLogResponse } from '@/services/api/types';
+import { parseServerDate } from '@/lib/utils';
 
 import { useI18nStore } from '@/store/useI18nStore';
 
@@ -66,7 +67,7 @@ export default function SystemLogsPage() {
                 {logs.map((log) => (
                   <TableRow key={log.id}>
                     <TableCell className="font-mono text-xs text-muted-foreground">#{log.id}</TableCell>
-                    <TableCell>{new Date(log.createdAt).toLocaleString()}</TableCell>
+                    <TableCell>{parseServerDate(log.createdAt).toLocaleString()}</TableCell>
                     <TableCell className="font-medium">{t('admin.logs.table.account_id_prefix')}{log.accountId}</TableCell>
                     <TableCell className="font-medium text-emerald-600">{log.action}</TableCell>
                     <TableCell>{log.targetEntity}</TableCell>

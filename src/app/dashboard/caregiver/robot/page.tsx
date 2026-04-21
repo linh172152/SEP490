@@ -44,6 +44,7 @@ import {
   ShieldCheck,
   Users,
 } from 'lucide-react';
+import { parseServerDate } from '@/lib/utils';
 
 type RobotActivityType = 'interaction' | 'reminder-log';
 
@@ -174,7 +175,7 @@ export default function CaregiverRobotPage() {
           .filter(Boolean)
           .some((value) => value!.toLowerCase().includes(query));
       })
-      .sort((left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime());
+      .sort((left, right) => parseServerDate(right.timestamp).getTime() - parseServerDate(left.timestamp).getTime());
   }, [filteredInteractions, filteredReminderLogs, searchQuery]);
 
   if (loading) {
@@ -292,7 +293,7 @@ export default function CaregiverRobotPage() {
                       <div className="mt-2 text-sm text-muted-foreground">{item.subtitle}</div>
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Clock className="h-4 w-4" /> {new Date(item.timestamp).toLocaleString()}
+                      <Clock className="h-4 w-4" /> {parseServerDate(item.timestamp).toLocaleString()}
                     </div>
                   </div>
                   <p className="mt-3 text-sm text-foreground/85">{item.description}</p>
@@ -377,14 +378,14 @@ function ActivityPanel({
         {items.length === 0 ? (
           <EmptyState text="No records for this section." />
         ) : (
-          items.slice().sort((left, right) => new Date(right.time).getTime() - new Date(left.time).getTime()).slice(0, 8).map((item) => (
+          items.slice().sort((left, right) => parseServerDate(right.time).getTime() - parseServerDate(left.time).getTime()).slice(0, 8).map((item) => (
             <div key={item.id} className="rounded-xl border p-3 text-sm">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-semibold">{item.title}</span>
                 <Badge variant="outline">{item.badge}</Badge>
               </div>
               <div className="mt-1 text-muted-foreground">{item.detail}</div>
-              <div className="mt-2 text-xs text-muted-foreground">{new Date(item.time).toLocaleString()}</div>
+              <div className="mt-2 text-xs text-muted-foreground">{parseServerDate(item.time).toLocaleString()}</div>
             </div>
           ))
         )}

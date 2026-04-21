@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Bell, Activity, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn, parseServerDate } from '@/lib/utils';
 import type { AlertNotificationResponse, ReminderLogResponse } from '@/services/api/types';
 
 interface AlertPanelProps {
@@ -23,7 +23,7 @@ export function AlertPanel({ alerts, logs, onResolveAlert, onViewAllLogs }: Aler
   }, []);
 
   const getRelativeTime = (dateString: string) => {
-    const diff = now - new Date(dateString).getTime();
+    const diff = now - parseServerDate(dateString).getTime();
     const minutes = Math.floor(diff / 60000);
     if (minutes < 60) return `${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
@@ -31,11 +31,11 @@ export function AlertPanel({ alerts, logs, onResolveAlert, onViewAllLogs }: Aler
     return `${Math.floor(hours / 24)}d ago`;
   };
 
-  const openAlerts = alerts.filter(a => !a.resolved).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  const resolvedAlerts = alerts.filter(a => a.resolved).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const openAlerts = alerts.filter(a => !a.resolved).sort((a, b) => parseServerDate(b.createdAt).getTime() - parseServerDate(a.createdAt).getTime());
+  const resolvedAlerts = alerts.filter(a => a.resolved).sort((a, b) => parseServerDate(b.createdAt).getTime() - parseServerDate(a.createdAt).getTime());
   
   // Sort logs by newest first, take top 5
-  const recentLogs = [...logs].sort((a, b) => new Date(b.triggeredTime).getTime() - new Date(a.triggeredTime).getTime()).slice(0, 5);
+  const recentLogs = [...logs].sort((a, b) => parseServerDate(b.triggeredTime).getTime() - parseServerDate(a.triggeredTime).getTime()).slice(0, 5);
 
   return (
     <div className="flex flex-col gap-4">
@@ -76,7 +76,7 @@ export function AlertPanel({ alerts, logs, onResolveAlert, onViewAllLogs }: Aler
                     <div className="flex items-center justify-between mt-3">
                       <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 bg-white/60 px-2 py-0.5 rounded-md">
                         <Clock className="h-3 w-3" />
-                        {new Date(alert.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} 
+                        {parseServerDate(alert.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} 
                         <span className="text-rose-600 font-bold ml-1">({getRelativeTime(alert.createdAt)})</span>
                       </div>
                       <Button size="sm" onClick={() => onResolveAlert(alert.id)} className="h-7 px-3 text-[10px] uppercase font-bold tracking-wider bg-slate-900 text-white hover:bg-emerald-600 transition-colors rounded-lg">
@@ -164,7 +164,7 @@ export function AlertPanel({ alerts, logs, onResolveAlert, onViewAllLogs }: Aler
                      <div className="text-[10px] text-slate-500 mt-0.5 line-clamp-1">{alert.message}</div>
                    </div>
                    <div className="text-[10px] text-slate-400 flex-shrink-0">
-                     {new Date(alert.createdAt).toLocaleDateString()}
+                     {parseServerDate(alert.createdAt).toLocaleDateString()}
                    </div>
                 </div>
               ))}

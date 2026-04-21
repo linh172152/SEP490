@@ -73,6 +73,27 @@ const packageThemes = [
     subtleClassName: 'bg-white/75 text-cyan-900 backdrop-blur-sm',
     ringClassName: 'ring-cyan-200',
   },
+  // ── Ember Gold — Ultimate / most expensive package ─────────────────
+  {
+    surfaceClassName: [
+      'border-2 border-orange-700/75',
+      'bg-[radial-gradient(ellipse_at_0%_0%,rgba(255,247,237,0.97),transparent_45%),radial-gradient(ellipse_at_100%_0%,rgba(254,243,199,0.88),transparent_42%),radial-gradient(ellipse_at_100%_100%,rgba(255,237,213,0.80),transparent_40%),radial-gradient(ellipse_at_0%_100%,rgba(253,230,138,0.55),transparent_38%),linear-gradient(145deg,#fff7ed_0%,#fef3c7_18%,#ffedd5_36%,#fef9c3_56%,#fff7ed_76%,#fef3c7_100%)]',
+      'text-orange-950',
+      'shadow-[0_0_0_1px_rgba(194,65,12,0.28),0_8px_40px_rgba(194,65,12,0.14),0_0_60px_rgba(245,158,11,0.12),inset_0_1px_0_rgba(255,255,255,0.95)]',
+    ].join(' '),
+    accentClassName: [
+      'gold-shimmer-bar',
+      'bg-[linear-gradient(90deg,#7c2d12_0%,#c2410c_8%,#ea580c_18%,#f97316_28%,#fbbf24_38%,#fef08a_45%,#ffffff_50%,#fef08a_55%,#fbbf24_62%,#f97316_72%,#ea580c_82%,#c2410c_92%,#7c2d12_100%)]',
+    ].join(' '),
+    badgeClassName: [
+      'border-orange-600/50',
+      'bg-gradient-to-r from-orange-100 via-amber-50 to-yellow-100',
+      'text-orange-900 font-bold',
+      'shadow-[0_1px_4px_rgba(194,65,12,0.20)]',
+    ].join(' '),
+    subtleClassName: 'bg-gradient-to-r from-orange-100/90 via-amber-50/80 to-yellow-100/90 text-orange-950',
+    ringClassName: 'ring-orange-600',
+  },
 ];
 
 export function getOrderedServicePackages(servicePackages: ServicePackageResponse[]) {

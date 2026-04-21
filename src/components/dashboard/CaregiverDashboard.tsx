@@ -38,6 +38,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useElderlyStore } from '@/store/useElderlyStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import Link from 'next/link';
+import { parseServerDate } from '@/lib/utils';
 
 const container = {
   hidden: { opacity: 0 },
@@ -256,7 +257,7 @@ export function CaregiverDashboard() {
                         <div className={`mt-1 h-2 w-2 rounded-full ${getSeverityStyles(alert.severity)} ${alert.severity === 'critical' ? 'animate-pulse ring-2 ring-rose-200' : ''}`} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold truncate">{alert.message}</p>
-                          <p className="text-xs text-muted-foreground">{new Date(alert.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                          <p className="text-xs text-muted-foreground">{parseServerDate(alert.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                         </div>
                         <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-600" onClick={() => resolveAlert(alert.id)}>
                           <CheckCircle2 className="h-5 w-5" />

@@ -36,7 +36,7 @@ import { alertService } from '@/services/api/alertService';
 import { caregiverService } from '@/services/api/caregiverService';
 import { roomService } from '@/services/api/roomService';
 import type { AlertNotificationResponse, CaregiverProfileResponse, RoomElderlySummary } from '@/services/api/types';
-import { cn } from '@/lib/utils';
+import { cn, parseServerDate } from '@/lib/utils';
 
 export default function CaregiverAlertsPage() {
   const { user } = useAuthStore();
@@ -297,10 +297,10 @@ export default function CaregiverAlertsPage() {
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1.5 text-sm font-bold text-slate-900">
                           <Clock className="h-3.5 w-3.5 text-slate-400" />
-                          {new Date(alert.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {parseServerDate(alert.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                         <div className="text-[10px] font-bold text-muted-foreground uppercase opacity-70">
-                          {new Date(alert.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                          {parseServerDate(alert.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                       </div>
                     </TableCell>

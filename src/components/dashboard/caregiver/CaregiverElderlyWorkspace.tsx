@@ -3,7 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { differenceInYears } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { getReminderDetailedStatus } from '@/utils/reminderStatus';
+import { cn, parseServerDate } from '@/lib/utils';
+
 import { getReminderPatternLabel, getReminderTypeLabel, normalizeReminderPattern, normalizeReminderType, REMINDER_PATTERN_OPTIONS, REMINDER_TYPE_OPTIONS } from '@/lib/reminderOptions';
 import { useAuthStore } from '@/store/useAuthStore';
 import { caregiverService } from '@/services/api/caregiverService';
@@ -322,31 +324,45 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     ];
 
     return activities
-      .sort((left, right) => new Date(right.time).getTime() - new Date(left.time).getTime())
+      .sort((left, right) => parseServerDate(right.time).getTime() - parseServerDate(left.time).getTime())
       .slice(0, 6);
   }, [selectedAlerts, selectedInteractions, selectedReminderLogs]);
   const reminderGroups = useMemo(() => {
-    const now = Date.now();
     return {
-      active: selectedReminders.filter((item) => item.active && new Date(item.scheduleTime).getTime() >= now),
-      missed: selectedReminders.filter((item) => item.active && new Date(item.scheduleTime).getTime() < now),
-      completed: selectedReminders.filter((item) => !item.active),
+      active: selectedReminders.filter((item) => {
+        if (!item.active) return false;
+        const info = getReminderDetailedStatus(item, selectedReminderLogs, selectedProfile?.gender);
+        return info.status === 'UPCOMING' || info.status === 'WAITING_ROBOT' || info.status === 'WAITING_USER_RESPONSE';
+      }),
+      missed: selectedReminders.filter((item) => {
+        if (!item.active) return false;
+        const info = getReminderDetailedStatus(item, selectedReminderLogs, selectedProfile?.gender);
+        return info.status === 'ROBOT_NOT_RESPONDING' || info.status === 'MISSED_USER_NO_RESPONSE';
+      }),
+      completed: selectedReminders.filter((item) => {
+        if (!item.active) return true;
+        const info = getReminderDetailedStatus(item, selectedReminderLogs, selectedProfile?.gender);
+        return info.status === 'COMPLETED';
+      }),
     };
-  }, [selectedReminders]);
+  }, [selectedReminders, selectedReminderLogs, selectedProfile]);
+
+
+
   const sortedSelectedReminders = useMemo(
-    () => selectedReminders.slice().sort((left, right) => new Date(right.scheduleTime).getTime() - new Date(left.scheduleTime).getTime()),
+    () => selectedReminders.slice().sort((left, right) => parseServerDate(left.scheduleTime).getTime() - parseServerDate(right.scheduleTime).getTime()),
     [selectedReminders]
   );
   const sortedReminderLogs = useMemo(
-    () => selectedReminderLogs.slice().sort((left, right) => new Date(right.triggeredTime).getTime() - new Date(left.triggeredTime).getTime()),
+    () => selectedReminderLogs.slice().sort((left, right) => parseServerDate(right.triggeredTime).getTime() - parseServerDate(left.triggeredTime).getTime()),
     [selectedReminderLogs]
   );
   const openAlerts = useMemo(
-    () => selectedAlerts.filter((item) => !item.resolved).sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()),
+    () => selectedAlerts.filter((item) => !item.resolved).sort((left, right) => parseServerDate(right.createdAt).getTime() - parseServerDate(left.createdAt).getTime()),
     [selectedAlerts]
   );
   const resolvedAlerts = useMemo(
-    () => selectedAlerts.filter((item) => item.resolved).sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()),
+    () => selectedAlerts.filter((item) => item.resolved).sort((left, right) => parseServerDate(right.createdAt).getTime() - parseServerDate(left.createdAt).getTime()),
     [selectedAlerts]
   );
   const activePackages = useMemo(() => {
@@ -571,7 +587,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
               <div key={item.id} className="rounded-2xl border p-4">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-semibold">{item.label}</span>
-                  <span className="text-xs text-muted-foreground">{new Date(item.time).toLocaleString()}</span>
+                  <span className="text-xs text-muted-foreground">{parseServerDate(item.time).toLocaleString()}</span>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">{item.detail}</p>
               </div>
@@ -584,16 +600,19 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
 
   const renderReminders = () => {
     const sortedSelectedReminders = [...selectedReminders].sort(
-      (left, right) => new Date(left.scheduleTime).getTime() - new Date(right.scheduleTime).getTime()
+      (left, right) => parseServerDate(left.scheduleTime).getTime() - parseServerDate(right.scheduleTime).getTime()
     );
 
     const filteredReminders = sortedSelectedReminders.filter(item => {
-      const isMissed = item.active && new Date(item.scheduleTime).getTime() < Date.now();
-      if (reminderFilter === 'active') return item.active && !isMissed;
-      if (reminderFilter === 'missed') return isMissed;
-      if (reminderFilter === 'completed') return !item.active;
+      const info = getReminderDetailedStatus(item, selectedReminderLogs, selectedProfile?.gender);
+      if (reminderFilter === 'active') return info.status === 'UPCOMING' || info.status === 'WAITING_ROBOT' || info.status === 'WAITING_USER_RESPONSE';
+      if (reminderFilter === 'missed') return info.status === 'ROBOT_NOT_RESPONDING' || info.status === 'MISSED_USER_NO_RESPONSE';
+      if (reminderFilter === 'completed') return info.status === 'COMPLETED';
       return true;
     });
+
+
+
 
     return (
       <div className="space-y-6">
@@ -693,11 +712,13 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                   </TableHeader>
                   <TableBody>
                     {filteredReminders.map((item) => {
-                      const isMissed = item.active && new Date(item.scheduleTime).getTime() < Date.now();
-                      const statusLabel = !item.active ? 'Completed' : isMissed ? 'Missed' : 'Active';
-                      const statusClassName = !item.active
+                      const info = getReminderDetailedStatus(item, selectedReminderLogs, selectedProfile?.gender);
+                      const statusLabel = info.status === 'COMPLETED' ? 'Completed' : (info.status === 'ROBOT_NOT_RESPONDING' || info.status === 'MISSED_USER_NO_RESPONSE') ? 'Missed' : (info.status === 'UPCOMING' ? 'Active' : 'Waiting...');
+
+
+                      const statusClassName = info.status === 'COMPLETED'
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                        : isMissed
+                        : (info.status === 'ROBOT_NOT_RESPONDING' || info.status === 'MISSED_USER_NO_RESPONSE')
                           ? 'bg-rose-50 text-rose-700 border-rose-100'
                           : 'bg-sky-50 text-sky-700 border-sky-100';
 
@@ -710,14 +731,20 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                             </div>
                           </TableCell>
                           <TableCell className="text-slate-600 text-xs text-nowrap">
-                             <div className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> {new Date(item.scheduleTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</div>
+                             <div className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> {parseServerDate(item.scheduleTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</div>
                           </TableCell>
                           <TableCell>
                              <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider">{getReminderPatternLabel(item.repeatPattern)}</Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={cn("font-bold px-2.5 py-0.5", statusClassName)}>{statusLabel}</Badge>
+                             <div className="flex flex-col gap-1">
+                               <Badge variant="outline" className={cn("font-bold px-2.5 py-0.5", statusClassName, (info.status === 'WAITING_ROBOT' || info.status === 'WAITING_USER_RESPONSE') && "animate-pulse")}>
+                                 {statusLabel}
+                               </Badge>
+                               {info.message && <span className="text-[10px] text-rose-600 font-medium">{info.message}</span>}
+                             </div>
                           </TableCell>
+
                           <TableCell className="text-right pr-6">
                             <div className="flex justify-end gap-1">
                               <Button size="sm" variant="outline" onClick={() => handleReminderEdit(item)}>Edit</Button>
@@ -762,7 +789,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
               <div className="rounded-xl border bg-white p-3">
                 <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Latest Interaction</div>
                 <div className="mt-2 text-sm font-semibold text-foreground">
-                  {selectedInteractions[0] ? new Date(selectedInteractions[0].createdAt).toLocaleString() : 'No history yet'}
+                  {selectedInteractions[0] ? parseServerDate(selectedInteractions[0].createdAt).toLocaleString() : 'No history yet'}
                 </div>
               </div>
             </div>
@@ -781,7 +808,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
           ) : (
             selectedInteractions
               .slice()
-              .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+              .sort((left, right) => parseServerDate(right.createdAt).getTime() - parseServerDate(left.createdAt).getTime())
               .map((item) => (
                 <div key={item.id} className="rounded-2xl border p-4 shadow-sm">
                   <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
@@ -793,13 +820,13 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                       </div>
                       <p className="mt-2 text-xs text-muted-foreground">Interaction ID #{item.id} • Elderly: {item.elderlyName}</p>
                     </div>
-                    <div className="text-xs font-medium text-muted-foreground">{new Date(item.createdAt).toLocaleString()}</div>
+                    <div className="text-xs font-medium text-muted-foreground">{parseServerDate(item.createdAt).toLocaleString()}</div>
                   </div>
                   <div className="mt-4 space-y-3">
                     <div className="rounded-2xl bg-slate-50 p-3 text-sm">
                       <div className="flex items-center justify-between gap-2">
                         <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Elderly</div>
-                        <div className="text-[11px] text-slate-500">{new Date(item.createdAt).toLocaleTimeString()}</div>
+                        <div className="text-[11px] text-slate-500">{parseServerDate(item.createdAt).toLocaleTimeString()}</div>
                       </div>
                       <p className="mt-1">{item.userInputText}</p>
                     </div>
@@ -869,7 +896,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
                           <Badge variant="outline" className="text-[10px] uppercase">{servicePackage?.level || 'Unknown'}</Badge>
                         </div>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          Assigned {new Date(userPackage.assignedAt).toLocaleDateString()} • {userPackage.status === 'PAID' && userPackage.expiredAt ? `Expires ${new Date(userPackage.expiredAt).toLocaleDateString()}` : `Status: ${userPackage.status || 'PENDING'}`}
+                          Assigned {parseServerDate(userPackage.assignedAt).toLocaleDateString()} • {userPackage.status === 'PAID' && userPackage.expiredAt ? `Expires ${parseServerDate(userPackage.expiredAt).toLocaleDateString()}` : `Status: ${userPackage.status || 'PENDING'}`}
                         </p>
                       </div>
                       <Badge variant="secondary" className="w-fit">{exercises.length} exercise{exercises.length === 1 ? '' : 's'}</Badge>
@@ -1147,12 +1174,12 @@ function LogCard({ title, items }: { title: string; items: Array<{ id: number; p
         ) : (
           items
             .slice()
-            .sort((left, right) => new Date(right.time).getTime() - new Date(left.time).getTime())
+            .sort((left, right) => parseServerDate(right.time).getTime() - parseServerDate(left.time).getTime())
             .map((item) => (
               <div key={item.id} className="rounded-2xl border p-4">
                 <div className="font-semibold">{item.primary}</div>
                 <div className="mt-1 text-sm text-muted-foreground">{item.secondary}</div>
-                <div className="mt-2 text-xs text-muted-foreground">{new Date(item.time).toLocaleString()}</div>
+                <div className="mt-2 text-xs text-muted-foreground">{parseServerDate(item.time).toLocaleString()}</div>
               </div>
             ))
         )}
@@ -1162,7 +1189,7 @@ function LogCard({ title, items }: { title: string; items: Array<{ id: number; p
 }
 
 function toDateTimeLocal(value: string) {
-  const date = new Date(value);
+  const date = parseServerDate(value);
   if (Number.isNaN(date.getTime())) return '';
   const offset = date.getTimezoneOffset();
   const local = new Date(date.getTime() - offset * 60_000);

@@ -39,6 +39,7 @@ import { useI18nStore } from "@/store/useI18nStore";
 import { accountService } from "@/services/api/accountService";
 import { elderlyService } from "@/services/api/elderlyService";
 import { AccountResponse, RegisterDTO, ElderlyProfileResponse } from "@/services/api/types";
+import { parseServerDate } from "@/lib/utils";
 import { UserFormModal } from "@/components/admin/users/UserFormModal";
 import { ElderlyFormModal } from "./ElderlyFormModal"; 
 import { toast } from "react-toastify";
@@ -277,7 +278,7 @@ export default function UserManagementPage() {
       const now = new Date();
       result = result.filter(item => {
         if (!item.createdAt) return false;
-        const created = new Date(item.createdAt);
+        const created = parseServerDate(item.createdAt);
         if (dateRange === "TODAY") {
           return created.toDateString() === now.toDateString();
         }
@@ -292,8 +293,8 @@ export default function UserManagementPage() {
 
     // Default sort by CreatedAt Newest
     return result.sort((a, b) => {
-      const dateA = new Date(a.createdAt || 0).getTime();
-      const dateB = new Date(b.createdAt || 0).getTime();
+      const dateA = parseServerDate(a.createdAt || '1970-01-01T00:00:00Z').getTime();
+      const dateB = parseServerDate(b.createdAt || '1970-01-01T00:00:00Z').getTime();
       return dateB - dateA;
     });
   };

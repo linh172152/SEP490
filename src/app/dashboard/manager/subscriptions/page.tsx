@@ -16,6 +16,7 @@ import {
   UserPackageResponse
 } from '@/services/api/types';
 import { PackageExerciseSelector } from './PackageExerciseSelector';
+import { parseServerDate } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -421,7 +422,6 @@ export default function SubscriptionsUnifiedPage() {
                     <TableHeader className="sticky top-0 bg-slate-50 z-10 shadow-sm">
                       <TableRow className="hover:bg-transparent border-none">
                         <TableHead className="pl-6 pt-4">{t('wellness.scripts.table.name')}</TableHead>
-                        <TableHead className="pt-4">{t('wellness.scripts.table.duration')}</TableHead>
                         <TableHead className="pt-4">{t('wellness.scripts.table.type') || 'Type'}</TableHead>
                         <TableHead className="pt-4 text-center">{t('wellness.scripts.table.preview') || 'Preview'}</TableHead>
                         <TableHead className="text-right pr-6 pt-4">{t('common.actions')}</TableHead>
@@ -430,21 +430,20 @@ export default function SubscriptionsUnifiedPage() {
                     <TableBody>
                       {exerciseLoading ? (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center py-20 text-muted-foreground">
+                          <TableCell colSpan={4} className="text-center py-20 text-muted-foreground">
                             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 opacity-20" />
                             {t('common.loading')}
                           </TableCell>
                         </TableRow>
                       ) : packageExercises.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic">
+                          <TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic">
                             {t('manager.subscriptions.no_exercises')}
                           </TableCell>
                         </TableRow>) : (
                         packageExercises.map((ex) => (
                           <TableRow key={ex.id} className="group hover:bg-slate-50 transition-colors border-slate-50">
                             <TableCell className="pl-6 font-bold text-slate-700">{ex.name}</TableCell>
-                            <TableCell>{ex.duration}m</TableCell>
                             <TableCell>
                               <Badge variant="secondary" className="bg-slate-100 text-slate-600 uppercase text-[10px] font-bold">
                                 {ex.type}
@@ -632,8 +631,8 @@ export default function SubscriptionsUnifiedPage() {
                       return matchesSearch && matchesLevel && hasValidPrice;
                     })
                     .sort((a, b) => {
-                      const dateA = new Date(a.assignedAt || 0).getTime();
-                      const dateB = new Date(b.assignedAt || 0).getTime();
+                      const dateA = parseServerDate(a.assignedAt || '1970-01-01T00:00:00Z').getTime();
+                      const dateB = parseServerDate(b.assignedAt || '1970-01-01T00:00:00Z').getTime();
                       return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
                     })
                     .map((item) => {
@@ -661,7 +660,7 @@ export default function SubscriptionsUnifiedPage() {
                                    {description}
                                  </code>
                                  <span className="text-[11px] font-bold text-slate-400">
-                                   {item.assignedAt ? new Date(item.assignedAt).toLocaleString() : ''}
+                                   {item.assignedAt ? parseServerDate(item.assignedAt).toLocaleString() : ''}
                                  </span>
                               </div>
                             </div>

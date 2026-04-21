@@ -11,6 +11,7 @@ import type { CaregiverProfileResponse, InteractionLogResponse, ReminderLogRespo
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Bot, Clock, Loader2, MessageSquare, NotebookText } from 'lucide-react';
+import { parseServerDate } from '@/lib/utils';
 
 export default function CaregiverReportsPage() {
   const { user } = useAuthStore();
@@ -59,8 +60,8 @@ export default function CaregiverReportsPage() {
     load();
   }, [user?.id]);
 
-  const recentReminderLogs = useMemo(() => reminderLogs.slice().sort((left, right) => new Date(right.triggeredTime).getTime() - new Date(left.triggeredTime).getTime()).slice(0, 5), [reminderLogs]);
-  const recentInteractionLogs = useMemo(() => interactionLogs.slice().sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()).slice(0, 5), [interactionLogs]);
+  const recentReminderLogs = useMemo(() => reminderLogs.slice().sort((left, right) => parseServerDate(right.triggeredTime).getTime() - parseServerDate(left.triggeredTime).getTime()).slice(0, 5), [reminderLogs]);
+  const recentInteractionLogs = useMemo(() => interactionLogs.slice().sort((left, right) => parseServerDate(right.createdAt).getTime() - parseServerDate(left.createdAt).getTime()).slice(0, 5), [interactionLogs]);
 
   return (
     <div className="space-y-6 pb-10">

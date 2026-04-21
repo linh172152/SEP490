@@ -71,6 +71,7 @@ export interface RoomElderlySummary {
   id: number;
   name: string;
   accountId?: number;
+  gender?: string;
 }
 
 // System Log Types
@@ -117,7 +118,7 @@ export interface ServicePackageResponse {
 }
 
 export interface PaymentCreateResponse {
-  qrCodeUrl: string;
+  checkoutUrl: string;
   amount: number;
   description: string;
 }
@@ -224,6 +225,7 @@ export interface ElderlyProfileResponse extends ElderlyProfileRequest {
   accountId: number;
   roomId?: number | null;
   fullName?: string;
+  gender?: string;
   deleted: boolean;
   name: string;
 }

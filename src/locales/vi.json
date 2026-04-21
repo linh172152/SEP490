@@ -31,6 +31,9 @@
     "processing": "Đang xử lý...",
     "search": "Tìm kiếm...",
     "confirm_delete": "Bạn có chắc chắn muốn xóa bản ghi này không?",
+    "confirm_permanent_delete": "Bạn có chắc chắn muốn XÓA VĨNH VIỄN tài khoản này không? Hành động này không thể hoàn tác.",
+    "confirm_delete_all": "Xác nhận xóa TẤT CẢ?",
+    "confirm_delete_all_desc": "Bạn sắp xóa vĩnh viễn toàn bộ tài khoản trong lịch sử. Hành động này KHÔNG THỂ khôi phục.",
     "currency": "VNĐ",
     "units": {
       "days": "ngày",
@@ -823,6 +826,7 @@
         "name": "Họ và tên",
         "dob": "Ngày sinh",
         "health": "Tiền sử bệnh lý",
+        "room": "Phòng",
         "config": "Cài đặt"
       },
       "dialog": {
@@ -953,6 +957,7 @@
       "duration": "Thời lượng",
       "desc": "Mô tả",
       "actions": "Thao tác",
+      "preview": "Xem trước",
       "pagination": "{{count}} trang kết quả"
     },
     "modal": {

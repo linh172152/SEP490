@@ -229,18 +229,6 @@ export default function RobotsManagePage() {
                         v{robot.firmwareVersion}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-muted-foreground font-medium uppercase tracking-tighter">{t('admin.robots.card.room') || 'Room'}:</span>
-                      <span className="font-bold text-foreground">
-                        {roomMap[robot.id] || '-'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h5 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                      <Info className="h-3 w-3" /> {t('admin.robots.card.assignment') || 'Deployment Status'}
-                    </h5>
                     {robot.assignedElderlyName ? (
                       <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-400 bg-indigo-500/5 px-3 py-2.5 rounded-xl border border-indigo-500/10">
                         <span className="h-2 w-2 rounded-full bg-indigo-500 shadow-sm" />
@@ -253,7 +241,12 @@ export default function RobotsManagePage() {
                         <span className="h-2 w-2 rounded-full bg-indigo-500" />
                         <span className="font-bold text-xs uppercase">{t('admin.robots.card.room') || 'Room'}: {roomMap[robot.id]}</span>
                       </div>
-                    ) : null}
+                    ) : (
+                      <div className="flex items-center gap-2 text-slate-400 bg-slate-500/5 px-3 py-2.5 rounded-xl border border-slate-500/10">
+                        <span className="h-2 w-2 rounded-full bg-slate-300" />
+                        <span className="font-bold text-xs italic">{t('manager.nav.unassigned') || 'Chưa gán phòng'}</span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
 

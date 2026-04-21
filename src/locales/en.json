@@ -31,6 +31,9 @@
     "processing": "Processing...",
     "search": "Search...",
     "confirm_delete": "Are you sure you want to delete this item?",
+    "confirm_permanent_delete": "Are you sure you want to PERMANENTLY delete this account? This action cannot be undone.",
+    "confirm_delete_all": "Confirm Delete ALL?",
+    "confirm_delete_all_desc": "You are about to permanently delete all accounts in history. This action CANNOT be undone.",
     "currency": "VNĐ",
     "units": {
       "days": "days",
@@ -783,6 +786,7 @@
         "name": "Elderly Name",
         "dob": "Date of Birth",
         "health": "Medical History",
+        "room": "Room",
         "config": "Settings"
       },
       "dialog": {
@@ -913,6 +917,7 @@
       "duration": "Duration",
       "desc": "Description",
       "actions": "Operations",
+      "preview": "Preview",
       "pagination": "{{count}} result pages"
     },
     "modal": {

@@ -15,11 +15,21 @@ class PaymentService {
   }
 
   async confirm(payload: PaymentConfirmRequest): Promise<PaymentConfirmResponse> {
-    return apiClient.post<PaymentConfirmResponse>('/api/payments/confirm', null, {
-      params: {
-        description: payload.description,
-        amount: payload.amount,
-      },
+    // Extract ID from UP:ID format
+    const idStr = payload.description.replace('UP:', '').trim();
+    const orderCode = parseInt(idStr);
+
+    if (isNaN(orderCode)) {
+      throw new Error("Invalid transaction description format. Expected 'UP:ID'");
+    }
+
+    // Call the PayOS Webhook endpoint to trigger backend success logic
+    return apiClient.post<PaymentConfirmResponse>('/api/payment/payos/webhook', {
+      code: "00",
+      data: {
+        orderCode: orderCode,
+        amount: payload.amount
+      }
     });
   }
 

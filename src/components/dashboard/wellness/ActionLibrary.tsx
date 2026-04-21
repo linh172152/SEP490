@@ -161,7 +161,6 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
                 <TableHead className="pl-6 py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t('wellness.table.code')}</TableHead>
                 <TableHead className="py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t('wellness.table.name')}</TableHead>
                 <TableHead className="py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t('wellness.table.type')}</TableHead>
-                <TableHead className="py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t('wellness.table.duration')}</TableHead>
                 <TableHead className="py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t('wellness.table.desc')}</TableHead>
                 <TableHead className="pr-6 py-4 text-right uppercase tracking-wider text-[11px] font-bold opacity-70">{t('wellness.table.actions')}</TableHead>
               </TableRow>
@@ -170,12 +169,12 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i} className="animate-pulse border-border/40">
-                    <TableCell colSpan={6} className="h-16 bg-slate-100/20 dark:bg-slate-800/20" />
+                    <TableCell colSpan={5} className="h-16 bg-slate-100/20 dark:bg-slate-800/20" />
                   </TableRow>
                 ))
               ) : currentActions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-40 text-center text-muted-foreground/60 italic">
+                  <TableCell colSpan={5} className="h-40 text-center text-muted-foreground/60 italic">
                     <Smile className="h-10 w-10 mx-auto mb-3 opacity-20" />
                     {t("common.no_data")}
                   </TableCell>
@@ -200,12 +199,6 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
                       )}>
                         {t(`wellness.types.${action.type || 'ACTION'}`)}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5 text-slate-500 font-medium text-sm">
-                        <Clock className="h-3.5 w-3.5" />
-                        {action.duration || 0}s
-                      </div>
                     </TableCell>
                     <TableCell className="max-w-[200px]">
                       <span className="text-xs text-muted-foreground line-clamp-1 italic">

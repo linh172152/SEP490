@@ -33,6 +33,14 @@ import {
 import { Bot, Terminal, Clock, Tag } from "lucide-react";
 import { RobotActionLibrary } from "@/services/api/types";
 
+interface ActionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: Partial<RobotActionLibrary>) => void;
+  initialData?: RobotActionLibrary | null;
+  isLoading?: boolean;
+}
+
 export function ActionModal({
   isOpen,
   onClose,
@@ -47,7 +55,6 @@ export function ActionModal({
     code: z.string().min(1, t("wellness.modal.validation.code_required")),
     type: z.string().default("ACTION"),
     description: z.string().optional(),
-    duration: z.coerce.number().min(0).default(0),
   });
 
   type FormValues = z.infer<typeof formSchema>;
@@ -59,7 +66,6 @@ export function ActionModal({
       code: initialData?.code || "",
       type: initialData?.type || "ACTION",
       description: initialData?.description || "",
-      duration: initialData?.duration || 0,
     },
   });
 
@@ -70,7 +76,6 @@ export function ActionModal({
         code: initialData?.code || "",
         type: initialData?.type || "ACTION",
         description: initialData?.description || "",
-        duration: initialData?.duration || 0,
       });
     }
   }, [isOpen, initialData, form]);
@@ -160,24 +165,6 @@ export function ActionModal({
                 )}
               />
 
-              <div className="grid grid-cols-1 gap-4">
-                <FormField
-                  control={form.control}
-                  name="duration"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-black uppercase tracking-widest opacity-70">{t("wellness.modal.fields.duration")}</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input type="number" placeholder={t("wellness.modal.fields.duration_placeholder")} {...field} className="pl-10 h-11 bg-slate-50/50 rounded-xl" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
 
               <FormField
                 control={form.control}

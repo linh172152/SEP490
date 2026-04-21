@@ -397,11 +397,12 @@ export default function PackagesPage() {
                 {/* Ultimate decorative sparkles */}
                 {isUltimate && (
                   <>
-                    <span className="gold-sparkle pointer-events-none absolute left-4 top-8 text-amber-400/60 text-lg select-none" style={{ animationDelay: '0s' }}>✦</span>
-                    <span className="gold-sparkle pointer-events-none absolute right-16 top-12 text-yellow-500/50 text-base select-none" style={{ animationDelay: '1.1s' }}>✦</span>
-                    <span className="gold-sparkle pointer-events-none absolute left-10 bottom-24 text-amber-300/40 text-sm select-none" style={{ animationDelay: '2.2s' }}>✦</span>
-                    {/* Top radial glow overlay */}
-                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,rgba(251,191,36,0.15),transparent_65%)]" />
+                    <span className="gold-sparkle pointer-events-none absolute left-4 top-8 text-orange-600/55 text-lg select-none" style={{ animationDelay: '0s' }}>✦</span>
+                    <span className="gold-sparkle pointer-events-none absolute right-16 top-12 text-amber-400/60 text-base select-none" style={{ animationDelay: '1.1s' }}>✦</span>
+                    <span className="gold-sparkle pointer-events-none absolute left-10 bottom-24 text-orange-500/40 text-sm select-none" style={{ animationDelay: '2.2s' }}>✦</span>
+                    <span className="gold-sparkle pointer-events-none absolute right-8 bottom-16 text-yellow-500/35 text-xs select-none" style={{ animationDelay: '3.0s' }}>✦</span>
+                    {/* Dual radial glow — deep-orange top-left + gold top-right */}
+                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_15%_-5%,rgba(234,88,12,0.10),transparent_55%),radial-gradient(ellipse_at_85%_-5%,rgba(251,191,36,0.12),transparent_50%)]" />
                   </>
                 )}
 
@@ -410,17 +411,17 @@ export default function PackagesPage() {
                   <div className={cn(
                     'absolute right-0 top-0 z-10 flex items-center gap-1 rounded-bl-2xl px-3 py-2 text-[10px] font-bold shadow-lg',
                     isUltimate
-                      ? 'bg-gradient-to-r from-amber-700 via-yellow-600 to-amber-700 text-yellow-100'
+                      ? 'bg-gradient-to-r from-orange-800 via-orange-600 to-amber-500 text-yellow-50'
                       : 'bg-slate-900 text-white',
                   )}>
                     <Check className="h-3 w-3" /> CURRENT PLAN
                   </div>
                 )}
 
-                {/* GOLD LUXURY badge — only for ultimate, only when not current */}
+                {/* EMBER GOLD badge — only for ultimate, only when not current */}
                 {isUltimate && !isCurrent && (
-                  <div className="absolute right-0 top-0 z-10 flex items-center gap-1.5 rounded-bl-2xl bg-gradient-to-r from-amber-700 via-yellow-500 to-amber-700 px-3 py-2 text-[10px] font-black tracking-widest text-yellow-50 shadow-lg uppercase">
-                    <Crown className="h-3 w-3" /> Gold Luxury
+                  <div className="absolute right-0 top-0 z-10 flex items-center gap-1.5 rounded-bl-2xl bg-gradient-to-r from-orange-800 via-orange-600 to-amber-500 px-3 py-2 text-[10px] font-black tracking-widest text-yellow-50 shadow-[0_2px_12px_rgba(194,65,12,0.40)] uppercase">
+                    <Crown className="h-3 w-3" /> Ember Gold
                   </div>
                 )}
                 
@@ -429,7 +430,7 @@ export default function PackagesPage() {
                     'mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border transition-all',
                     pkgTheme.badgeClassName,
                     isUltimate
-                      ? 'h-14 w-14 shadow-[0_0_16px_rgba(251,191,36,0.45)] group-hover:shadow-[0_0_28px_rgba(251,191,36,0.65)] group-hover:scale-110'
+                      ? 'h-14 w-14 shadow-[0_0_14px_rgba(194,65,12,0.35),0_0_28px_rgba(251,191,36,0.25)] group-hover:shadow-[0_0_24px_rgba(194,65,12,0.55),0_0_44px_rgba(251,191,36,0.35)] group-hover:scale-110'
                       : isCurrent ? 'shadow-md' : 'group-hover:scale-105',
                   )}>
                     <Icon className={cn('h-6 w-6', isUltimate && 'h-7 w-7')} />
@@ -438,13 +439,13 @@ export default function PackagesPage() {
                     <CardTitle className={cn('font-black tracking-tight', isUltimate ? 'text-3xl' : 'text-2xl')}>
                       {pkg.name}
                     </CardTitle>
-                    {isUltimate && <Sparkles className="h-5 w-5 text-amber-500 gold-sparkle" style={{ animationDelay: '0.6s' }} />}
+                    {isUltimate && <Sparkles className="h-5 w-5 text-orange-600 gold-sparkle" style={{ animationDelay: '0.6s' }} />}
                   </div>
                   <CardDescription className={cn('font-semibold text-foreground/85', isUltimate ? 'text-xl' : 'text-lg')}>
                     {pkg.price.toLocaleString()} <span className="text-xs font-normal text-foreground/65"> / {pkg.level}</span>
                     {isUltimate && (
-                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-amber-800 border border-amber-300">
-                        <Star className="h-2.5 w-2.5 fill-amber-500 text-amber-500" /> Best Value
+                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-orange-100 to-amber-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-orange-800 border border-orange-300/60">
+                        <Star className="h-2.5 w-2.5 fill-orange-500 text-orange-500" /> Best Value
                       </span>
                     )}
                   </CardDescription>
@@ -488,7 +489,7 @@ export default function PackagesPage() {
                       isCurrent
                         ? `${pkgTheme.badgeClassName} scale-95 opacity-50 cursor-default`
                         : isUltimate
-                          ? 'bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-amber-950 hover:from-amber-700 hover:via-yellow-600 hover:to-amber-700 shadow-[0_4px_20px_rgba(251,191,36,0.45)] hover:shadow-[0_6px_28px_rgba(251,191,36,0.65)] border-0'
+                          ? 'bg-gradient-to-r from-orange-700 via-orange-500 to-amber-500 text-white hover:from-orange-800 hover:via-orange-600 hover:to-amber-600 shadow-[0_4px_20px_rgba(194,65,12,0.38),0_2px_12px_rgba(245,158,11,0.28)] hover:shadow-[0_6px_32px_rgba(194,65,12,0.52),0_4px_16px_rgba(245,158,11,0.38)] border-0'
                           : 'bg-slate-900 text-white hover:bg-slate-800 shadow-slate-200',
                     )}
                     disabled={isCurrent || purchasingId !== null || !selectedElderlyId}

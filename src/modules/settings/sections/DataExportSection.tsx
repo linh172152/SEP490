@@ -15,14 +15,17 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from "react-toastify";
+import { useI18nStore } from '@/store/useI18nStore';
 
 export function DataExportSection() {
+  const { t } = useI18nStore();
+
   const handleExport = () => {
-    toast.success('Your data export has been initiated and will arrive via email shortly.');
+    toast.success(t('settings.data_export.toasts.initiated'));
   };
 
   const handleDeleteParams = () => {
-    toast.error('Account deletion simulation: Admin approval explicitly required in this demo.');
+    toast.error(t('settings.data_export.toasts.admin_required'));
   };
 
   return (

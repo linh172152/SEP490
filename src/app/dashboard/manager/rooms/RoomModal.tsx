@@ -71,11 +71,12 @@ export function RoomModal({ isOpen, onClose, room, onRefresh, managerId }: RoomM
   const loadSelectionLists = async () => {
     setLoadingLists(true);
     try {
-      const [caregiversRes, elderlyRes, robotsRes, allRoomsRes] = await Promise.all([
+      const [caregiversRes, elderlyRes, robotsRes, allRoomsRes, accountsRes] = await Promise.all([
         caregiverService.getAll(),
         elderlyService.getAll(),
         robotService.getAll(),
-        roomService.getAllRooms()
+        roomService.getAllRooms(),
+        accountService.getAccounts()
       ]);
       
       // Identify robots, patients and STAFF assigned to OTHER rooms
@@ -97,8 +98,29 @@ export function RoomModal({ isOpen, onClose, room, onRefresh, managerId }: RoomM
         });
       });
 
-      setCaregivers(caregiversRes || []);
-      setElderlies(elderlyRes);
+      // Filter out deleted or ghost caregivers/elderlies
+      const activeAccountsMap = new Map();
+      accountsRes.forEach(acc => {
+        if (!acc.deleted) activeAccountsMap.set(acc.email?.toLowerCase(), acc);
+      });
+
+      const filteredCaregivers = (caregiversRes || []).filter(cg => {
+        if (!cg.accountEmail) return true; // Keep new profiles without accounts
+        const acc = activeAccountsMap.get(cg.accountEmail.toLowerCase());
+        // Hide if there's an accountId but the account is missing/deleted
+        if (cg.accountId && !acc) return false;
+        return true;
+      });
+
+      const filteredElderlies = (elderlyRes || []).filter(el => {
+        if (!el.accountId) return true;
+        // Check if account exists and is not deleted
+        const acc = accountsRes.find(a => a.id === el.accountId);
+        return acc && !acc.deleted;
+      });
+
+      setCaregivers(filteredCaregivers);
+      setElderlies(filteredElderlies);
       setRobots(robotsRes);
       setOccupiedRobotIds(occupiedRobots);
       setOccupiedElderlyIds(occupiedElderly);

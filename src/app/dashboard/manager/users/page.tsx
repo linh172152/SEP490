@@ -38,7 +38,15 @@ import {
 import { useI18nStore } from "@/store/useI18nStore";
 import { accountService } from "@/services/api/accountService";
 import { elderlyService } from "@/services/api/elderlyService";
-import { AccountResponse, RegisterDTO, ElderlyProfileResponse } from "@/services/api/types";
+import { roomService } from "@/services/api/roomService";
+import { caregiverService } from "@/services/api/caregiverService";
+import { 
+  AccountResponse, 
+  RegisterDTO, 
+  ElderlyProfileResponse, 
+  RoomResponse, 
+  CaregiverProfileResponse 
+} from "@/services/api/types";
 import { parseServerDate } from "@/lib/utils";
 import { UserFormModal } from "@/components/admin/users/UserFormModal";
 import { ElderlyFormModal } from "./ElderlyFormModal"; 
@@ -69,7 +77,7 @@ import {
 const STORAGE_KEY = "deleted_accounts_backup";
 
 interface BackupRecord {
-  account: AccountResponse;
+  account: AccountResponse & { profileId?: number; accountId?: number };
   deletedAt: number;
 }
 
@@ -79,6 +87,8 @@ export default function UserManagementPage() {
   // Data States
   const [accounts, setAccounts] = useState<AccountResponse[]>([]);
   const [elderlyList, setElderlyList] = useState<ElderlyProfileResponse[]>([]);
+  const [rooms, setRooms] = useState<RoomResponse[]>([]);
+  const [caregiverProfiles, setCaregiverProfiles] = useState<CaregiverProfileResponse[]>([]);
   const [loading, setLoading] = useState(true);
   
   // View States
@@ -113,12 +123,16 @@ export default function UserManagementPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [accRes, eldRes] = await Promise.all([
+      const [accRes, eldRes, roomRes, profileRes] = await Promise.all([
         accountService.getAccounts(),
-        elderlyService.getAll()
+        elderlyService.getAll(),
+        roomService.getAllRooms(),
+        caregiverService.getAll()
       ]);
       setAccounts(accRes || []);
       setElderlyList(eldRes || []);
+      setRooms(roomRes || []);
+      setCaregiverProfiles(profileRes || []);
     } catch (error) {
       toast.error(t("common.error"));
     } finally {
@@ -204,20 +218,39 @@ export default function UserManagementPage() {
   };
 
   const handlePermanentDelete = (record: BackupRecord) => {
+    const { account } = record;
+    const profileId = account.profileId;
+    const accountId = account.accountId || account.id;
+
     setConfirmDelete({
       isOpen: true,
       title: t('common.confirm_permanent_delete') || "Permanently Delete Account?",
-      description: "This action is irreversible. All data associated with this account will be lost forever.",
+      description: `Target: ${account.fullName || account.email}. This action is irreversible.`,
       onConfirm: async () => {
         try {
           setConfirmDelete(prev => ({ ...prev, isLoading: true }));
-          await accountService.deleteAccount(record.account.id);
+          
+          // 1. Remove from Room instead of deleting profile (Manager permission friendly)
+          if (profileId && account.roomId) {
+            const role = (account.role || "").toUpperCase();
+            if (role.includes("CAREGIVER")) {
+              await roomService.removeCaregiverFromRoom(account.roomId, profileId).catch(err => console.warn("Room unassign failed:", err));
+            } else if (role.includes("ELDERLY") || activeTab === "elderly") {
+              await roomService.removeElderlyFromRoom(account.roomId, profileId).catch(err => console.warn("Room unassign failed:", err));
+            }
+          }
+
+          // 2. Then delete account
+          if (accountId) {
+            await accountService.deleteAccount(accountId);
+          }
+
           toast.success(t("common.delete_success"));
           
           const raw = localStorage.getItem(STORAGE_KEY);
           if (raw) {
             const all: BackupRecord[] = JSON.parse(raw);
-            const filtered = all.filter(r => r.account.id !== record.account.id);
+            const filtered = all.filter(r => (r.account.accountId || r.account.id) !== accountId);
             localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
           }
           
@@ -232,19 +265,76 @@ export default function UserManagementPage() {
     });
   };
 
-  const handleDelete = (account: AccountResponse) => {
+  const handlePermanentDeleteAll = () => {
+    if (backupList.length === 0) return;
+
     setConfirmDelete({
       isOpen: true,
-      title: t('common.confirm_delete') || "Delete Account?",
-      description: "Are you sure you want to deactivate this account? You can restore it from the history within 24 hours.",
+      title: t('common.confirm_delete_all') || "Xác nhận xóa TẤT CẢ?",
+      description: t('common.confirm_delete_all_desc', { count: backupList.length }) || `Bạn sắp xóa vĩnh viễn ${backupList.length} tài khoản khỏi hệ thống. Hành động này KHÔNG THỂ khôi phục.`,
       onConfirm: async () => {
         try {
           setConfirmDelete(prev => ({ ...prev, isLoading: true }));
-          await accountService.updateAccount(account.id, { deleted: true });
-          saveToBackup(account);
+          
+          // 1. Double Delete loops
+          await Promise.allSettled(backupList.map(async (record) => {
+            const { account } = record;
+            const profileId = account.profileId;
+            const accountId = account.accountId || account.id;
+            const roomId = account.roomId;
+
+            if (profileId && roomId) {
+              const role = (account.role || "").toUpperCase();
+              if (role.includes("CAREGIVER")) await roomService.removeCaregiverFromRoom(roomId, profileId).catch(() => {});
+              else await roomService.removeElderlyFromRoom(roomId, profileId).catch(() => {});
+            }
+            if (accountId) await accountService.deleteAccount(accountId).catch(() => {});
+          }));
+
+          localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+          toast.success("Đã dọn dẹp sạch lịch sử xóa.");
+          loadBackup();
+          fetchData();
+        } catch (error: any) {
+          toast.error(t("common.error"));
+        } finally {
+          setConfirmDelete(prev => ({ ...prev, isOpen: false, isLoading: false }));
+        }
+      }
+    });
+  };
+
+  const handleDelete = (item: any) => {
+    const profileId = item.profileId;
+    const accountId = item.accountId || item.id;
+
+    setConfirmDelete({
+      isOpen: true,
+      title: t('common.confirm_delete') || "Delete Account?",
+      description: "Are you sure you want to deactivate this account and remove profile assignment?",
+      onConfirm: async () => {
+        try {
+          setConfirmDelete(prev => ({ ...prev, isLoading: true }));
+          
+          // 1. Unassign from Room instead of deleting profile (Manager safe approach)
+          if (profileId && item.roomId) {
+            if (activeTab === "caregivers") {
+              await roomService.removeCaregiverFromRoom(item.roomId, profileId).catch(err => console.warn("Unassign failed:", err));
+            } else if (activeTab === "elderly") {
+              await roomService.removeElderlyFromRoom(item.roomId, profileId).catch(err => console.warn("Unassign failed:", err));
+            }
+          }
+
+          // 2. Soft delete Account to block login
+          if (accountId) {
+             await accountService.updateAccount(accountId, { deleted: true });
+             saveToBackup(item);
+          }
+
           toast.success(t("common.delete_success"));
           fetchData();
-        } catch (err) {
+          loadBackup();
+        } catch (error: any) {
           toast.error(t("common.error"));
         } finally {
           setConfirmDelete(prev => ({ ...prev, isOpen: false, isLoading: false }));
@@ -254,14 +344,167 @@ export default function UserManagementPage() {
   };
 
   // -- Filtering & Sorting --
-  const caregivers = useMemo(() => accounts.filter(u => {
-    const r = (u.role || "").toUpperCase();
-    return r.includes("CAREGIVER");
-  }), [accounts]);
+  const unifiedCaregivers = useMemo(() => {
+    const accountMap = new Map();
+    accounts.forEach(acc => {
+      if (acc.email) accountMap.set(acc.email.toLowerCase(), acc);
+    });
+
+    const processedProfileIds = new Set<number>();
+    const processedAccountEmails = new Set<string>();
+
+    const roomCaregivers = new Map();
+    rooms.forEach(room => {
+      room.caregivers?.forEach(cg => {
+        roomCaregivers.set(cg.id, { ...cg, roomId: room.id, roomName: room.roomName });
+      });
+    });
+
+    const result = new Map();
+    caregiverProfiles.forEach(p => {
+      const email = p.accountEmail?.toLowerCase();
+      const acc = email ? accountMap.get(email) : null;
+      const roomCg = roomCaregivers.get(p.id);
+      
+      const key = email || `p-${p.id}`;
+      result.set(key, {
+        ...acc,
+        ...p,
+        id: p.accountId || acc?.id || p.id,
+        accountId: p.accountId || acc?.id,
+        profileId: p.id,
+        // Priority: Profile Name > Account Name
+        fullName: p.name || acc?.fullName || acc?.FullName || ('accountEmail' in p ? p.accountEmail : ''),
+        email: ('accountEmail' in p ? p.accountEmail : '') || acc?.email || '',
+        role: acc?.role || "CAREGIVER",
+        roomId: roomCg?.roomId || p.roomId || acc?.roomId, 
+        roomName: roomCg?.roomName,
+        deleted: acc?.deleted,
+        createdAt: acc?.createdAt || new Date().toISOString(), 
+        isProfileOnly: !acc
+      });
+      processedProfileIds.add(p.id);
+      if (email) processedAccountEmails.add(email);
+    });
+
+    // Add remaining from Rooms (Caregivers in room but profile missing from main list - rare)
+    roomCaregivers.forEach((cg, profileId) => {
+      if (!processedProfileIds.has(profileId)) {
+        const email = cg.email?.toLowerCase();
+        const acc = email ? accountMap.get(email) : null;
+        const key = email || `p-room-${profileId}`;
+        
+        result.set(key, {
+          ...acc,
+          id: acc?.id || profileId,
+          accountId: acc?.id,
+          profileId: profileId,
+          fullName: cg.name || acc?.fullName,
+          email: cg.email || acc?.email,
+          role: acc?.role || "CAREGIVER",
+          roomId: cg.roomId,
+          roomName: cg.roomName,
+          deleted: acc?.deleted,
+          createdAt: acc?.createdAt || new Date().toISOString(),
+          isRoomOnly: !acc 
+        });
+        processedProfileIds.add(profileId);
+        if (email) processedAccountEmails.add(email);
+      }
+    });
+
+    // Add remaining from Accounts (Accounts with role Caregiver but no profile yet)
+    accounts.forEach(acc => {
+      const email = acc.email?.toLowerCase();
+      if (email && !processedAccountEmails.has(email)) {
+        const r = (acc.role || "").toUpperCase();
+        if (r.includes("CAREGIVER")) {
+          result.set(email, {
+            ...acc,
+            fullName: acc.fullName || acc.FullName,
+            email: acc.email,
+            createdAt: acc.createdAt,
+            accountId: acc.id
+          });
+          processedAccountEmails.add(email);
+        }
+      }
+    });
+
+    return Array.from(result.values()).filter(item => {
+      // 1. Hide soft-deleted accounts
+      if (item.deleted) return false;
+
+      // 2. Hide Ghost Records (Profile exists but Account is permanently gone)
+      // If the profile has an accountId but we didn't find an account, it's a ghost.
+      if (item.profileId && item.accountId && item.isProfileOnly) return false;
+
+      return true;
+    });
+  }, [accounts, caregiverProfiles, rooms]);
+
+  const unifiedElderly = useMemo(() => {
+    const accountIdMap = new Map();
+    accounts.forEach(acc => {
+      accountIdMap.set(acc.id, acc);
+    });
+
+    const roomElderlyMap = new Map();
+    rooms.forEach(room => {
+      room.elderlies?.forEach(e => {
+        roomElderlyMap.set(e.id, { roomId: room.id, roomName: room.roomName });
+      });
+    });
+
+    const processedProfileIds = new Set<number>();
+    const elderlyMap = new Map();
+    
+    // 1. Start with Profiles
+    elderlyList.forEach(e => {
+      const acc = e.accountId ? accountIdMap.get(e.accountId) : null;
+      const roomInfo = roomElderlyMap.get(e.id);
+      elderlyMap.set(e.id, { 
+        ...acc,
+        ...e, 
+        id: e.id,
+        profileId: e.id, 
+        accountId: e.accountId,
+        // Priority: Profile Name > Account Name
+        fullName: e.name || acc?.fullName || acc?.FullName,
+        roomId: roomInfo?.roomId || e.roomId,
+        roomName: roomInfo?.roomName,
+        deleted: acc?.deleted,
+        isProfileOnly: !acc,
+        email: acc?.email || 'N/A'
+      });
+      processedProfileIds.add(e.id);
+    });
+
+    // 2. Catch remaining Elderly from rooms (rare)
+    roomElderlyMap.forEach((info, profileId) => {
+      if (!processedProfileIds.has(profileId)) {
+        elderlyMap.set(profileId, {
+          id: profileId,
+          profileId: profileId,
+          name: "Resident in Room",
+          roomId: info.roomId,
+          roomName: info.roomName,
+          isRoomOnly: true
+        });
+      }
+    });
+
+    return Array.from(elderlyMap.values()).filter(item => {
+      if (item.deleted) return false;
+      // Hide Ghost: Profile had an account but account is gone
+      if (item.profileId && item.accountId && item.isProfileOnly) return false;
+      return true;
+    }).sort((a, b) => b.id - a.id);
+  }, [elderlyList, rooms, accounts]);
 
   const families = useMemo(() => accounts.filter(u => {
     const r = (u.role || "").toUpperCase();
-    return r.includes("FAMILYMEMBER");
+    return r.includes("FAMILYMEMBER") && !u.deleted;
   }), [accounts]);
 
   const getFilteredData = (data: any[]) => {
@@ -300,11 +543,11 @@ export default function UserManagementPage() {
   };
 
   const currentTabItems = useMemo(() => {
-    if (activeTab === "caregivers") return getFilteredData(caregivers);
-    if (activeTab === "elderly") return getFilteredData(elderlyList);
+    if (activeTab === "caregivers") return getFilteredData(unifiedCaregivers);
+    if (activeTab === "elderly") return getFilteredData(unifiedElderly);
     if (activeTab === "family") return getFilteredData(families);
     return [];
-  }, [activeTab, caregivers, elderlyList, families, searchQuery, dateRange]);
+  }, [activeTab, unifiedCaregivers, unifiedElderly, families, searchQuery, dateRange]);
 
   const paginatedItems = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -312,6 +555,14 @@ export default function UserManagementPage() {
   }, [currentTabItems, currentPage]);
 
   const totalPages = Math.ceil(currentTabItems.length / itemsPerPage);
+  
+  const roomMap = useMemo(() => {
+    const map: Record<number, string> = {};
+    rooms.forEach(r => {
+      map[r.id] = r.roomName;
+    });
+    return map;
+  }, [rooms]);
 
   // -- Helpers --
   const getRoleBadge = (role: any) => {
@@ -351,7 +602,7 @@ export default function UserManagementPage() {
           </Button>
 
           {activeTab === "caregivers" && (
-            <Button className="h-11 px-6 shadow-lg shadow-primary/20 gap-2 font-bold" onClick={() => setIsStaffFormOpen(true)}>
+            <Button className="h-11 px-6 shadow-lg shadow-primary/20 gap-2 font-bold" onClick={() => { setSelectedUser(null); setIsStaffFormOpen(true); }}>
               <Plus className="h-5 w-5" /> {t('manager.staff.add_btn')}
             </Button>
           )}
@@ -409,20 +660,23 @@ export default function UserManagementPage() {
                   <TableHead className="py-5 uppercase text-[10px] font-black tracking-widest opacity-50">
                     {activeTab === "elderly" ? t('manager.residents.table.health') : t('manager.staff.table.status')}
                   </TableHead>
+                  <TableHead className="py-5 uppercase text-[10px] font-black tracking-widest opacity-50">
+                    {t('manager.staff.table.room') || "Room"}
+                  </TableHead>
                   <TableHead className="py-5 uppercase text-[10px] font-black tracking-widest opacity-50 text-right pr-6">{t('common.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                     <TableCell colSpan={4} className="py-32 text-center">
+                     <TableCell colSpan={5} className="py-32 text-center">
                         <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary/20" />
                         <p className="mt-4 text-xs font-black uppercase tracking-widest text-muted-foreground animate-pulse">{t('common.loading')}</p>
                      </TableCell>
                   </TableRow>
                 ) : paginatedItems.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="py-32 text-center text-muted-foreground opacity-50">
+                    <TableCell colSpan={5} className="py-32 text-center text-muted-foreground opacity-50">
                        <UserSquare2 className="h-16 w-16 mx-auto mb-4 opacity-10" />
                        <p className="text-xl font-bold">{t('common.no_data')}</p>
                     </TableCell>
@@ -436,9 +690,28 @@ export default function UserManagementPage() {
                              {(item.fullName || item.FullName || item.name || "?")[0].toUpperCase()}
                           </div>
                           <div className="flex flex-col">
-                            <span className="font-bold text-slate-900">{(item.fullName || item.FullName || item.name)}</span>
-                            {activeTab !== "elderly" && <div>{getRoleBadge(item.role)}</div>}
-                            {activeTab === "elderly" && <span className="text-[10px] text-muted-foreground font-mono">RID-{item.id}</span>}
+                            <div className="flex items-center gap-2">
+                               <span className="font-bold text-slate-900">{item.fullName}</span>
+                               {item.isProfileOnly && (
+                                 <Badge variant="outline" className="text-[9px] h-4 bg-amber-50 text-amber-600 border-amber-100 font-bold px-1.5 uppercase">Profile Only</Badge>
+                               )}
+                               {item.isRoomOnly && (
+                                 <Badge variant="outline" className="text-[9px] h-4 bg-indigo-50 text-indigo-600 border-indigo-100 font-bold px-1.5 uppercase">Room Only</Badge>
+                               )}
+                            </div>
+                            {activeTab !== "elderly" && (
+                              <div className="flex items-center gap-1">
+                                {getRoleBadge(item.role)}
+                                {item.isProfileOnly && <Badge variant="outline" className="text-[9px] bg-amber-50 text-amber-600 border-amber-200">Profile Only</Badge>}
+                                {item.isRoomOnly && <Badge variant="outline" className="text-[9px] bg-blue-50 text-blue-600 border-blue-200">Room Only</Badge>}
+                              </div>
+                            )}
+                            {activeTab === "elderly" && (
+                              <div className="flex flex-col">
+                                <span className="text-[10px] text-muted-foreground font-mono">RID-{item.id}</span>
+                                {item.isRoomOnly && <Badge variant="outline" className="text-[8px] h-4 bg-blue-50 text-blue-600 border-blue-200 w-fit">Room Only</Badge>}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </TableCell>
@@ -472,6 +745,18 @@ export default function UserManagementPage() {
                               <div className={`h-1.5 w-1.5 rounded-full ${item.deleted ? 'bg-slate-400' : 'bg-emerald-500 animate-pulse'}`} />
                               {item.deleted ? t('common.deleted') : t('common.active')}
                            </div>
+                        )}
+                      </TableCell>
+
+                       <TableCell className="py-4">
+                        {item.roomId ? (
+                          <Badge variant="outline" className="bg-indigo-50/50 text-indigo-700 border-indigo-100 font-bold px-3 py-1 rounded-lg">
+                            {item.roomName || roomMap[item.roomId] || `Room ID: ${item.roomId}`}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic font-medium opacity-50">
+                            {t('manager.staff.unassigned_room') || "Not Assigned"}
+                          </span>
                         )}
                       </TableCell>
 
@@ -517,15 +802,29 @@ export default function UserManagementPage() {
       {/* Backup/Restore List Dialog */}
       <Dialog open={isBackupOpen} onOpenChange={setIsBackupOpen}>
          <DialogContent className="sm:max-w-xl rounded-2xl p-0 overflow-hidden border-none shadow-2xl [&>button]:text-white">
-            <div className="bg-slate-900 p-8 text-white">
-               <DialogTitle className="text-2xl font-black flex items-center gap-3">
-                  <History className="h-7 w-7 text-primary" />
-                  {t('common.recent_deletions') || "Recent Deletions"}
-               </DialogTitle>
-               <DialogDescription className="text-slate-400 mt-2 font-medium">
-                  Records deleted in the last 24 hours can be recovered here.
-               </DialogDescription>
-            </div>
+             <div className="bg-slate-900 p-8 text-white">
+                <div className="flex items-start justify-between">
+                   <div className="space-y-1">
+                      <DialogTitle className="text-2xl font-black flex items-center gap-3">
+                         <History className="h-7 w-7 text-primary" />
+                         {t('common.recent_deletions') || "Recent Deletions"}
+                      </DialogTitle>
+                      <DialogDescription className="text-slate-400 font-medium">
+                         Records deleted in the last 24 hours can be recovered here.
+                      </DialogDescription>
+                   </div>
+                   {backupList.length > 0 && (
+                     <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        className="rounded-xl font-bold gap-2 shadow-lg shadow-rose-900/20"
+                        onClick={handlePermanentDeleteAll}
+                     >
+                        <Trash2 className="h-4 w-4" /> {t('common.clear_all') || 'Xóa tất cả'}
+                     </Button>
+                   )}
+                </div>
+             </div>
             
             <div className="p-6 max-h-[400px] overflow-y-auto bg-card">
                {backupList.length === 0 ? (

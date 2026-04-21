@@ -31,6 +31,9 @@
     "processing": "Đang xử lý...",
     "search": "Tìm kiếm...",
     "confirm_delete": "Bạn có chắc chắn muốn xóa bản ghi này không?",
+    "confirm_permanent_delete": "Bạn có chắc chắn muốn XÓA VĨNH VIỄN tài khoản này không? Hành động này không thể hoàn tác.",
+    "confirm_delete_all": "Xác nhận xóa TẤT CẢ?",
+    "confirm_delete_all_desc": "Bạn sắp xóa vĩnh viễn toàn bộ tài khoản trong lịch sử. Hành động này KHÔNG THỂ khôi phục.",
     "currency": "VNĐ",
     "units": {
       "days": "ngày",
@@ -83,25 +86,31 @@
     "clear_all": "Xóa tất cả bộ lọc",
     "view_all": "Xem toàn bộ đội ngũ",
     "selected": "Đã chọn",
-    "items": "bài tập"
+    "items": "hành động"
   },
   "sidebar": {
     "dashboard": "Bảng điều khiển",
     "overview": "Tổng quan",
     "user_mgt": "Quản lý người dùng",
+    "staff_mgt": "Quản lý nhân sự",
     "fleet": "Đội ngũ Robot",
     "robot_mgt": "Quản lý Robot",
     "robot_fleet": "Trung tâm Robot",
     "subscriptions": "Gói đăng ký",
     "rooms": "Quản lý phòng",
-    "wellness": "Trung tâm sức khỏe",
+    "wellness": "Trung tâm Hành động",
     "settings": "Cài đặt",
     "logout": "Đăng xuất",
     "data_security": "Bảo mật dữ liệu",
-    "staff_mgt": "Quản lý nhân sự",
     "reminders": "Nhắc nhở",
     "service_plans": "Gói dịch vụ",
-    "exercises": "Bài tập"
+    "exercises": "Thư viện hành động",
+    "residents": "Người cao tuổi",
+    "health_activity": "Sức khỏe & Hoạt động",
+    "alerts": "Cảnh báo",
+    "reports": "Báo cáo",
+    "robot_interaction": "Tương tác Robot",
+    "care_tasks": "Nhiệm vụ Chăm sóc"
   },
   "auth": {
     "login": {
@@ -187,7 +196,11 @@
       "select_gender": "Chọn giới tính",
       "male": "Nam",
       "female": "Nữ",
-      "other": "Khác"
+      "other": "Khác",
+      "toasts": {
+        "save_success_all": "Cập nhật toàn bộ hồ sơ thành công!",
+        "save_error_sections": "Lỗi cập nhật một hoặc nhiều phần hồ sơ."
+      }
     },
     "audit_logs": "Nhật Ký Hoạt Động",
     "data_export": "Xuất Dữ Liệu Nhật Ký",
@@ -199,7 +212,11 @@
       "risk_management": "Quản Lý Rủi Ro",
       "role_access": "Quyền Truy Cập",
       "data_export": "Xuất Dữ Liệu",
-      "audit_logs": "Nhật Ký Hệ Thống"
+      "audit_logs": "Nhật Ký Hệ Thống",
+      "toasts": {
+        "initiated": "Yêu cầu trích xuất dữ liệu đã được khởi tạo và sẽ được gửi qua email sớm.",
+        "admin_required": "Mô phỏng xóa tài khoản: Yêu cầu phê duyệt từ Admin trong bản demo này."
+      }
     },
     "preferences": {
       "title": "Tùy Chọn Hệ Thống",
@@ -226,6 +243,9 @@
       "confirm_password": "Xác nhận mật khẩu mới",
       "button_update": "Cập nhật mật khẩu",
       "button_updating": "Đang cập nhật...",
+      "validation": {
+        "password_min_6": "Mật khẩu mới phải có ít nhất 6 ký tự"
+      },
       "success_update": "Cập nhật mật khẩu thành công",
       "error_mismatch": "Mật khẩu mới không khớp nhau",
       "error_invalid": "Mật khẩu hiện tại không đúng hoặc mật khẩu mới quá ngắn",
@@ -289,7 +309,7 @@
         "total_accounts": "Người dùng hạ tầng",
         "robots_status": "Thiết bị Robot",
         "security_records": "Bản ghi an ninh",
-        "wellness_scripts": "Kịch bản sức khỏe"
+        "wellness_scripts": "Kịch bản hành động"
       },
       "charts": {
         "user_distribution_title": "Phân bổ vai trò người dùng",
@@ -572,6 +592,21 @@
     }
   },
   "caregiver": {
+    "dashboard": {
+      "title": "Nhiệm vụ Chăm sóc",
+      "subtitle": "Không gian quản lý nhắc nhở và kích hoạt hành động robot cho người cao tuổi được gán cho bạn.",
+      "robot_actions": "Hành động Robot",
+      "action_library": {
+        "title": "Thư viện Hành động",
+        "description": "Xem danh sách các hành động mà robot có thể thực hiện để hỗ trợ người cao tuổi.",
+        "link": "Xem thư viện hành động"
+      },
+      "stats": {
+        "scheduled": "Đã lên lịch",
+        "edit": "Sửa",
+        "open_elderly": "Hồ sơ"
+      }
+    },
     "reminders": {
       "title": "Quản Lý Lịch Nhắc Nhở",
       "subtitle": "Quản lý và theo dõi các công việc hàng ngày và lịch uống thuốc.",
@@ -603,7 +638,7 @@
       "types": {
         "medication": "Uống thuốc",
         "hydration": "Uống nước",
-        "exercise": "Tập luyện",
+        "exercise": "Kích hoạt hành động",
         "meal": "Ăn uống",
         "appointment": "Hẹn gặp",
         "other": "Khác"
@@ -616,8 +651,19 @@
         "every_2_hours": "Mỗi 2 giờ"
       },
       "status": {
-        "active": "Đang bật",
-        "inactive": "Đã tắt"
+        "active": "Đang hoạt động",
+        "inactive": "Ngừng hoạt động",
+        "overdue": "Quá hạn"
+      },
+      "exercises": {
+        "toasts": {
+          "load_error": "Không thể tải thư viện hành động robot.",
+          "trigger_error": "Không thể gửi lệnh tới robot.",
+          "load_detail_error": "Không thể tải thông tin hành động robot."
+        }
+      },
+      "toasts": {
+        "profile_missing": "Không tìm thấy hồ sơ Caregiver. Vui lòng đồng bộ hồ sơ trước."
       }
     }
   },
@@ -670,17 +716,17 @@
     },
     "subscriptions": {
       "title": "Quản lý Gói dịch vụ",
-      "subtitle": "Thiết lập cấp độ gói dịch vụ và gán danh sách bài tập chuyên sâu cho từng cấp độ.",
+      "subtitle": "Thiết lập cấp độ gói dịch vụ và gán danh sách các hành động robot cho từng cấp độ.",
       "tab_packages": "Cấp độ Gói",
-      "tab_sessions": "Cấu hình Bài tập",
+      "tab_sessions": "Gán hành động Robot",
       "tab_payments": "Xác nhận thanh toán",
-      "assign_exercises": "Thiết lập bài tập",
-      "no_exercises": "Chưa có bài tập nào được gán cho gói này.",
-      "package_select": "Chọn gói dịch vụ để cấu hình",
-      "exercises_title": "Danh sách bài tập",
-      "add_exercise": "Thêm bài tập",
+      "assign_exercises": "Thiết lập hành động",
+      "no_exercises": "Chưa có hành động nào được gán cho gói này.",
+      "package_select": "Chọn gói dịch vụ để gán hành động",
+      "exercises_title": "Danh sách hành động Robot",
+      "add_exercise": "Thêm hành động",
       "remove_exercise": "Gỡ bỏ",
-      "quota_hint": "Định mức bài tập gợi ý cho",
+      "quota_hint": "Số lượng hành động tối ưu cho",
       "payment_confirm_title": "Xác minh giao dịch thủ công",
       "payment_confirm_desc": "Nhập thông tin từ biên lai chuyển khoản để kích hoạt gói dịch vụ cho người cao tuổi.",
       "field_description": "Mã nội dung chuyển khoản",
@@ -691,7 +737,29 @@
       "confirm_success": "Đã xác nhận thanh toán và kích hoạt gói thành công!",
       "confirm_error": "Xác nhận thất bại. Vui lòng kiểm tra lại mã và số tiền.",
       "pending_list_title": "Giao dịch chờ xử lý",
-      "choose_btn": "Chọn"
+      "choose_btn": "Chọn",
+      "auto_generate": {
+        "label": "Tự động gán hành động",
+        "description": "Hệ thống sẽ dựa trên cấp độ (Level) để tự động chọn ngẫu nhiên các hành động thay vì bạn phải gán tay.",
+        "badge": "MỚI"
+      },
+      "action_selector": {
+        "title": "Thiết lập hành động Robot",
+        "subtitle": "Chọn các mã hành động mẫu cho gói",
+        "search_placeholder": "Tìm mã hoặc tên hành động..."
+      },
+      "action_mapping": {
+        "title": "Gán hành động Robot cho gói",
+        "assign_btn": "Gán hành động",
+        "table": {
+          "name": "Tên hành động",
+          "code": "Mã Code",
+          "type": "Loại",
+          "status": "Trạng thái",
+          "ready": "Sẵn sàng",
+          "empty_actions": "Chưa có hành động nào được gán cho gói này"
+        }
+      }
     },
     "nav": {
       "rooms": "Quản lý qua Phòng"
@@ -758,6 +826,7 @@
         "name": "Họ và tên",
         "dob": "Ngày sinh",
         "health": "Tiền sử bệnh lý",
+        "room": "Phòng",
         "config": "Cài đặt"
       },
       "dialog": {
@@ -870,27 +939,70 @@
     "cancel_btn": "Bỏ qua"
   },
   "wellness": {
-    "title": "Thư viện bài tập",
-    "sidebar_label": "Kế hoạch bài tập",
+    "title": "Thư viện Hành động",
+    "title_hub": "Trung tâm Hành động Robot",
+    "subtitle_hub": "Quản lý và thiết lập các kịch bản hành động thông minh cho toàn bộ đội ngũ Robot.",
+    "sidebar_label": "Thư viện Hành động",
+    "add_action": "Thêm Hành Động",
+    "search_placeholder": "Tìm kiếm hành động hoặc mã code...",
+    "types": {
+      "ACTION": "Hành động",
+      "DANCE": "Nhảy múa",
+      "EMOTION": "Cảm xúc"
+    },
+    "table": {
+      "code": "Mã lệnh",
+      "name": "Hành động",
+      "type": "Loại",
+      "duration": "Thời lượng",
+      "desc": "Mô tả",
+      "actions": "Thao tác",
+      "preview": "Xem trước",
+      "pagination": "{{count}} trang kết quả"
+    },
+    "modal": {
+      "edit_title": "Chỉnh sửa hành động",
+      "create_title": "Thêm hành động mới",
+      "subtitle": "Nhập thông tin hành động robot từ môi trường local.",
+      "fields": {
+        "code": "Mã lệnh Robot",
+        "code_placeholder": "Ví dụ: 012",
+        "type": "Loại hành động",
+        "type_placeholder": "Chọn loại",
+        "name": "Tên hành động",
+        "name_placeholder": "Ví dụ: Hít đất, Chào đón...",
+        "duration": "Thời lượng (Giây)",
+        "duration_placeholder": "0",
+        "description": "Mô tả chi tiết",
+        "description_placeholder": "Mô tả cụ thể về hành động này..."
+      },
+      "validation": {
+        "name_min": "Mô tả phải ít nhất 2 ký tự",
+        "code_required": "Tên (Mã code) là bắt buộc"
+      }
+    },
+    "toasts": {
+      "fetch_error": "Lỗi khi tải danh sách hành động",
+      "create_success": "Đã thêm hành động mới",
+      "create_error": "Lỗi khi thêm hành động",
+      "delete_success": "Đã xóa hành động",
+      "delete_error": "Lỗi khi xóa hành động",
+      "trigger_success": "Đã gửi lệnh thực thi: {{code}}",
+      "trigger_error": "Lỗi khi gửi lệnh cho robot",
+      "load_error": "Không thể tải thư viện bài tập.",
+      "update_success": "Cập nhật kịch bản thành công.",
+      "update_error": "Lỗi khi cập nhật kịch bản."
+    },
     "subtitle": "Quản lý kịch bản điều khiển Robot và giám sát nhật ký thực thi trên toàn hệ thống.",
     "desc": "Quy mô kịch bản",
     "library_tab": "Thư viện kịch bản",
-    "exercise_tab": "Theo dõi bài tập",
+    "exercise_tab": "Lịch sử Hành động",
     "difficulty": {
       "easy": "Cơ bản",
       "medium": "Trung bình",
       "hard": "Chuyên sâu"
     },
     "headers": {},
-    "toasts": {
-      "load_error": "Không thể tải thư viện bài tập.",
-      "create_success": "Tạo kịch bản bài tập thành công.",
-      "create_error": "Lỗi khi tạo kịch bản bài tập.",
-      "update_success": "Cập nhật kịch bản thành công.",
-      "update_error": "Lỗi khi cập nhật kịch bản.",
-      "delete_success": "Đã xóa kịch bản bài tập.",
-      "delete_error": "Lỗi khi xóa kịch bản."
-    },
     "library": {
       "add_btn": "Khởi tạo kịch bản mới",
       "edit_btn": "Cấu hình kịch bản",
@@ -1055,6 +1167,23 @@
     }
   },
   "family": {
+    "elderly_detail": {
+      "view_actions": "Xem hành động Robot",
+      "included_actions": {
+        "title": "Hành động Robot đi kèm",
+        "description": "Các hành động robot được cung cấp bởi các gói dịch vụ đang hoạt động.",
+        "empty": "Chưa có hành động nào. Vui lòng mua gói dịch vụ để mở khóa các tính năng của Robot."
+      },
+      "actions_page": {
+        "breadcrumb": "Hành động Robot",
+        "title": "Hành động Robot được gán",
+        "description": "Các hành động robot khả dụng cho {{name}} dựa trên gói dịch vụ đang sử dụng.",
+        "package_group": "Hành động theo Gói dịch vụ",
+        "package_desc": "Danh sách các hành động có thể kích hoạt từ Robot.",
+        "no_packages": "Hồ sơ tài khoản này chưa có gói dịch vụ nào được gán hành động.",
+        "no_actions": "Không có hành động nào đi kèm trong gói này."
+      }
+    },
     "elderly": {
       "create": {
         "title": "Hồ sơ Chăm sóc Mới",
@@ -1096,6 +1225,30 @@
           "submit": "Hoàn tất & Khởi tạo",
           "submitting": "Đang khởi tạo hồ sơ..."
         }
+      }
+    },
+    "payment": {
+      "title": "Thanh Toán",
+      "desc": "Quét mã QR ngay trên trang này. Hệ thống sẽ tự động xác nhận giao dịch trước khi quay lại danh sách người cao tuổi.",
+      "qr_title": "Mã QR Thanh Toán",
+      "qr_desc": "Mã QR được hiển thị trực tiếp để đảm bảo trải nghiệm liền mạch.",
+      "summary_title": "Tóm Tắt Thanh Toán",
+      "summary_desc": "Thông tin giao dịch cuối cùng để đối chiếu.",
+      "auto_confirm_title": "Xác Nhận Tự Động",
+      "auto_confirm_desc": "Hệ thống đang tự động kiểm tra chi tiết giao dịch của bạn.",
+      "auto_confirm_note": "Thông báo thành công sẽ xuất hiện ngay khi gói dịch vụ được kích hoạt.",
+      "back_to_plans": "Quay lại danh sách gói",
+      "toasts": {
+        "no_data": "Không tìm thấy dữ liệu thanh toán.",
+        "data_error": "Dữ liệu thanh toán bị lỗi.",
+        "success_redirect": "Thanh toán thành công. Đang quay về danh sách người cao tuổi...",
+        "confirm_failed": "Xác nhận thanh toán tự động thất bại."
+      }
+    },
+    "packages": {
+      "toasts": {
+        "select_elderly": "Vui lòng chọn một người cao tuổi trước khi thanh toán.",
+        "create_failed": "Lỗi khi tạo thanh toán. Vui lòng thử lại."
       }
     }
   }

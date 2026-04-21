@@ -52,7 +52,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { normalizeRobotStatus } from '@/lib/utils';
+import { normalizeRobotStatus, cn } from '@/lib/utils';
 
 
 export default function AdminFleetPage() {
@@ -333,8 +333,11 @@ export default function AdminFleetPage() {
                        <TableCell>
                           <div className="flex items-center gap-2">
                              <div className={`h-2 w-2 rounded-full ${roomMap[robot.id] ? 'bg-indigo-500' : 'bg-slate-300'}`} />
-                             <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                               {roomMap[robot.id] || '-'}
+                             <span className={cn(
+                               "text-xs font-bold",
+                               roomMap[robot.id] ? "text-slate-700 dark:text-slate-300" : "text-muted-foreground/60 italic"
+                             )}>
+                               {roomMap[robot.id] || t('manager.nav.unassigned') || 'Chưa gán'}
                              </span>
                           </div>
                        </TableCell>

@@ -96,6 +96,14 @@ export interface RobotAction {
   description?: string;
 }
 
+export interface RobotActionLibrary {
+  id: number;
+  name: string;
+  code: string;
+  type: string;
+  description?: string;
+}
+
 export interface ServicePackageRequest {
   name: string;
   description: string;
@@ -103,7 +111,7 @@ export interface ServicePackageRequest {
   price: number;
   active: boolean;
   durationDays?: number;
-  exerciseIds?: number[];
+  robotActionIds?: number[];
 }
 
 export interface ServicePackageResponse {

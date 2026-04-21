@@ -69,9 +69,6 @@ export default function SubscriptionsUnifiedPage() {
   const [selectedPackage, setSelectedPackage] = useState<ServicePackageResponse | null>(null);
   const [isExerciseSelectorOpen, setIsExerciseSelectorOpen] = useState(false);
 
-  // Payment Confirmation State
-  const [confirmDescription, setConfirmDescription] = useState('');
-  const [confirmAmount, setConfirmAmount] = useState<string>('');
   const [isConfirming, setIsConfirming] = useState(false);
   const [searchPaymentQuery, setSearchPaymentQuery] = useState('');
   const [filterPackageLevel, setFilterPackageLevel] = useState('ALL');
@@ -154,13 +151,6 @@ export default function SubscriptionsUnifiedPage() {
     try {
       if (modalMode === 'create') {
         const newPkg = await servicePackageService.create(data);
-        if (newPkg && newPkg.id) {
-          try {
-            await servicePackageService.updateExercises(newPkg.id, []);
-          } catch (clearErr) {
-            console.warn('Failed to clear initial auto-mapped exercises', clearErr);
-          }
-        }
         toast.success(t('common.create_success'));
       } else if (selectedPackage) {
         await servicePackageService.update(selectedPackage.id, data);
@@ -193,12 +183,29 @@ export default function SubscriptionsUnifiedPage() {
     });
   };
 
-  const handleUpdateExercises = async (exerciseIds: number[]) => {
+  const handleUpdateExercises = async (actionIds: number[]) => {
     if (!selectedPkgId) return;
+    
+    // Find current package data to avoid overwriting with empty fields
+    const currentPkg = packages.find(p => p.id === selectedPkgId);
+    if (!currentPkg) return;
+
     try {
-      await servicePackageService.updateExercises(selectedPkgId, exerciseIds);
+      const updateData: ServicePackageRequest = {
+        name: currentPkg.name,
+        description: currentPkg.description,
+        level: currentPkg.level,
+        price: currentPkg.price,
+        active: currentPkg.active,
+        durationDays: currentPkg.durationDays,
+        robotActionIds: actionIds
+      };
+
+      await servicePackageService.update(selectedPkgId, updateData);
       toast.success(t('common.update_success'));
       fetchPackageExercises(selectedPkgId);
+      // Refresh packages to reflect changes
+      fetchData();
     } catch (e) {
       console.error(e);
       toast.error(t('common.error'));
@@ -215,13 +222,28 @@ export default function SubscriptionsUnifiedPage() {
       onConfirm: async () => {
         try {
           setConfirmDelete(prev => ({ ...prev, isLoading: true }));
-          const updatedExerciseIds = packageExercises
+          
+          const currentPkg = packages.find(p => p.id === selectedPkgId);
+          if (!currentPkg) return;
+
+          const updatedActionIds = packageExercises
             .map(ex => ex.id)
             .filter(id => id !== exerciseId);
 
-          await servicePackageService.updateExercises(selectedPkgId, updatedExerciseIds);
+          const updateData: ServicePackageRequest = {
+            name: currentPkg.name,
+            description: currentPkg.description,
+            level: currentPkg.level,
+            price: currentPkg.price,
+            active: currentPkg.active,
+            durationDays: currentPkg.durationDays,
+            robotActionIds: updatedActionIds
+          };
+
+          await servicePackageService.update(selectedPkgId, updateData);
           toast.success(t('common.update_success') || 'Updated successfully');
           fetchPackageExercises(selectedPkgId);
+          fetchData();
         } catch (error) {
           toast.error(t('common.error') || 'An error occurred');
         } finally {
@@ -231,17 +253,11 @@ export default function SubscriptionsUnifiedPage() {
     });
   };
 
-  const handleManualConfirm = async () => {
-    if (!confirmDescription || !confirmAmount) {
-      toast.error(t('common.error_generic'));
-      return;
-    }
+  const handleManualConfirm = async (desc: string, amount: number) => {
     setIsConfirming(true);
     try {
-      await paymentService.confirmPayment(confirmDescription, parseFloat(confirmAmount));
+      await paymentService.confirmPayment(desc, amount);
       toast.success(t('manager.subscriptions.confirm_success'));
-      setConfirmDescription('');
-      setConfirmAmount('');
       fetchData(); 
     } catch (err) {
       console.error(err);
@@ -410,7 +426,7 @@ export default function SubscriptionsUnifiedPage() {
                           size="sm" 
                           className="rounded-lg gap-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50"
                         >
-                          <Plus className="h-3 w-3" /> {t('manager.subscriptions.add_exercise')}
+                          <Plus className="h-3 w-3" /> {t('manager.subscriptions.action_mapping.assign_btn') || t('manager.subscriptions.add_exercise')}
                         </Button>
                       </div>
                     )}
@@ -421,31 +437,29 @@ export default function SubscriptionsUnifiedPage() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-slate-50 z-10 shadow-sm">
                       <TableRow className="hover:bg-transparent border-none">
-                        <TableHead className="pl-6 pt-4">{t('wellness.scripts.table.name')}</TableHead>
-                        <TableHead className="pt-4">{t('wellness.scripts.table.duration')}</TableHead>
-                        <TableHead className="pt-4">{t('wellness.scripts.table.type') || 'Type'}</TableHead>
-                        <TableHead className="pt-4 text-center">Preview</TableHead>
+                        <TableHead className="pl-6 pt-4">{t('wellness.table.name')}</TableHead>
+                        <TableHead className="pt-4">{t('wellness.table.type') || 'Type'}</TableHead>
+                        <TableHead className="pt-4 text-center">{t('wellness.table.preview') || 'Preview'}</TableHead>
                         <TableHead className="text-right pr-6 pt-4">{t('common.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {exerciseLoading ? (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center py-20 text-muted-foreground">
+                          <TableCell colSpan={4} className="text-center py-20 text-muted-foreground">
                             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 opacity-20" />
                             {t('common.loading')}
                           </TableCell>
                         </TableRow>
                       ) : packageExercises.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic">
+                          <TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic">
                             {t('manager.subscriptions.no_exercises')}
                           </TableCell>
                         </TableRow>) : (
                         packageExercises.map((ex) => (
                           <TableRow key={ex.id} className="group hover:bg-slate-50 transition-colors border-slate-50">
                             <TableCell className="pl-6 font-bold text-slate-700">{ex.name}</TableCell>
-                            <TableCell>{ex.duration}m</TableCell>
                             <TableCell>
                               <Badge variant="secondary" className="bg-slate-100 text-slate-600 uppercase text-[10px] font-bold">
                                 {ex.type}
@@ -482,82 +496,8 @@ export default function SubscriptionsUnifiedPage() {
         </TabsContent>
 
         <TabsContent value="payments">
-          <div className="grid grid-cols-1 xl:grid-cols-5 gap-8 py-4">
-            <div className="xl:col-span-2">
-              <Card className="border-none shadow-2xl shadow-slate-200/60 rounded-[2.5rem] overflow-hidden bg-white/80 backdrop-blur-xl border border-white/20 sticky top-4">
-                <CardHeader className="pb-2 text-center pt-8">
-                  <div className="w-16 h-16 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-inner">
-                    <CreditCard className="h-8 w-8 text-indigo-600" />
-                  </div>
-                  <CardTitle className="text-2xl font-black text-slate-900 tracking-tight">
-                    {t('manager.subscriptions.payment_confirm_title')}
-                  </CardTitle>
-                  <CardDescription className="text-slate-500 font-medium leading-relaxed max-w-sm mx-auto">
-                    {t('manager.subscriptions.payment_confirm_desc')}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6 p-8 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="description" className="text-xs font-black text-slate-500 ml-1 flex items-center gap-2">
-                      {t('manager.subscriptions.field_description')}
-                    </Label>
-                    <div className="relative group">
-                      <Input
-                        id="description"
-                        placeholder={t('manager.subscriptions.description_placeholder')}
-                        value={confirmDescription}
-                        onChange={(e) => setConfirmDescription(e.target.value)}
-                        className="h-14 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all font-mono font-medium pr-12 text-slate-700"
-                      />
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => {
-                          navigator.clipboard.readText().then(text => setConfirmDescription(text));
-                        }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 text-slate-300 hover:text-indigo-600 rounded-xl"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="amount" className="text-xs font-black text-slate-500 ml-1 flex items-center gap-2">
-                      {t('manager.subscriptions.field_amount')}
-                    </Label>
-                    <div className="relative group">
-                      <Input
-                        id="amount"
-                        type="number"
-                        placeholder={t('manager.subscriptions.amount_placeholder')}
-                        value={confirmAmount}
-                        onChange={(e) => setConfirmAmount(e.target.value)}
-                        className="h-14 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all font-black text-emerald-600 text-xl pr-16"
-                      />
-                      <div className="absolute right-5 top-1/2 -translate-y-1/2 font-black text-slate-300 group-focus-within:text-emerald-500 transition-colors">
-                        VNĐ
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={handleManualConfirm}
-                    disabled={isConfirming || !confirmDescription || !confirmAmount}
-                    className="w-full h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg transition-all active:scale-[0.98] shadow-lg shadow-indigo-100 disabled:opacity-50"
-                  >
-                    {isConfirming ? (
-                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                    ) : (
-                      <CheckCircle2 className="h-5 w-5 mr-2" />
-                    )}
-                    {t('manager.subscriptions.confirm_btn')}
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="xl:col-span-3 space-y-6">
+          <div className="py-4">
+            <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
                  <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 shrink-0">
                     <Clock className="h-6 w-6 text-indigo-600" /> {t('manager.subscriptions.pending_list_title')}
@@ -667,23 +607,35 @@ export default function SubscriptionsUnifiedPage() {
                               </div>
                             </div>
                           </div>
-
-                          <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-4 md:pt-0">
-                             <div className="text-right">
+                          <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-4 md:pt-0">
+                             <div className="text-right mr-4">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('manager.subscriptions.amount', 'Amount')}</p>
                                 <p className="text-xl font-black text-emerald-600">{(pkg?.price || 0).toLocaleString()} ₫</p>
                              </div>
-                             <Button
-                               onClick={() => {
-                                 setConfirmDescription(description);
-                                 setConfirmAmount((pkg?.price || 0).toString());
-                                 toast.info(t('manager.subscriptions.data_filled', 'Data filled!'));
-                               }}
-                               className="h-12 w-12 md:w-auto md:px-6 rounded-2xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white font-black transition-all shadow-inner"
-                             >
-                               <ChevronRight className="h-5 w-5 md:mr-1" />
-                               <span className="hidden md:inline">{t('manager.subscriptions.choose_btn')}</span>
-                             </Button>
+                             <div className="flex gap-2">
+                               <Button
+                                 onClick={() => {
+                                   setConfirmDelete({
+                                     isOpen: true,
+                                     title: t('common.confirm') || 'Confirm Payment',
+                                     description: `Confirm payment for package ${pkg?.name || 'ID ' + item.id}? This will activate the subscription.`,
+                                     onConfirm: async () => {
+                                       try {
+                                         setConfirmDelete(prev => ({ ...prev, isLoading: true }));
+                                         await handleManualConfirm(description, pkg?.price || 0);
+                                       } finally {
+                                         setConfirmDelete(prev => ({ ...prev, isOpen: false, isLoading: false }));
+                                       }
+                                     }
+                                   });
+                                 }}
+                                 disabled={isConfirming}
+                                 className="h-12 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black px-6 transition-all shadow-lg shadow-indigo-100"
+                               >
+                                 <CheckCircle2 className="h-4 w-4 mr-2" />
+                                 {t('common.confirm', 'Confirm')}
+                               </Button>
+                             </div>
                           </div>
                         </CardContent>
                       </Card>

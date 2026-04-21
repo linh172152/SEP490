@@ -30,9 +30,6 @@ class ServicePackageService {
     return apiClient.get<ServicePackageResponse[]>(`/api/service-packages/level/${level}`);
   }
 
-  async updateExercises(pkgId: number, exerciseIds: number[]): Promise<void> {
-    return apiClient.put<void>(`/api/service-packages/${pkgId}/exercises`, { exerciseIds });
-  }
 
   async createAuto(data: ServicePackageRequest): Promise<ServicePackageResponse> {
     return apiClient.post<ServicePackageResponse>('/api/service-packages/auto', data);

@@ -230,3 +230,43 @@
 .Toastify__progress-bar--success {
   background: var(--primary) !important;
 }
+
+/* ── Gold Luxury — Ultimate package animations ─────────────────────────── */
+@keyframes gold-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+@keyframes gold-glow-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0  24px rgba(251, 191,  36, 0.30),
+      0 0  60px rgba(245, 158,  11, 0.14),
+      0 2px 8px  rgba(120,  53,  15, 0.10);
+  }
+  50% {
+    box-shadow:
+      0 0  42px rgba(251, 191,  36, 0.55),
+      0 0  90px rgba(245, 158,  11, 0.28),
+      0 4px 16px rgba(120,  53,  15, 0.18);
+  }
+}
+
+@keyframes float-sparkle {
+  0%, 100% { transform: translateY(0px) rotate(0deg);   opacity: 0.7; }
+  33%       { transform: translateY(-6px) rotate(12deg); opacity: 1;   }
+  66%       { transform: translateY(3px) rotate(-8deg);  opacity: 0.5; }
+}
+
+.gold-shimmer-bar {
+  background-size: 200% auto;
+  animation: gold-shimmer 2.4s linear infinite;
+}
+
+.gold-glow-card {
+  animation: gold-glow-pulse 3.2s ease-in-out infinite;
+}
+
+.gold-sparkle {
+  animation: float-sparkle 4s ease-in-out infinite;
+}

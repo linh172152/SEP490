@@ -6,7 +6,6 @@ import { caregiverService } from '@/services/api/caregiverService';
 import { roomService } from '@/services/api/roomService';
 import { reminderService } from '@/services/api/reminderService';
 import { interactionLogService } from '@/services/api/interactionLogService';
-import { robotService } from '@/services/api/robotService';
 import type { CaregiverProfileResponse, InteractionLogResponse, ReminderLogResponse, RobotDTO, RoomElderlySummary } from '@/services/api/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

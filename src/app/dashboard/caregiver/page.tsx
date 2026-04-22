@@ -7,7 +7,6 @@ import { caregiverService } from '@/services/api/caregiverService';
 import { roomService } from '@/services/api/roomService';
 import { alertService } from '@/services/api/alertService';
 import { reminderService } from '@/services/api/reminderService';
-import { robotService } from '@/services/api/robotService';
 import { userPackageService } from '@/services/api/userPackageService';
 import { servicePackageService } from '@/services/api/servicePackageService';
 import { cn } from '@/lib/utils';
@@ -152,7 +151,7 @@ export default function CaregiverOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{roomElderlies.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">Lay tu GET /api/rooms/{'{'}roomId{'}'}/elderlies</p>
+            <p className="text-xs text-muted-foreground mt-1">Cagiver's room</p>
           </CardContent>
         </Card>
 

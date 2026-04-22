@@ -26,7 +26,6 @@ import {
   Search,
   BellRing,
   Loader2,
-  RefreshCw,
   UserCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -44,7 +43,6 @@ export default function CaregiverAlertsPage() {
   const [alerts, setAlerts] = useState<AlertNotificationResponse[]>([]);
   const [elderlies, setElderlies] = useState<RoomElderlySummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [resolvingId, setResolvingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,12 +50,12 @@ export default function CaregiverAlertsPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'resolved'>('active');
   const [elderlyFilter, setElderlyFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [timeSortOrder, setTimeSortOrder] = useState<'newest' | 'oldest'>('newest');
 
-  const loadData = async (isRefresh = false) => {
+  const loadData = async () => {
     if (!user?.id) return;
-    
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
+
+    setLoading(true);
     
     setError(null);
     try {
@@ -87,7 +85,6 @@ export default function CaregiverAlertsPage() {
       setError(err instanceof Error ? err.message : 'Unable to load alerts.');
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
@@ -127,6 +124,13 @@ export default function CaregiverAlertsPage() {
     });
   }, [alerts, statusFilter, elderlyFilter, searchQuery]);
 
+  const sortedAlerts = useMemo(() => {
+    return filteredAlerts.slice().sort((left, right) => {
+      const diff = parseServerDate(right.createdAt).getTime() - parseServerDate(left.createdAt).getTime();
+      return timeSortOrder === 'newest' ? diff : -diff;
+    });
+  }, [filteredAlerts, timeSortOrder]);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
@@ -152,15 +156,6 @@ export default function CaregiverAlertsPage() {
             {profile ? `Managing alerts for Room ${profile.roomId}` : 'Real-time incident management for your assigned elderly.'}
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={() => loadData(true)} 
-          disabled={refreshing}
-          className="rounded-xl font-bold uppercase tracking-wider text-[10px] h-9"
-        >
-          {refreshing ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-2 h-3.5 w-3.5" />}
-          Refresh
-        </Button>
       </div>
 
       {error && (
@@ -225,6 +220,16 @@ export default function CaregiverAlertsPage() {
               ))}
             </SelectContent>
           </Select>
+
+          <Select value={timeSortOrder} onValueChange={(value) => setTimeSortOrder(value as 'newest' | 'oldest')}>
+            <SelectTrigger className="w-[180px] h-11 rounded-2xl border-slate-200 bg-white shadow-sm font-bold text-slate-700">
+              <SelectValue placeholder="Newest first" />
+            </SelectTrigger>
+            <SelectContent className="rounded-2xl border-slate-100">
+              <SelectItem value="newest" className="font-medium">Newest first</SelectItem>
+              <SelectItem value="oldest" className="font-medium">Oldest first</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -241,7 +246,7 @@ export default function CaregiverAlertsPage() {
           </TableHeader>
           <TableBody>
             <AnimatePresence mode='popLayout'>
-              {filteredAlerts.length === 0 ? (
+              {sortedAlerts.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="h-64 text-center">
                     <div className="flex flex-col items-center justify-center gap-3 opacity-30">
@@ -251,7 +256,7 @@ export default function CaregiverAlertsPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredAlerts.map((alert) => (
+                sortedAlerts.map((alert) => (
                   <motion.tr
                     key={alert.id}
                     layout

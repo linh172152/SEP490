@@ -28,7 +28,6 @@ import {
   Users
 } from 'lucide-react';
 import Link from 'next/link';
-import { toast } from 'react-toastify';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { getActiveUserPackageForElderly, getCatalogPackageForUserPackage, getServicePackageTheme, getUnpurchasedPackageTheme } from '@/lib/servicePackageThemes';
@@ -36,43 +35,13 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuSeparator,
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Trash2 } from 'lucide-react';
-import { elderlyService } from '@/services/api/elderlyService';
 
 export default function ElderlyListPage() {
   const { user } = useAuthStore();
-  const { elderlyList, userPackages, servicePackages, roomNames, fetchDashboardData, generateDemoData, isUsingMock } = useFamilyStore();
+  const { elderlyList, userPackages, servicePackages, roomNames, fetchDashboardData } = useFamilyStore();
   const [searchQuery, setSearchQuery] = useState('');
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
-
-  const handleDeleteConfirm = async () => {
-    if (!deleteConfirmId) return;
-    setDeletingId(deleteConfirmId);
-    setDeleteConfirmId(null);
-    try {
-      await elderlyService.delete(deleteConfirmId);
-      toast.success('Đã xoá hồ sơ người cao tuổi.');
-      if (user?.id) await fetchDashboardData(Number(user.id));
-    } catch {
-      toast.error('Xoá thất bại. Vui lòng thử lại.');
-    } finally {
-      setDeletingId(null);
-    }
-  };
   const unpurchasedTheme = getUnpurchasedPackageTheme();
 
   useEffect(() => {
@@ -169,21 +138,13 @@ export default function ElderlyListPage() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
                       <Link href={`/dashboard/family/elderly/${elderly.id}`} className="flex items-center gap-2">
-                        <Eye className="h-4 w-4" /> Xem chi tiết
+                        <Eye className="h-4 w-4" /> View details
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href={`/dashboard/family/elderly/${elderly.id}/edit`} className="flex items-center gap-2">
-                        <Edit2 className="h-4 w-4" /> Chỉnh sửa
+                        <Edit2 className="h-4 w-4" /> Edit profile
                       </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="flex items-center gap-2 text-red-600 focus:text-red-600"
-                      disabled={deletingId === elderly.id}
-                      onSelect={() => setDeleteConfirmId(elderly.id)}
-                    >
-                      <Trash2 className="h-4 w-4" /> Xoá hồ sơ
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -214,7 +175,7 @@ export default function ElderlyListPage() {
                         </Badge>
                       ) : (
                         <Badge variant="secondary" className={unpurchasedTheme.badgeClassName}>
-                          Chưa mua gói
+                          Not purchased
                         </Badge>
                       )}
                     </div>
@@ -228,21 +189,21 @@ export default function ElderlyListPage() {
                     <div className="flex items-center justify-between gap-3">
                       <span className="flex items-center gap-2 text-muted-foreground">
                         <MapPin className="h-4 w-4 text-amber-500" />
-                        Phong
+                        Room
                       </span>
                       <span className="font-medium text-slate-700 dark:text-slate-300">
-                        {elderly.roomId ? roomNames[elderly.roomId] || `Room ${elderly.roomId}` : 'Chua co phong'}
+                        {elderly.roomId ? roomNames[elderly.roomId] || `Room ${elderly.roomId}` : 'No room assigned'}
                       </span>
                     </div>
                     {!hasPackage ? (
                       <Button asChild className="mt-2 w-full bg-slate-700 hover:bg-slate-800 text-white">
                         <Link href={`/dashboard/family/packages?elderlyId=${elderly.id}&elderlyName=${encodeURIComponent(elderly.name)}`}>
-                          Mua gói ngay !
+                          Buy plan now
                         </Link>
                       </Button>
                     ) : (
                       <div className={cn('rounded-xl px-3 py-2 text-xs font-semibold', packageTheme.subtleClassName)}>
-                        {activePackage?.level} • {activePackage?.durationDays || 30} ngày • Gắn cho {elderly.name}
+                        {activePackage?.level} • {activePackage?.durationDays || 30} days • Assigned to {elderly.name}
                       </div>
                     )}
                   </div>
@@ -263,13 +224,13 @@ export default function ElderlyListPage() {
                 <div className="flex w-full gap-2">
                   <Button variant="outline" className="flex-1 text-sky-600 border-sky-100 hover:bg-sky-50 group-hover:bg-sky-600 group-hover:text-white transition-all duration-300" asChild>
                     <Link href={`/dashboard/family/elderly/${elderly.id}`}>
-                      Xem detail
+                      View details
                     </Link>
                   </Button>
                   {!hasPackage ? (
                     <Button asChild className="bg-slate-700 hover:bg-slate-800 text-white">
                       <Link href={`/dashboard/family/packages?elderlyId=${elderly.id}&elderlyName=${encodeURIComponent(elderly.name)}`}>
-                        Mua gói
+                        Buy plan
                       </Link>
                     </Button>
                   ) : null}
@@ -293,44 +254,9 @@ export default function ElderlyListPage() {
                  Add First Elderly
                 </Link>
              </Button>
-             {!isUsingMock && (
-                <Button 
-                   onClick={() => user?.id && generateDemoData(Number(user.id))}
-                   variant="outline" 
-                   className="min-w-[150px] h-12"
-                >
-                   Try Demo Data
-                </Button>
-             )}
           </div>
         </div>
       )}
-
-      {/* Delete confirmation dialog */}
-      <AlertDialog open={deleteConfirmId !== null} onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận xoá hồ sơ người cao tuổi</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-2 text-sm">
-                <p>Bạn có chắc muốn xoá hồ sơ này?</p>
-                <p className="font-semibold text-red-600">
-                  ⚠️ Lưu ý: Toàn bộ thông tin hồ sơ, lịch sử chăm sóc, lời nhắc và <strong>tất cả các gói dịch vụ đang gắn với hồ sơ</strong> sẽ bị xoá vĩnh viễn. Hành động này không thể hoàn tác và <strong>không được hoàn tiền</strong> cho bất kỳ gói nào.
-                </p>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Huỷ</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-              onClick={handleDeleteConfirm}
-            >
-              Xoá
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

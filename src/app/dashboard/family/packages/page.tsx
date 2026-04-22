@@ -31,12 +31,10 @@ import {
   AlertCircle,
   Loader2,
   UserRound,
-  RefreshCw,
   Activity,
   Gem,
   Sparkles,
   Star,
-  Trash2,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { PackageExercisesModal } from '@/components/dashboard/family/PackageExercisesModal';
@@ -176,10 +174,10 @@ export default function PackagesPage() {
     setDeleteConfirmUpId(null);
     try {
       await userPackageService.delete(deleteConfirmUpId);
-      toast.success('Đã xoá gói thành công.');
+      toast.success('Plan removed successfully.');
       if (user?.id) await fetchDashboardData(Number(user.id));
     } catch {
-      toast.error('Xoá gói thất bại. Vui lòng thử lại.');
+      toast.error('Failed to remove plan. Please try again.');
     } finally {
       setDeletingUpId(null);
     }
@@ -187,7 +185,7 @@ export default function PackagesPage() {
 
   const handlePurchase = async (packageId: number) => {
     if (!selectedElderlyId) {
-      toast.error('Vui lòng chọn một elderly profile trước khi thanh toán.');
+      toast.error('Please select an elderly profile before checkout.');
       return;
     }
     
@@ -210,10 +208,10 @@ export default function PackagesPage() {
         );
       }
 
-      toast.success(`Đã tạo thanh toán cho EL #${selectedElderlyId}. Chuyển sang trang payment...`);
+      toast.success(`Payment created for EL #${selectedElderlyId}. Redirecting to payment page...`);
       router.push('/dashboard/family/payment');
     } catch {
-      toast.error('Lỗi khi tạo thanh toán. Vui lòng thử lại.');
+      toast.error('Unable to create payment. Please try again.');
     } finally {
       setPurchasingId(null);
     }
@@ -241,9 +239,7 @@ export default function PackagesPage() {
           <h1 className="text-3xl font-bold tracking-tight">Service Plans</h1>
           <p className="text-muted-foreground mt-1">Review, purchase, and manage the plans attached to your elderly care journey.</p>
         </div>
-        <Button variant="outline" onClick={() => user?.id && fetchDashboardData(Number(user.id))}>
-          <RefreshCw className="mr-2 h-4 w-4" /> Refresh plan status
-        </Button>
+        <div />
       </div>
 
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
@@ -254,7 +250,7 @@ export default function PackagesPage() {
           <CardHeader>
             <CardTitle>Selected Elderly For Payment</CardTitle>
             <CardDescription>
-              Lưu ý: phải lưu Elderly ID và hiện ra bên ngoài tên của Elderly đó vì khi thanh toán sẽ dùng EL ID đó.
+              Keep the selected Elderly ID visible because checkout is processed with that exact EL ID.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -271,31 +267,31 @@ export default function PackagesPage() {
                   </div>
                   <div className="rounded-xl bg-sky-50 p-4">
                     <div className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">Current Plan Status</div>
-                    <div className="mt-2 font-semibold text-slate-900">{activePackageInfo?.name || 'Chưa mua gói'}</div>
+                    <div className="mt-2 font-semibold text-slate-900">{activePackageInfo?.name || 'Not purchased yet'}</div>
                   </div>
                 </div>
                 {allPackagesForElderly.length > 0 && (
                   <div className="mt-3 rounded-xl border border-sky-200 bg-gradient-to-r from-emerald-50 via-sky-50 to-violet-50 p-4 flex flex-wrap gap-x-6 gap-y-2">
                     <div className="flex items-center gap-1.5">
                       <Calendar className="h-4 w-4 text-sky-600" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-sky-700">Tổng ngày:</span>
-                      <span className="font-black text-sky-900">{totalDays} ngày</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-sky-700">Total days:</span>
+                      <span className="font-black text-sky-900">{totalDays} days</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Activity className="h-4 w-4 text-emerald-600" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">Tổng bài tập:</span>
-                      <span className="font-black text-emerald-900">{totalExercises} bài</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">Total exercises:</span>
+                      <span className="font-black text-emerald-900">{totalExercises} exercises</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Package className="h-4 w-4 text-violet-600" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-violet-700">Số gói:</span>
-                      <span className="font-black text-violet-900">{allPackagesForElderly.length} gói</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-violet-700">Plans:</span>
+                      <span className="font-black text-violet-900">{allPackagesForElderly.length} plans</span>
                     </div>
                   </div>
                 )}
                 {allPackagesForElderly.length > 0 && (
                   <div className="mt-3 space-y-2">
-                    <div className="text-xs font-bold uppercase tracking-wider text-slate-500 px-1">Gói đã đăng ký</div>
+                    <div className="text-xs font-bold uppercase tracking-wider text-slate-500 px-1">Purchased plans</div>
                     {allPackagesForElderly.map((up) => {
                       const catalog = servicePackages.find((sp) => sp.id === up.servicePackageId);
                       const isPaid = up.status === 'PAID';
@@ -306,21 +302,12 @@ export default function PackagesPage() {
                         )}>
                           <div className="min-w-0 flex-1">
                             <div className="font-semibold text-sm text-slate-900 truncate">{catalog?.name || `Package #${up.servicePackageId}`}</div>
-                            <div className="text-[10px] text-slate-500 mt-0.5">{catalog?.durationDays ?? 0} ngày • {catalog?.level || ''}</div>
+                            <div className="text-[10px] text-slate-500 mt-0.5">{catalog?.durationDays ?? 0} days • {catalog?.level || ''}</div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             <Badge className={cn('text-[10px] font-bold px-2 py-0', isPaid ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-amber-100 text-amber-800 border-amber-300')}>
                               {up.status}
                             </Badge>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50"
-                              disabled={deletingUpId === up.id}
-                              onClick={() => setDeleteConfirmUpId(up.id)}
-                            >
-                              {deletingUpId === up.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                            </Button>
                           </div>
                         </div>
                       );
@@ -330,7 +317,7 @@ export default function PackagesPage() {
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">
-                Chưa chọn elderly profile. Hãy chọn từ danh sách bên phải hoặc bấm “Mua gói ngay !” từ trang chi tiết của từng EL.
+                No elderly profile selected yet. Choose one from the list on the right, or click "Buy plan now" from an elderly detail page.
               </div>
             )}
           </CardContent>
@@ -339,7 +326,7 @@ export default function PackagesPage() {
         <Card>
           <CardHeader>
             <CardTitle>Choose An Elderly Profile</CardTitle>
-            <CardDescription>Trang này có thể mở trực tiếp từ từng EL hoặc chọn nhanh một EL tại đây.</CardDescription>
+            <CardDescription>You can open this page from an elderly profile or quickly choose one here.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {elderlyList.length === 0 ? (
@@ -371,7 +358,7 @@ export default function PackagesPage() {
                       <div className="text-xs text-muted-foreground">EL #{elderly.id}</div>
                     </div>
                     <Badge variant={pkg ? 'outline' : 'secondary'} className={pkg ? getServicePackageTheme(pkg, servicePackages).badgeClassName : unpurchasedTheme.badgeClassName}>
-                      {pkg?.name || 'Chưa mua gói'}
+                      {pkg?.name || 'Not purchased yet'}
                     </Badge>
                   </div>
                 </button>
@@ -430,8 +417,8 @@ export default function PackagesPage() {
                     <Info className="h-8 w-8 text-white/80" />
                     <p className="text-xs font-medium leading-relaxed">
                       {activePackage.status === 'PENDING' || !activePackage.expiredAt 
-                        ? "Gói của bạn đang chờ quản lý xác nhận thanh toán. Các tính năng cao cấp sẽ được kích hoạt ngay sau đó."
-                        : "Gói dịch vụ đã được kích hoạt thành công. Người cao tuổi hiện có quyền truy cập vào các bài tập và tính năng của robot."}
+                        ? "Your plan is waiting for manager payment confirmation. Premium features will activate right after confirmation."
+                        : "The plan is active. This elderly profile can now access package exercises and robot features."}
                     </p>
                  </div>
               </CardContent>
@@ -611,15 +598,15 @@ export default function PackagesPage() {
                         <Loader2 className="h-4 w-4 animate-spin" /> Processing...
                       </div>
                     ) : isAlreadyPurchased ? (
-                      'Đã đăng ký'
+                      'Already purchased'
                     ) : !selectedElderlyId ? (
                       'Select Elderly First'
                     ) : isUltimate ? (
                       <span className="flex items-center gap-2 font-black tracking-wide">
-                        <Crown className="h-4 w-4" /> Mua gói Ultimate
+                        <Crown className="h-4 w-4" /> Buy Ultimate plan
                       </span>
                     ) : (
-                      'Mua gói ngay !'
+                      'Buy plan now'
                     )}
                     {!purchasingId && !isCurrent && selectedElderlyId && !isUltimate && (
                       <ChevronRight className="ml-2 h-4 w-4" />
@@ -632,7 +619,7 @@ export default function PackagesPage() {
         </div>
         {servicePackages.length === 0 && (
           <Card className="border-2 border-dashed border-slate-200 bg-slate-50/50 p-8 text-center rounded-3xl">
-            <p className="text-muted-foreground">Chua tai duoc danh sach goi tu GET /api/service-packages.</p>
+            <p className="text-muted-foreground">Unable to load plans from GET /api/service-packages.</p>
           </Card>
         )}
       </section>
@@ -664,19 +651,19 @@ export default function PackagesPage() {
       <AlertDialog open={deleteConfirmUpId !== null} onOpenChange={(open) => { if (!open) setDeleteConfirmUpId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận xoá gói dịch vụ</AlertDialogTitle>
+            <AlertDialogTitle>Confirm plan removal</AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
-              <span className="block">Bạn có chắc muốn xoá gói này khỏi hồ sơ người cao tuổi?</span>
-              <span className="block font-semibold text-red-600">⚠️ Lưu ý: Sau khi xoá, toàn bộ chức năng của gói (bài tập, robot) sẽ ngừng kích hoạt ngay lập tức. Hành động này không thể hoàn tác và <strong>không được hoàn tiền</strong>.</span>
+              <span className="block">Are you sure you want to remove this plan from the elderly profile?</span>
+              <span className="block font-semibold text-red-600">Warning: Once removed, all package features (exercises, robot capabilities) stop immediately. This action cannot be undone and is <strong>not refundable</strong>.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Huỷ</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
               onClick={handleDeleteUserPackage}
             >
-              Xoá gói
+              Remove plan
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

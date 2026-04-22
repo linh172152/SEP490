@@ -37,7 +37,6 @@ import {
   Clock, 
   Filter, 
   Loader2, 
-  RefreshCw, 
   Search, 
   UserCircle 
 } from 'lucide-react';
@@ -50,7 +49,6 @@ export default function FamilyAlertsPage() {
   
   const [alerts, setAlerts] = useState<AlertNotificationResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Filters
@@ -58,14 +56,10 @@ export default function FamilyAlertsPage() {
   const [elderlyFilter, setElderlyFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const loadData = async (isRefresh = false) => {
+  const loadData = async () => {
     if (!user?.id) return;
-    
-    if (isRefresh) {
-        setRefreshing(true);
-    } else {
-        setLoading(true);
-    }
+
+    setLoading(true);
     
     setError(null);
     try {
@@ -81,7 +75,6 @@ export default function FamilyAlertsPage() {
       setError(err instanceof Error ? err.message : 'Unable to load alerts.');
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
@@ -136,15 +129,6 @@ export default function FamilyAlertsPage() {
             Monitoring safety and wellness across all your assigned elderly family members.
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={() => loadData(true)} 
-          disabled={refreshing}
-          className="rounded-xl font-bold uppercase tracking-wider text-[10px] h-9"
-        >
-          {refreshing ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-2 h-3.5 w-3.5" />}
-          Refresh Feed
-        </Button>
       </div>
 
       {/* Summary Cards */}

@@ -81,6 +81,7 @@ export default function CaregiverRemindersPage() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [timeSortOrder, setTimeSortOrder] = useState<'newest' | 'oldest'>('newest');
   
   const [formData, setFormData] = useState<ReminderRequest>({
     elderlyId: 0,
@@ -178,6 +179,13 @@ export default function CaregiverRemindersPage() {
       return matchesSearch && matchesFilter;
     });
   }, [reminders, searchQuery, filterType]);
+
+  const sortedFilteredReminders = useMemo(() => {
+    return filteredReminders.slice().sort((left, right) => {
+      const diff = parseServerDate(right.scheduleTime).getTime() - parseServerDate(left.scheduleTime).getTime();
+      return timeSortOrder === 'newest' ? diff : -diff;
+    });
+  }, [filteredReminders, timeSortOrder]);
 
   const handleOpenModal = (reminder: ReminderResponse | null = null) => {
     const realCaregiverId = effectiveCaregiverId;
@@ -322,6 +330,16 @@ export default function CaregiverRemindersPage() {
                   ))}
                 </SelectContent>
               </Select>
+
+              <Select value={timeSortOrder} onValueChange={(value) => setTimeSortOrder(value as 'newest' | 'oldest')}>
+                <SelectTrigger className="w-[150px] h-11 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-sky-500 hover:bg-slate-100/50 dark:hover:bg-slate-800/80 transition-colors">
+                  <SelectValue placeholder="Newest first" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest first</SelectItem>
+                  <SelectItem value="oldest">Oldest first</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardHeader>
@@ -351,8 +369,8 @@ export default function CaregiverRemindersPage() {
                       </TableCell>
                     </TableRow>
                   ))
-                ) : filteredReminders.length > 0 ? (
-                  filteredReminders.map((reminder) => (
+                ) : sortedFilteredReminders.length > 0 ? (
+                  sortedFilteredReminders.map((reminder) => (
                     <TableRow key={reminder.id} className="group hover:bg-sky-50/30 dark:hover:bg-sky-900/10 transition-colors border-slate-100 dark:border-slate-800">
                       <TableCell className="px-8 font-semibold py-5">
                         <div className="text-slate-900 dark:text-slate-100">{reminder.title}</div>

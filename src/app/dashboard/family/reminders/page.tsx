@@ -69,7 +69,7 @@ function dedupeById<T extends { id: number }>(items: T[]) {
 
 export default function RemindersPage() {
   const { user } = useAuthStore();
-  const { elderlyList, fetchDashboardData, isLoading, isUsingMock, generateDemoData } = useFamilyStore();
+  const { elderlyList, fetchDashboardData, isLoading } = useFamilyStore();
 
   const [loadingFeed, setLoadingFeed] = useState(false);
   const [reminders, setReminders] = useState<ReminderResponse[]>([]);
@@ -78,6 +78,7 @@ export default function RemindersPage() {
   const [filterType, setFilterType] = useState<string>('all');
   const [filterElderly, setFilterElderly] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [timeSortOrder, setTimeSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   useEffect(() => {
     if (user?.id) {
@@ -189,18 +190,27 @@ export default function RemindersPage() {
   const openAlerts = useMemo(() => filteredAlerts.filter((item) => !item.resolved), [filteredAlerts]);
 
   const sortedReminders = useMemo(
-    () => filteredReminders.slice().sort((left, right) => parseServerDate(left.scheduleTime).getTime() - parseServerDate(right.scheduleTime).getTime()),
-    [filteredReminders]
+    () => filteredReminders.slice().sort((left, right) => {
+      const diff = parseServerDate(right.scheduleTime).getTime() - parseServerDate(left.scheduleTime).getTime();
+      return timeSortOrder === 'newest' ? diff : -diff;
+    }),
+    [filteredReminders, timeSortOrder]
   );
 
   const sortedLogs = useMemo(
-    () => filteredReminderLogs.slice().sort((left, right) => parseServerDate(right.triggeredTime).getTime() - parseServerDate(left.triggeredTime).getTime()),
-    [filteredReminderLogs]
+    () => filteredReminderLogs.slice().sort((left, right) => {
+      const diff = parseServerDate(right.triggeredTime).getTime() - parseServerDate(left.triggeredTime).getTime();
+      return timeSortOrder === 'newest' ? diff : -diff;
+    }),
+    [filteredReminderLogs, timeSortOrder]
   );
 
   const sortedAlerts = useMemo(
-    () => filteredAlerts.slice().sort((left, right) => parseServerDate(right.createdAt).getTime() - parseServerDate(left.createdAt).getTime()),
-    [filteredAlerts]
+    () => filteredAlerts.slice().sort((left, right) => {
+      const diff = parseServerDate(right.createdAt).getTime() - parseServerDate(left.createdAt).getTime();
+      return timeSortOrder === 'newest' ? diff : -diff;
+    }),
+    [filteredAlerts, timeSortOrder]
   );
 
   const isPageLoading = isLoading || loadingFeed;
@@ -224,7 +234,7 @@ export default function RemindersPage() {
         <SummaryCard title="Open Alerts" value={openAlerts.length} icon={<ShieldAlert className="h-5 w-5 text-rose-500" />} />
       </div>
 
-      <div className="grid items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 md:grid-cols-4">
+      <div className="grid items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 md:grid-cols-5">
         <div className="relative md:col-span-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -259,15 +269,20 @@ export default function RemindersPage() {
           </SelectContent>
         </Select>
 
+        <Select value={timeSortOrder} onValueChange={(value) => setTimeSortOrder(value as 'newest' | 'oldest')}>
+          <SelectTrigger className="h-11 border-none bg-muted/50">
+            <SelectValue placeholder="Newest first" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Newest first</SelectItem>
+            <SelectItem value="oldest">Oldest first</SelectItem>
+          </SelectContent>
+        </Select>
+
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="icon" onClick={() => { setFilterType('all'); setFilterElderly('ALL'); setSearchQuery(''); }} className="h-11 w-11 rounded-xl">
+          <Button variant="ghost" size="icon" onClick={() => { setFilterType('all'); setFilterElderly('ALL'); setSearchQuery(''); setTimeSortOrder('newest'); }} className="h-11 w-11 rounded-xl">
             <RotateCcw className="h-5 w-5 text-muted-foreground" />
           </Button>
-          {!isUsingMock ? (
-            <Button variant="ghost" className="h-11 font-bold text-sky-600 hover:bg-sky-50 hover:text-sky-700" onClick={() => user?.id && generateDemoData(Number(user.id))}>
-              Load Demo
-            </Button>
-          ) : null}
         </div>
       </div>
 

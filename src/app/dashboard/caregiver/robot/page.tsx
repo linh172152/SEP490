@@ -7,7 +7,6 @@ import { roomService } from '@/services/api/roomService';
 import { interactionLogService } from '@/services/api/interactionLogService';
 import { reminderService } from '@/services/api/reminderService';
 import { exerciseService } from '@/services/api/exerciseService';
-import { robotService } from '@/services/api/robotService';
 import type {
   InteractionLogResponse,
   ReminderLogResponse,
@@ -39,7 +38,6 @@ import {
   Dumbbell,
   Loader2,
   MessageSquare,
-  RefreshCw,
   Search,
   ShieldCheck,
   Users,
@@ -106,7 +104,7 @@ export default function CaregiverRobotPage() {
       setRoomElderlies(elderlies);
       setRoomRobot(robot);
       setInteractionLogs(
-        allInteractions.filter((item) => elderlyIds.has(item.elderlyId) && (!robot || item.robotId === robot.id))
+        allInteractions.filter((item) => elderlyIds.has(item.elderlyId))
       );
       setReminderLogs(
         allReminderLogs.filter((item) => elderlyIds.has(item.elderlyId) && (!robot || item.robotId === robot.id))
@@ -203,9 +201,6 @@ export default function CaregiverRobotPage() {
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Robot Interaction</h1>
           <p className="text-muted-foreground">API-backed robot activity center for your room. The page starts with all assigned elderly profiles and can then be filtered by EL.</p>
         </div>
-        <Button variant="outline" onClick={loadRobotData}>
-          <RefreshCw className="mr-2 h-4 w-4" /> Refresh Robot Activity
-        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

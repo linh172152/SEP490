@@ -366,7 +366,7 @@ export default function FamilyElderlyDetailPage() {
                   <div>No active service plan yet.</div>
                   <Button asChild className="w-full bg-slate-700 hover:bg-slate-800 text-white">
                     <Link href={`/dashboard/family/packages?elderlyId=${profile.id}&elderlyName=${encodeURIComponent(profile.name)}`}>
-                      Mua gói ngay !
+                      Buy plan now
                     </Link>
                   </Button>
                 </div>
@@ -550,7 +550,7 @@ export default function FamilyElderlyDetailPage() {
                       {!pkg.isOwned ? (
                         <Button asChild size="sm" className="mt-3 bg-slate-700 hover:bg-slate-800 text-white">
                           <Link href={`/dashboard/family/packages?elderlyId=${profile.id}&elderlyName=${encodeURIComponent(profile.name)}`}>
-                            Mua gói ngay !
+                            Buy plan now
                           </Link>
                         </Button>
                       ) : null}

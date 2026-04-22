@@ -14,7 +14,6 @@ import { elderlyService } from '@/services/api/elderlyService';
 import { reminderService } from '@/services/api/reminderService';
 import { interactionLogService } from '@/services/api/interactionLogService';
 import { alertService } from '@/services/api/alertService';
-import { robotService } from '@/services/api/robotService';
 import { userPackageService } from '@/services/api/userPackageService';
 import { servicePackageService } from '@/services/api/servicePackageService';
 import { exerciseService } from '@/services/api/exerciseService';
@@ -76,7 +75,6 @@ export type CaregiverWorkspaceTab =
   | 'reminders'
   | 'robot'
   | 'logs'
-  | 'room-device'
   | 'exercise'
   | 'package-exercise';
 
@@ -85,7 +83,6 @@ const workspaceTabs: Array<{ key: CaregiverWorkspaceTab; label: string }> = [
   { key: 'reminders', label: 'Reminders' },
   { key: 'robot', label: 'Robot Interaction' },
   { key: 'logs', label: 'Logs / History' },
-  { key: 'room-device', label: 'Room / Device' },
   { key: 'exercise', label: 'Exercise' },
 ];
 
@@ -120,7 +117,6 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [loadingContext, setLoadingContext] = useState(true);
   const [loadingSelected, setLoadingSelected] = useState(false);
-  const [loadingRoomDevice, setLoadingRoomDevice] = useState(false);
   const [loadingPackages, setLoadingPackages] = useState(false);
   const [savingReminder, setSavingReminder] = useState(false);
   const [runningExerciseId, setRunningExerciseId] = useState<number | null>(null);
@@ -196,15 +192,10 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
       return;
     }
 
-    setLoadingRoomDevice(true);
-    try {
-      const room = await roomService.getRoomById(caregiverProfile.roomId).catch(() => null);
-      const robot = room?.robot ?? null;
-      setRoomInfo(room);
-      setRoomRobot(robot);
-    } finally {
-      setLoadingRoomDevice(false);
-    }
+    const room = await roomService.getRoomById(caregiverProfile.roomId).catch(() => null);
+    const robot = room?.robot ?? null;
+    setRoomInfo(room);
+    setRoomRobot(robot);
   }, [caregiverProfile?.roomId]);
 
   const loadSelectedElderly = useCallback(async () => {
@@ -854,25 +845,6 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     </div>
   );
 
-  const renderRoomDevice = () => (
-    <div className="grid gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Room Context</CardTitle>
-          <CardDescription>Operational context for caregiver and robot in the assigned room.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {loadingRoomDevice ? <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading room and device context...</div> : null}
-          <InfoPair label="Room" value={roomInfo?.roomName || (caregiverProfile?.roomId ? `Room ${caregiverProfile.roomId}` : 'Unassigned')} />
-          <InfoPair label="Manager" value={roomInfo?.managerName || 'N/A'} />
-          <InfoPair label="Robot" value={roomRobot?.robotName || 'No robot assigned'} />
-          <InfoPair label="Robot Model" value={roomRobot?.model || 'N/A'} />
-          <InfoPair label="Robot ID" value={roomRobot?.id ? `${roomRobot.id}` : 'N/A'} />
-        </CardContent>
-      </Card>
-    </div>
-  );
-
   const renderExercise = () => (
     <div className="grid gap-6">
       <Card>
@@ -960,7 +932,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
             <div className="rounded-full bg-sky-50 p-4 text-sky-600"><User className="h-8 w-8" /></div>
             <div>
               <h3 className="text-xl font-semibold">Select an elderly profile</h3>
-              <p className="mt-2 max-w-md text-sm text-muted-foreground">Start from the list on the left. After choosing an elderly profile, the workspace will guide you through overview, reminders, robot interaction, logs, room/device, and exercise tabs.</p>
+              <p className="mt-2 max-w-md text-sm text-muted-foreground">Start from the list on the left. After choosing an elderly profile, the workspace will guide you through overview, reminders, robot interaction, logs, and exercise tabs.</p>
             </div>
           </CardContent>
         </Card>
@@ -976,8 +948,6 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
         return renderRobot();
       case 'logs':
         return renderLogs();
-      case 'room-device':
-        return renderRoomDevice();
       case 'exercise':
       case 'package-exercise':
         return renderExercise();

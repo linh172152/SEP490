@@ -259,7 +259,7 @@
     "dashboard": "Dashboard",
     "overview": "Overview",
     "user_mgt": "User Management",
-    "staff_mgt": "Staff Management",
+    "staff_mgt": "User Manager",
     "fleet": "Robot Fleet",
     "robot_mgt": "Robot Management",
     "robot_fleet": "Fleet Hub",

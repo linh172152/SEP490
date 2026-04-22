@@ -151,7 +151,7 @@ export function RoomViewModal({ isOpen, onClose, room }: RoomViewModalProps) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-2">
                            <p className="text-lg font-black text-slate-900 truncate tracking-tight">{el.name}</p>
-                           <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-100 text-[9px] font-black uppercase rounded-md tracking-widest">Resident</Badge>
+                           <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-100 text-[9px] font-black uppercase rounded-md tracking-widest">Elderly</Badge>
                         </div>
                         <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                            <div className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">

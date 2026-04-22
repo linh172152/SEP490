@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -39,6 +39,7 @@ import { cn, parseServerDate } from '@/lib/utils';
 
 export default function CaregiverAlertsPage() {
   const { user } = useAuthStore();
+  const isRefreshingRef = useRef(false);
   const [profile, setProfile] = useState<CaregiverProfileResponse | null>(null);
   const [alerts, setAlerts] = useState<AlertNotificationResponse[]>([]);
   const [elderlies, setElderlies] = useState<RoomElderlySummary[]>([]);
@@ -52,10 +53,18 @@ export default function CaregiverAlertsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [timeSortOrder, setTimeSortOrder] = useState<'newest' | 'oldest'>('newest');
 
-  const loadData = async () => {
+  const loadData = useCallback(async (silent = false) => {
     if (!user?.id) return;
 
-    setLoading(true);
+    if (isRefreshingRef.current) {
+      return;
+    }
+
+    isRefreshingRef.current = true;
+
+    if (!silent) {
+      setLoading(true);
+    }
     
     setError(null);
     try {
@@ -84,13 +93,23 @@ export default function CaregiverAlertsPage() {
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unable to load alerts.');
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
+      isRefreshingRef.current = false;
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
-    loadData();
-  }, [user?.id]);
+    void loadData(false);
+    const intervalId = setInterval(() => {
+      void loadData(true);
+    }, 2000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [loadData]);
 
   const handleResolveAlert = async (alert: AlertNotificationResponse) => {
     setResolvingId(alert.id);

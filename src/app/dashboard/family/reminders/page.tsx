@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useFamilyStore } from '@/store/useFamilyStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -70,6 +70,7 @@ function dedupeById<T extends { id: number }>(items: T[]) {
 export default function RemindersPage() {
   const { user } = useAuthStore();
   const { elderlyList, fetchDashboardData, isLoading } = useFamilyStore();
+  const isRefreshingRef = useRef(false);
 
   const [loadingFeed, setLoadingFeed] = useState(false);
   const [reminders, setReminders] = useState<ReminderResponse[]>([]);
@@ -87,16 +88,28 @@ export default function RemindersPage() {
   }, [user?.id, fetchDashboardData]);
 
   useEffect(() => {
-    const loadFamilyFeeds = async () => {
+    const loadFamilyFeeds = async (silent = false) => {
+      if (isRefreshingRef.current) {
+        return;
+      }
+
+      isRefreshingRef.current = true;
+
       if (elderlyList.length === 0) {
         setReminders([]);
         setReminderLogs([]);
         setAlerts([]);
-        setLoadingFeed(false);
+        if (!silent) {
+          setLoadingFeed(false);
+        }
+        isRefreshingRef.current = false;
         return;
       }
 
-      setLoadingFeed(true);
+      if (!silent) {
+        setLoadingFeed(true);
+      }
+
       try {
         const elderlyIds = elderlyList.map((item) => item.id);
         const [reminderGroups, reminderLogGroups, allAlerts] = await Promise.all([
@@ -110,11 +123,21 @@ export default function RemindersPage() {
         setReminderLogs(dedupeById(reminderLogGroups.flat()));
         setAlerts(dedupeById(allAlerts.filter((item) => elderlyIdSet.has(item.elderlyId))));
       } finally {
-        setLoadingFeed(false);
+        if (!silent) {
+          setLoadingFeed(false);
+        }
+        isRefreshingRef.current = false;
       }
     };
 
-    loadFamilyFeeds();
+    void loadFamilyFeeds(false);
+    const intervalId = setInterval(() => {
+      void loadFamilyFeeds(true);
+    }, 2000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [elderlyList]);
 
   const filteredReminders = useMemo(() => {

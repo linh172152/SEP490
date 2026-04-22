@@ -92,7 +92,7 @@ export default function CreateElderlyPage() {
         roomId: null,
       });
 
-      toast.success(t('family.patients.toasts.create_success'));
+      toast.success(t('common.create_success'));
       router.push('/dashboard/family/elderly');
     } catch {
       toast.error(t('common.error'));

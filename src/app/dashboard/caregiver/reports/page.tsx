@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { caregiverService } from '@/services/api/caregiverService';
 import { roomService } from '@/services/api/roomService';
@@ -14,6 +14,7 @@ import { parseServerDate } from '@/lib/utils';
 
 export default function CaregiverReportsPage() {
   const { user } = useAuthStore();
+  const isRefreshingRef = useRef(false);
   const [profile, setProfile] = useState<CaregiverProfileResponse | null>(null);
   const [elderlies, setElderlies] = useState<RoomElderlySummary[]>([]);
   const [reminderLogs, setReminderLogs] = useState<ReminderLogResponse[]>([]);
@@ -21,14 +22,23 @@ export default function CaregiverReportsPage() {
   const [roomRobot, setRoomRobot] = useState<RobotDTO | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const load = async () => {
+  const load = useCallback(async (silent = false) => {
       if (!user?.id) {
-        setLoading(false);
+        if (!silent) {
+          setLoading(false);
+        }
         return;
       }
 
-      setLoading(true);
+      if (isRefreshingRef.current) {
+        return;
+      }
+
+      isRefreshingRef.current = true;
+
+      if (!silent) {
+        setLoading(true);
+      }
       try {
         const profiles = await caregiverService.getByAccountId(Number(user.id)).catch(() => [] as CaregiverProfileResponse[]);
         const currentProfile = profiles[0] ?? null;
@@ -52,12 +62,23 @@ export default function CaregiverReportsPage() {
         setReminderLogs(allReminderLogs.filter((item) => elderlyIds.has(item.elderlyId)));
         setInteractionLogs(allInteractionLogs.filter((item) => elderlyIds.has(item.elderlyId)));
       } finally {
-        setLoading(false);
+        if (!silent) {
+          setLoading(false);
+        }
+        isRefreshingRef.current = false;
       }
-    };
+    }, [user?.id]);
 
-    load();
-  }, [user?.id]);
+  useEffect(() => {
+    void load(false);
+    const intervalId = setInterval(() => {
+      void load(true);
+    }, 2000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [load]);
 
   const recentReminderLogs = useMemo(() => reminderLogs.slice().sort((left, right) => parseServerDate(right.triggeredTime).getTime() - parseServerDate(left.triggeredTime).getTime()).slice(0, 5), [reminderLogs]);
   const recentInteractionLogs = useMemo(() => interactionLogs.slice().sort((left, right) => parseServerDate(right.createdAt).getTime() - parseServerDate(left.createdAt).getTime()).slice(0, 5), [interactionLogs]);

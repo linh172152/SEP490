@@ -486,7 +486,7 @@ export default function UserManagementPage() {
         elderlyMap.set(profileId, {
           id: profileId,
           profileId: profileId,
-          name: "Resident in Room",
+          name: "Elderly in Room",
           roomId: info.roomId,
           roomName: info.roomName,
           isRoomOnly: true
@@ -641,7 +641,7 @@ export default function UserManagementPage() {
             {t('common.roles.CAREGIVER')}
           </TabsTrigger>
           <TabsTrigger value="elderly" className="h-12 px-8 rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            {t('common.roles.ELDERLYUSER') || "Residents"}
+            {t('common.roles.ELDERLYUSER') || "Elderly"}
           </TabsTrigger>
           <TabsTrigger value="family" className="h-12 px-8 rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
             {t('common.roles.FAMILYMEMBER')}

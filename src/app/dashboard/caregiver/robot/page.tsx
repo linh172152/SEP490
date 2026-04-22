@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { caregiverService } from '@/services/api/caregiverService';
 import { roomService } from '@/services/api/roomService';
@@ -60,6 +60,7 @@ type RobotActivityFeedItem = {
 
 export default function CaregiverRobotPage() {
   const user = useAuthStore((state) => state.user);
+  const isRefreshingRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [roomElderlies, setRoomElderlies] = useState<RoomElderlySummary[]>([]);
@@ -69,13 +70,23 @@ export default function CaregiverRobotPage() {
   const [selectedElderlyId, setSelectedElderlyId] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const loadRobotData = useCallback(async () => {
+  const loadRobotData = useCallback(async (silent = false) => {
     if (!user?.id) {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
       return;
     }
 
-    setLoading(true);
+    if (isRefreshingRef.current) {
+      return;
+    }
+
+    isRefreshingRef.current = true;
+
+    if (!silent) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
@@ -87,7 +98,6 @@ export default function CaregiverRobotPage() {
         setRoomRobot(null);
         setInteractionLogs([]);
         setReminderLogs([]);
-        setLoading(false);
         return;
       }
 
@@ -112,12 +122,22 @@ export default function CaregiverRobotPage() {
     } catch (loadError: unknown) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load robot activity data.');
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
+      isRefreshingRef.current = false;
     }
   }, [user?.id]);
 
   useEffect(() => {
-    loadRobotData();
+    void loadRobotData(false);
+    const intervalId = setInterval(() => {
+      void loadRobotData(true);
+    }, 2000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [loadRobotData]);
 
   const filteredInteractions = useMemo(() => {

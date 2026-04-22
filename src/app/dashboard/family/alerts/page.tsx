@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useFamilyStore } from '@/store/useFamilyStore';
 import { alertService } from '@/services/api/alertService';
@@ -46,6 +46,7 @@ import { cn, parseServerDate } from '@/lib/utils';
 export default function FamilyAlertsPage() {
   const { user } = useAuthStore();
   const { elderlyList, fetchDashboardData } = useFamilyStore();
+  const isRefreshingRef = useRef(false);
   
   const [alerts, setAlerts] = useState<AlertNotificationResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,10 +57,18 @@ export default function FamilyAlertsPage() {
   const [elderlyFilter, setElderlyFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const loadData = async () => {
+  const loadData = useCallback(async (silent = false) => {
     if (!user?.id) return;
 
-    setLoading(true);
+    if (isRefreshingRef.current) {
+      return;
+    }
+
+    isRefreshingRef.current = true;
+
+    if (!silent) {
+      setLoading(true);
+    }
     
     setError(null);
     try {
@@ -74,13 +83,23 @@ export default function FamilyAlertsPage() {
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unable to load alerts.');
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
+      isRefreshingRef.current = false;
     }
-  };
+  }, [elderlyList, fetchDashboardData, user?.id]);
 
   useEffect(() => {
-    loadData();
-  }, [user?.id]);
+    void loadData(false);
+    const intervalId = setInterval(() => {
+      void loadData(true);
+    }, 2000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [loadData]);
 
   const filteredAlerts = useMemo(() => {
     return alerts.filter(alert => {

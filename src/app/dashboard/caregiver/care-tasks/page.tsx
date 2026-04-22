@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getReminderPatternLabel, getReminderTypeLabel, normalizeReminderType, normalizeReminderPattern, REMINDER_PATTERN_OPTIONS, REMINDER_TYPE_OPTIONS } from '@/lib/reminderOptions';
 import { alertService } from '@/services/api/alertService';
@@ -72,6 +72,7 @@ const ROWS_PER_PAGE_OPTIONS = [10, 20, 50, 100] as const;
 
 export default function CaregiverCareTasksPage() {
   const { user } = useAuthStore();
+  const isRefreshingRef = useRef(false);
   const [profile, setProfile] = useState<CaregiverProfileResponse | null>(null);
   const [reminders, setReminders] = useState<ReminderResponse[]>([]);
   const [reminderLogs, setReminderLogs] = useState<ReminderLogResponse[]>([]);
@@ -95,15 +96,22 @@ export default function CaregiverCareTasksPage() {
   const [activityRowsPerPage, setActivityRowsPerPage] = useState<number>(10);
   const [activityPage, setActivityPage] = useState<number>(1);
 
-  const load = async (options?: { remindersOnly?: boolean }) => {
+  const load = async (options?: { remindersOnly?: boolean; silent?: boolean }) => {
     if (!user?.id) {
       setLoading(false);
       return;
     }
 
     const remindersOnly = options?.remindersOnly ?? false;
+    const silent = options?.silent ?? false;
 
-    if (!remindersOnly) {
+    if (isRefreshingRef.current) {
+      return;
+    }
+
+    isRefreshingRef.current = true;
+
+    if (!remindersOnly && !silent) {
       setLoading(true);
     }
 
@@ -166,14 +174,22 @@ export default function CaregiverCareTasksPage() {
     } catch (loadError: unknown) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load caregiver care tasks.');
     } finally {
-      if (!remindersOnly) {
+      if (!remindersOnly && !silent) {
         setLoading(false);
       }
+      isRefreshingRef.current = false;
     }
   };
 
   useEffect(() => {
-    load();
+    void load();
+    const intervalId = setInterval(() => {
+      void load({ silent: true });
+    }, 2000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
     // The shared load function is intentionally keyed to auth changes here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);

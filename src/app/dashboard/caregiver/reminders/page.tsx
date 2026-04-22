@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getReminderPatternLabel, getReminderTypeLabel, normalizeReminderPattern, normalizeReminderType, REMINDER_PATTERN_OPTIONS, REMINDER_TYPE_OPTIONS } from '@/lib/reminderOptions';
 import { useReminderStore } from '@/store/useReminderStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -92,6 +92,7 @@ export default function CaregiverRemindersPage() {
     repeatPattern: 'daily',
     active: true
   });
+  const isRefreshingRef = useRef(false);
 
   const caregiverIdentifiers = getCaregiverIdentifiers(currentProfile, user?.id);
 
@@ -106,37 +107,53 @@ export default function CaregiverRemindersPage() {
 
   useEffect(() => {
     const loadRoomElderlies = async () => {
-      if (!currentProfile?.id) {
-        setRoomElderlies([]);
-        await fetchReminders({ caregiverId: undefined });
+      if (isRefreshingRef.current) {
         return;
       }
 
-      let data: RoomElderlySummary[] = [];
-
+      isRefreshingRef.current = true;
       try {
-        if (currentProfile.roomId) {
-          data = await roomService.getElderliesByRoom(currentProfile.roomId);
+        if (!currentProfile?.id) {
+          setRoomElderlies([]);
+          await fetchReminders({ caregiverId: undefined });
+          return;
         }
-      } catch {
-        data = [];
-      }
 
-      setRoomElderlies(data || []);
-      
-      const [allLogs] = await Promise.all([
-        data.length > 0 
-          ? Promise.all(data.map(e => reminderService.getLogsByElderlyId(e.id).catch(() => [] as ReminderLogResponse[]))).then(res => res.flat())
-          : Promise.resolve([] as ReminderLogResponse[]),
-        fetchReminders({
-          caregiverIds: getCaregiverIdentifiers(currentProfile, user?.id),
-        })
-      ]);
-      setReminderLogs(allLogs);
+        let data: RoomElderlySummary[] = [];
+
+        try {
+          if (currentProfile.roomId) {
+            data = await roomService.getElderliesByRoom(currentProfile.roomId);
+          }
+        } catch {
+          data = [];
+        }
+
+        setRoomElderlies(data || []);
+        
+        const [allLogs] = await Promise.all([
+          data.length > 0 
+            ? Promise.all(data.map(e => reminderService.getLogsByElderlyId(e.id).catch(() => [] as ReminderLogResponse[]))).then(res => res.flat())
+            : Promise.resolve([] as ReminderLogResponse[]),
+          fetchReminders({
+            caregiverIds: getCaregiverIdentifiers(currentProfile, user?.id),
+          })
+        ]);
+        setReminderLogs(allLogs);
+      } finally {
+        isRefreshingRef.current = false;
+      }
     };
 
 
     void loadRoomElderlies();
+    const intervalId = setInterval(() => {
+      void loadRoomElderlies();
+    }, 2000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [currentProfile, fetchReminders, user?.id]);
 
   const refreshCaregiverReminders = async () => {
@@ -358,7 +375,7 @@ export default function CaregiverRemindersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading ? (
+                {isLoading && reminders.length === 0 ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i} className="animate-pulse border-slate-50 dark:border-slate-800">
                       <TableCell colSpan={7} className="h-20 px-8">

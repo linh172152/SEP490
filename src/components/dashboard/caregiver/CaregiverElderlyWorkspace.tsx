@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { differenceInYears } from 'date-fns';
 import { getReminderDetailedStatus } from '@/utils/reminderStatus';
 import { cn, parseServerDate } from '@/lib/utils';
@@ -112,6 +112,7 @@ interface WorkspaceProps {
 export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: WorkspaceProps) {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const isSelectedRefreshingRef = useRef(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -198,7 +199,7 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
     setRoomRobot(robot);
   }, [caregiverProfile?.roomId]);
 
-  const loadSelectedElderly = useCallback(async () => {
+  const loadSelectedElderly = useCallback(async (silent = false) => {
     if (!effectiveSelectedId) {
       setSelectedProfile(null);
       setSelectedReminders([]);
@@ -208,7 +209,15 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
       return;
     }
 
-    setLoadingSelected(true);
+    if (isSelectedRefreshingRef.current) {
+      return;
+    }
+
+    isSelectedRefreshingRef.current = true;
+
+    if (!silent) {
+      setLoadingSelected(true);
+    }
     try {
       // Fetch profile first
       const profile = await elderlyService.getById(effectiveSelectedId);
@@ -230,7 +239,10 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
       // Profile fetch is critical, if it fails we show error
       setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Unable to load profile.' });
     } finally {
-      setLoadingSelected(false);
+      if (!silent) {
+        setLoadingSelected(false);
+      }
+      isSelectedRefreshingRef.current = false;
     }
   }, [effectiveSelectedId]);
 
@@ -274,7 +286,14 @@ export function CaregiverElderlyWorkspace({ activeTab, selectedElderlyId }: Work
   }, [loadRoomDevice]);
 
   useEffect(() => {
-    loadSelectedElderly();
+    void loadSelectedElderly(false);
+    const intervalId = setInterval(() => {
+      void loadSelectedElderly(true);
+    }, 2000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [loadSelectedElderly]);
 
   useEffect(() => {

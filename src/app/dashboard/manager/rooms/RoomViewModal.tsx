@@ -53,9 +53,9 @@ export function RoomViewModal({ isOpen, onClose, room }: RoomViewModalProps) {
         </DialogHeader>
 
         <ScrollArea className="h-[650px] p-8">
-          <div className="grid grid-cols-2 gap-8">
+          <div className="space-y-8">
             
-            {/* Top Left: Robot Section */}
+            {/* Top: Robot Section - Full Width */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
@@ -66,20 +66,21 @@ export function RoomViewModal({ isOpen, onClose, room }: RoomViewModalProps) {
               </div>
               
               {room.robot ? (
-                <div className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm border border-slate-100 transition-all hover:shadow-md hover:border-amber-200">
-                  <div className="flex items-center gap-5">
-                    <div className="h-16 w-16 rounded-2xl bg-amber-50 flex items-center justify-center shadow-inner transition-transform group-hover:scale-110">
-                      <Bot className="h-8 w-8 text-amber-600" />
+                <div className="group relative overflow-hidden rounded-2xl bg-white p-8 shadow-sm border border-slate-100 transition-all hover:shadow-md hover:border-amber-200">
+                  <div className="flex items-center gap-8">
+                    <div className="h-20 w-20 rounded-2xl bg-amber-50 flex items-center justify-center shadow-inner transition-transform group-hover:scale-110">
+                      <Bot className="h-10 w-10 text-amber-600" />
                     </div>
                     <div>
-                      <h5 className="text-lg font-black text-slate-900 leading-tight">{room.robot.robotName}</h5>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        <Badge variant="outline" className="text-[10px] font-bold uppercase bg-slate-50 border-slate-200">{room.robot.model}</Badge>
-                        <Badge variant="outline" className="text-[10px] font-bold uppercase bg-slate-50 border-slate-200">{room.robot.serialNumber}</Badge>
+                      <h5 className="text-2xl font-black text-slate-900 leading-tight">{room.robot.robotName}</h5>
+                      <div className="flex flex-wrap gap-3 mt-3">
+                        <Badge variant="outline" className="text-xs font-bold uppercase py-1 px-3 bg-slate-50 border-slate-200">{room.robot.model}</Badge>
+                        <Badge variant="outline" className="text-xs font-bold uppercase py-1 px-3 bg-slate-50 border-slate-200">{room.robot.serialNumber}</Badge>
+                        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none text-[10px] font-black uppercase tracking-widest">Connected</Badge>
                       </div>
                     </div>
                   </div>
-                  <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                  <div className="absolute top-6 right-6 h-3 w-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50/50 text-slate-400">
@@ -89,45 +90,8 @@ export function RoomViewModal({ isOpen, onClose, room }: RoomViewModalProps) {
               )}
             </div>
 
-            {/* Top Right: Caregivers Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
-                  <Users className="h-4 w-4 text-indigo-600" />
-                </div>
-                <h4 className="text-sm font-black uppercase tracking-widest text-slate-600">{t('manager.rooms.modal.tab_staff')}</h4>
-                <div className="flex-1 border-b border-dashed border-slate-200"></div>
-                <Badge className="rounded-lg text-[10px] bg-indigo-500/10 text-indigo-600 border-none font-black">
-                  {room.caregivers?.length || 0}/2
-                </Badge>
-              </div>
-
-              {room.caregivers && room.caregivers.length > 0 ? (
-                <div className="grid gap-3">
-                  {room.caregivers.map((cg: CaregiverDTO) => (
-                    <div key={cg.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white shadow-sm border border-slate-100 transition-all hover:bg-slate-50 group">
-                      <Avatar className="h-12 w-12 border-2 border-white shadow-sm transition-transform group-hover:scale-105">
-                        <AvatarFallback className="bg-indigo-600 text-white font-black text-sm">
-                          {getInitials(cg.name || cg.email)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-base font-black text-slate-900 truncate tracking-tight">{cg.name || cg.email}</p>
-                        <p className="text-xs text-slate-500 font-bold truncate opacity-60 uppercase">{cg.email}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50/50 text-slate-400">
-                  <Users className="h-10 w-10 mb-2 opacity-20" />
-                  <p className="text-sm font-bold uppercase tracking-widest">{t('common.no_data')}</p>
-                </div>
-              )}
-            </div>
-
             {/* Bottom: Elderlies Section - Full Width */}
-            <div className="col-span-2 space-y-4 mt-4">
+            <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                   <Baby className="h-4 w-4 text-emerald-600" />
@@ -140,17 +104,17 @@ export function RoomViewModal({ isOpen, onClose, room }: RoomViewModalProps) {
               </div>
 
               {room.elderlies && room.elderlies.length > 0 ? (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-6">
                   {room.elderlies.map((el: ElderlyDTO) => (
-                    <div key={el.id} className="flex items-center gap-5 p-5 rounded-2xl bg-white shadow-sm border border-slate-100 transition-all hover:shadow-md hover:border-emerald-200 group">
-                      <Avatar className="h-14 w-14 border-2 border-white shadow-sm transition-transform group-hover:scale-105">
-                        <AvatarFallback className="bg-emerald-600 text-white font-black text-lg">
+                    <div key={el.id} className="flex items-center gap-5 p-6 rounded-2xl bg-white shadow-sm border border-slate-100 transition-all hover:shadow-md hover:border-emerald-200 group">
+                      <Avatar className="h-16 w-16 border-2 border-white shadow-sm transition-transform group-hover:scale-105">
+                        <AvatarFallback className="bg-emerald-600 text-white font-black text-xl">
                           {getInitials(el.name)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-2">
-                           <p className="text-lg font-black text-slate-900 truncate tracking-tight">{el.name}</p>
+                           <p className="text-xl font-black text-slate-900 truncate tracking-tight">{el.name}</p>
                            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-100 text-[9px] font-black uppercase rounded-md tracking-widest">Resident</Badge>
                         </div>
                         <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">

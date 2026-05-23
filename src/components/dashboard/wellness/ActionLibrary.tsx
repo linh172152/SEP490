@@ -1,32 +1,33 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { 
-  Plus, 
-  Search, 
-  Trash2, 
-  Clock, 
+import {
+  Plus,
+  Search,
+  Trash2,
+  Clock,
   ChevronLeft,
   ChevronRight,
   MoreHorizontal,
   Play,
   Zap,
   Tag,
-  Smile
+  Smile,
+  Lock
 } from "lucide-react";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +35,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useI18nStore } from "@/store/useI18nStore";
 import { robotActionService } from "@/services/api/robotActionService";
-import { RobotActionLibrary } from "@/services/api/types";
+import { servicePackageService } from "@/services/api/servicePackageService";
+import { RobotActionLibrary, ServicePackageResponse } from "@/services/api/types";
 import { toast } from "react-toastify";
 import { ActionModal } from "./ActionModal";
 import { cn } from "@/lib/utils";
@@ -42,9 +44,10 @@ import { cn } from "@/lib/utils";
 export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
   const { t } = useI18nStore();
   const [actions, setActions] = useState<RobotActionLibrary[]>([]);
+  const [packages, setPackages] = useState<ServicePackageResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -58,8 +61,12 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
   const fetchActions = async () => {
     try {
       setIsLoading(true);
-      const data = await robotActionService.getAllActions();
-      setActions(data);
+      const [actionData, packageData] = await Promise.all([
+        robotActionService.getAllActions(),
+        servicePackageService.getAll()
+      ]);
+      setActions(actionData);
+      setPackages(packageData);
     } catch (error) {
       toast.error(t('wellness.toasts.fetch_error'));
     } finally {
@@ -85,14 +92,35 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
     }
   };
 
+  const getActionUsage = (actionId: number) => {
+    return packages.filter(pkg =>
+      pkg.robotActions?.some(ra => ra.id === actionId)
+    );
+  };
+
   const handleDelete = async (id: number) => {
+    const usages = getActionUsage(id);
+    if (usages.length > 0) {
+      const pkgNames = usages.map(u => u.name).join(", ");
+      toast.error(`${t('wellness.toasts.delete_error')}: ${t('wellness.toasts.in_use_error', 'This action is in use by packages')} [${pkgNames}]`);
+      return;
+    }
+
     if (!confirm(t("common.confirm_delete"))) return;
     try {
       await robotActionService.deleteAction(id);
       toast.success(t('wellness.toasts.delete_success'));
       fetchActions();
-    } catch (error) {
-      toast.error(t('wellness.toasts.delete_error'));
+    } catch (error: any) {
+      // Check if it's a foreign key constraint error (400)
+      const errorData = error.response?.data;
+      const errorMsg = typeof errorData === 'string' ? errorData : errorData?.message || '';
+
+      if (errorMsg.includes("foreign key constraint fails") || errorMsg.includes("servicepackage_robot_action")) {
+        toast.error(`${t('wellness.toasts.delete_error')}: ${t('wellness.toasts.in_use_error', 'This action is in use by packages and cannot be deleted.')}`);
+      } else {
+        toast.error(t('wellness.toasts.delete_error'));
+      }
     }
   };
 
@@ -110,9 +138,9 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
 
   const filteredActions = actions.filter(s => {
     const q = searchQuery.toLowerCase();
-    return s.name.toLowerCase().includes(q) || 
-           s.code.toLowerCase().includes(q) ||
-           (s.description?.toLowerCase().includes(q) || "");
+    return s.name.toLowerCase().includes(q) ||
+      s.code.toLowerCase().includes(q) ||
+      (s.description?.toLowerCase().includes(q) || "");
   });
 
   const totalPages = Math.ceil(filteredActions.length / itemsPerPage);
@@ -140,7 +168,7 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
         </div>
 
         {!readOnly && (
-          <Button 
+          <Button
             onClick={() => {
               setSelectedAction(null);
               setIsModalOpen(true);
@@ -184,18 +212,25 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
                   <TableRow key={action.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 border-border/40 transition-colors">
                     <TableCell className="pl-6 py-4">
                       <Badge variant="outline" className="font-mono bg-slate-50 dark:bg-slate-900 border-border/60 text-sm py-1">
-                         {action.code}
+                        {action.code}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                       <span className="font-bold text-slate-900 dark:text-slate-100">{action.name}</span>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-900 dark:text-slate-100">{action.name}</span>
+                        {getActionUsage(action.id).length > 0 && (
+                          <span className="text-[10px] text-amber-600 font-bold flex items-center gap-1 mt-0.5">
+                            <Lock className="h-3 w-3" /> {t('wellness.in_use', 'Part of Package')}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary" className={cn(
                         "text-[10px] font-bold",
                         action.type === 'ACTION' ? "bg-blue-100 text-blue-700 border-blue-200" :
-                        action.type === 'DANCE' ? "bg-purple-100 text-purple-700 border-purple-200" :
-                        "bg-pink-100 text-pink-700 border-pink-200"
+                          action.type === 'DANCE' ? "bg-purple-100 text-purple-700 border-purple-200" :
+                            "bg-pink-100 text-pink-700 border-pink-200"
                       )}>
                         {t(`wellness.types.${action.type || 'ACTION'}`)}
                       </Badge>
@@ -207,16 +242,16 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
                     </TableCell>
                     <TableCell className="pr-6 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           className="h-9 w-9 p-0 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-emerald-600 rounded-xl"
                           onClick={() => handleTrigger(action.code, action.id)}
                           disabled={isTriggering === action.id}
                         >
                           {isTriggering === action.id ? <Zap className="h-4 w-4 animate-pulse" /> : <Play className="h-4 w-4 fill-current" />}
                         </Button>
-                        
+
                         {!readOnly && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -225,12 +260,17 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl border-border/50 animate-in fade-in zoom-in duration-200">
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 onClick={() => handleDelete(action.id)}
-                                className="cursor-pointer text-rose-600 focus:bg-rose-50 focus:text-rose-700"
+                                className={cn(
+                                  "cursor-pointer font-medium",
+                                  getActionUsage(action.id).length > 0
+                                    ? "text-slate-400 cursor-not-allowed opacity-70"
+                                    : "text-rose-600 focus:bg-rose-50 focus:text-rose-700"
+                                )}
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                {t("common.delete")}
+                                {getActionUsage(action.id).length > 0 ? t('wellness.locked', 'Locked') : t("common.delete")}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>

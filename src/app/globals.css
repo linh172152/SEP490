@@ -93,57 +93,46 @@
 }
 
 .dark {
-  /* Deeper Slate base for calming background to create contrast */
-  --background: oklch(0.14 0.02 260);
-  --foreground: oklch(0.95 0.01 260);
+  /* Elevated 'Midnight' Midnight Blue base (L=0.26) for better visibility */
+  --background: oklch(0.26 0.02 260);
+  --foreground: oklch(0.98 0.01 260);
   
-  /* Brighter slate for cards so they heavily pop from background */
-  --card: oklch(0.25 0.03 260);
-  --card-foreground: oklch(0.95 0.01 260);
+  /* Lighter Cards to clearly stand out from the background */
+  --card: oklch(0.32 0.03 260);
+  --card-foreground: oklch(0.98 0.01 260);
   
-  --popover: oklch(0.25 0.03 260);
-  --popover-foreground: oklch(0.95 0.01 260);
+  --popover: oklch(0.32 0.03 260);
+  --popover-foreground: oklch(0.98 0.01 260);
   
-  /* Primary: Soothing Teal-500 equivalent */
-  --primary: oklch(0.65 0.12 185);
-  --primary-foreground: oklch(0.98 0.01 185);
+  /* Primary: More vibrant Teal/Blue for dark mode */
+  --primary: oklch(0.70 0.12 210);
+  --primary-foreground: oklch(0.99 0.01 210);
   
-  /* Secondary: Soft dark slate */
-  --secondary: oklch(0.30 0.03 260);
-  --secondary-foreground: oklch(0.95 0.01 260);
+  --secondary: oklch(0.36 0.03 260);
+  --secondary-foreground: oklch(0.98 0.01 260);
   
-  /* Muted elements */
-  --muted: oklch(0.30 0.03 260);
+  --muted: oklch(0.36 0.03 260);
   --muted-foreground: oklch(0.75 0.02 260);
   
-  --accent: oklch(0.30 0.03 260);
-  --accent-foreground: oklch(0.98 0.01 260);
+  --accent: oklch(0.38 0.03 260);
+  --accent-foreground: oklch(0.99 0.01 260);
   
-  /* Destructive: Softer Rose instead of harsh red */
-  --destructive: oklch(0.60 0.15 20);
-  --destructive-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.65 0.15 25);
+  --destructive-foreground: oklch(0.99 0 0);
   
-  /* Soft borders */
   --border: oklch(0.38 0.03 260);
   --input: oklch(0.38 0.03 260);
-  --ring: oklch(0.65 0.12 185);
+  --ring: oklch(0.70 0.12 210);
   
-  /* Chart colors adapted for dark mode */
-  --chart-1: oklch(0.65 0.12 185); /* Teal */
-  --chart-2: oklch(0.65 0.15 260); /* Light slate blue */
-  --chart-3: oklch(0.70 0.12 70);  /* Soft Amber */
-  --chart-4: oklch(0.65 0.15 300); /* Soft Purple */
-  --chart-5: oklch(0.65 0.15 15);  /* Soft Rose */
-  
-  /* Sidebar matching the card colors to give a boxed layout feel */
-  --sidebar: oklch(0.20 0.02 260);
-  --sidebar-foreground: oklch(0.95 0.01 260);
-  --sidebar-primary: oklch(0.65 0.12 185);
-  --sidebar-primary-foreground: oklch(0.98 0.01 185);
-  --sidebar-accent: oklch(0.30 0.03 260);
-  --sidebar-accent-foreground: oklch(0.95 0.01 260);
+  /* Sidebar sync with elevated background */
+  --sidebar: oklch(0.28 0.02 260);
+  --sidebar-foreground: oklch(0.98 0.01 260);
+  --sidebar-primary: oklch(0.70 0.12 210);
+  --sidebar-primary-foreground: oklch(0.99 0.01 210);
+  --sidebar-accent: oklch(0.36 0.03 260);
+  --sidebar-accent-foreground: oklch(0.98 0.01 260);
   --sidebar-border: oklch(0.38 0.03 260);
-  --sidebar-ring: oklch(0.65 0.12 185);
+  --sidebar-ring: oklch(0.70 0.12 210);
 }
 
 @layer base {

@@ -208,9 +208,9 @@ export default function RobotsManagePage() {
                       </CardDescription>
                     </div>
                     <Badge className={`font-black text-[10px] uppercase px-2 py-0.5 rounded-md ${
-                        normalizedStatus === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' :
-                        normalizedStatus === 'MAINTENANCE' ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20' :
-                        'bg-rose-500/10 text-rose-600 border border-rose-500/20'
+                        normalizedStatus === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' :
+                        normalizedStatus === 'MAINTENANCE' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20' :
+                        'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                     }`}>
                         {t(`common.robot_status.${normalizedStatus}`)}
                     </Badge>
@@ -225,7 +225,7 @@ export default function RobotsManagePage() {
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-muted-foreground font-medium uppercase tracking-tighter">{t('admin.robots.card.firmware') || 'Firmware'}:</span>
-                      <span className="font-bold font-mono text-[11px] text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 px-1.5 rounded">
+                      <span className="font-bold font-mono text-[11px] text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/20 px-1.5 rounded">
                         v{robot.firmwareVersion}
                       </span>
                     </div>

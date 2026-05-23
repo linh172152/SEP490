@@ -326,7 +326,7 @@ export default function AdminFleetPage() {
                        </TableCell>
                        <TableCell>
                           <div className="text-xs font-bold text-slate-700 dark:text-slate-300">{robot.model}</div>
-                          <Badge variant="outline" className="text-[10px] h-5 mt-1 font-bold border-indigo-200 text-indigo-600 bg-indigo-50/50">
+                          <Badge variant="outline" className="text-[10px] h-5 mt-1 font-bold border-indigo-200 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-300 bg-indigo-50/50 dark:bg-indigo-500/10">
                             FIRMWARE: v{robot.firmwareVersion}
                           </Badge>
                        </TableCell>
@@ -343,9 +343,9 @@ export default function AdminFleetPage() {
                        </TableCell>
                        <TableCell>
                           <Badge className={`font-black text-[10px] uppercase px-2 py-0.5 rounded-md ${
-                            normalizedStatus === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' :
-                            normalizedStatus === 'MAINTENANCE' ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20' :
-                            'bg-rose-500/10 text-rose-600 border border-rose-500/20'
+                            normalizedStatus === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' :
+                            normalizedStatus === 'MAINTENANCE' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20' :
+                            'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                           }`}>
                             {t(`common.robot_status.${normalizedStatus}`)}
                           </Badge>

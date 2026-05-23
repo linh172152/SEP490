@@ -14,6 +14,7 @@
     "edit": "Chỉnh Sửa",
     "view": "Xem",
     "view_profile": "Xem hồ sơ",
+    "description": "Mô tả",
     "close": "Đóng",
     "actions": "Thao Tác",
     "name": "Họ và tên",
@@ -97,7 +98,7 @@
     "robot_mgt": "Quản lý Robot",
     "robot_fleet": "Trung tâm Robot",
     "subscriptions": "Gói đăng ký",
-    "rooms": "Quản lý phòng",
+    "rooms": "Quản lý Không gian",
     "wellness": "Trung tâm Hành động",
     "settings": "Cài đặt",
     "logout": "Đăng xuất",
@@ -719,7 +720,7 @@
       "subtitle": "Thiết lập cấp độ gói dịch vụ và gán danh sách các hành động robot cho từng cấp độ.",
       "tab_packages": "Cấp độ Gói",
       "tab_sessions": "Gán hành động Robot",
-      "tab_payments": "Xác nhận thanh toán",
+      "tab_payments": "Thanh toán",
       "assign_exercises": "Thiết lập hành động",
       "no_exercises": "Chưa có hành động nào được gán cho gói này.",
       "package_select": "Chọn gói dịch vụ để gán hành động",
@@ -762,7 +763,8 @@
       }
     },
     "nav": {
-      "rooms": "Quản lý qua Phòng"
+      "rooms": "Quản lý Không gian",
+      "unassigned": "Chưa gán"
     },
     "staff": {
       "title": "Quản lý người dùng",
@@ -771,11 +773,11 @@
       "list_title": "Danh sách tài khoản",
       "unassigned_room": "Chưa gán Room",
       "room_note": "* Mỗi người chăm sóc chỉ phụ trách 1 Room.",
-      "room_prefix": "Room",
+      "room_prefix": "Space",
       "table": {
         "name": "Họ và Tên",
         "email_phone": "Email / SĐT",
-        "room": "Room phụ trách",
+        "room": "Không gian (Space)",
         "status": "Trạng thái",
         "actions": "Thao tác"
       },
@@ -834,10 +836,10 @@
       }
     },
     "rooms": {
-      "title": "Quản lý phòng nghỉ",
-      "subtitle": "Điều phối phòng, người chăm sóc, người cao tuổi và hệ thống robot hỗ trợ.",
-      "add_btn": "Thêm phòng mới",
-      "search_placeholder": "Tìm kiếm theo tên phòng hoặc người cao tuổi...",
+      "title": "Quản lý Không gian",
+      "subtitle": "Quản lý các hộ gia đình, người cao tuổi và hệ thống robot hỗ trợ.",
+      "add_btn": "Thêm không gian mới",
+      "search_placeholder": "Tìm kiếm theo tên không gian hoặc người cao tuổi...",
       "search_placeholder_patient": "Tìm kiếm theo tên người cao tuổi...",
       "filter_robot": "Bộ lọc Robot",
       "filter_occupancy": "Bộ lọc Người cao tuổi",
@@ -845,8 +847,8 @@
       "robot_assigned": "Đã có Robot",
       "robot_none": "Chưa có Robot",
       "occupancy_all": "Tất cả trạng thái",
-      "occupancy_filled": "Đang có người ở",
-      "occupancy_empty": "Phòng trống",
+      "occupancy_filled": "Đang hoạt động",
+      "occupancy_empty": "Chưa có người",
       "empty_state": "Không tìm thấy kết quả phù hợp.",
       "card": {
         "caregivers": "Người chăm sóc",
@@ -856,12 +858,12 @@
         "assign_btn": "Gán ngay",
         "manage_btn": "Quản lý thành viên",
         "edit_info": "Sửa thông tin",
-        "delete_room": "Xóa phòng"
+        "delete_room": "Xóa không gian"
       },
       "modal": {
-        "edit_title": "Cập nhật thông tin phòng",
-        "create_title": "Thêm phòng mới",
-        "room_name": "Tên phòng",
+        "edit_title": "Cập nhật thông tin không gian",
+        "create_title": "Thêm không gian mới",
+        "room_name": "Tên không gian",
         "room_desc": "Mô tả / Ghi chú",
         "select_robot": "Chọn Robot",
         "select_caregiver": "Phân công người chăm sóc",
@@ -869,9 +871,9 @@
         "tab_staff": "Người chăm sóc",
         "tab_elderly": "Người cao tuổi",
         "tab_robot": "Robot",
-        "staff_desc": "Phân công người chăm sóc phụ trách quản lý phòng này.",
-        "elderly_desc": "Thêm các người cao tuổi đang cư trú tại phòng này.",
-        "robot_desc": "Gán một Robot chuyên dụng để hỗ trợ phòng.",
+        "staff_desc": "Phân công người phụ trách quản lý không gian này.",
+        "elderly_desc": "Thêm các người cao tuổi đang cư trú tại không gian này.",
+        "robot_desc": "Gán một Robot chuyên dụng để hỗ trợ không gian.",
         "status_assigned": "Gán thành công",
         "status_in_room": "Thêm vào phòng thành công",
         "status_active": "Gán Robot thành công",
@@ -880,16 +882,16 @@
         "btn_remove": "Gỡ bỏ",
         "btn_save": "Lưu phòng",
         "btn_update": "Cập nhật",
-        "placeholder_name": "Ví dụ: Phòng 101 - Khu A",
+        "placeholder_name": "Ví dụ: Hộ gia đình bác Hùng - Căn A102",
         "none": "Chưa ghi nhận"
       },
       "toasts": {
-        "delete_confirm": "Xác nhận xóa phòng này? Hành động này không thể hoàn tác.",
-        "delete_success": "Xóa phòng thành công",
-        "delete_error": "Lỗi khi xóa phòng",
-        "delete_not_empty": "Phòng {{name}} không thể xóa vì vẫn còn thiết bị hoặc người cư trú gắn liền. Vui lòng giải phóng phòng trước khi xóa.",
-        "update_success": "Cập nhật phòng thành công",
-        "create_success": "Đã tạo phòng mới thành công",
+        "delete_confirm": "Xác nhận xóa không gian này? Hành động này không thể hoàn tác.",
+        "delete_success": "Xóa không gian thành công",
+        "delete_error": "Lỗi khi xóa không gian",
+        "delete_not_empty": "Không gian {{name}} không thể xóa vì vẫn còn thiết bị hoặc người cư trú gắn liền. Vui lòng giải phóng không gian trước khi xóa.",
+        "update_success": "Cập nhật không gian thành công",
+        "create_success": "Đã tạo không gian mới thành công",
         "error_generic": "Đã có lỗi xảy ra",
         "remove_success": "Đã gỡ bỏ thành công"
       }
@@ -906,9 +908,9 @@
     "role": "Vai Trò",
     "gender": "Giới Tính",
     "status": "Trạng Thái",
-    "room_assignment": "Room Phụ Trách",
-    "room_placeholder": "Chọn Room",
-    "room_note": "* Mỗi người chăm sóc chỉ phụ trách 1 Room.",
+    "room_assignment": "Không gian phụ trách",
+    "room_placeholder": "Chọn Space",
+    "room_note": "* Mỗi người phụ trách chỉ nên gán vào 1 Space.",
     "cancel": "Hủy",
     "save": "Lưu Thay Đổi",
     "saving": "Đang lưu...",
@@ -987,6 +989,7 @@
       "create_error": "Lỗi khi thêm hành động",
       "delete_success": "Đã xóa hành động",
       "delete_error": "Lỗi khi xóa hành động",
+      "in_use_error": "Hành động này đã được gán vào một hoặc nhiều gói dịch vụ",
       "trigger_success": "Đã gửi lệnh thực thi: {{code}}",
       "trigger_error": "Lỗi khi gửi lệnh cho robot",
       "load_error": "Không thể tải thư viện bài tập.",
@@ -1052,7 +1055,9 @@
       "easy": "Cơ bản",
       "medium": "Nâng cao",
       "hard": "Phức tạp"
-    }
+    },
+    "in_use": "Đang trong gói",
+    "locked": "Đã khóa"
   },
   "landing": {
     "header": {

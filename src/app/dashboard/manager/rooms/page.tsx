@@ -10,7 +10,6 @@ import {
   Plus, 
   Search, 
   Home, 
-  Users, 
   Baby, 
   Bot, 
   Loader2, 
@@ -135,26 +134,25 @@ export default function RoomsManagerPage() {
   };
 
   const handleDelete = (room: RoomResponse) => {
-    const hasAssignments = (room.caregivers?.length || 0) > 0 || (room.elderlies?.length || 0) > 0 || room.robot !== null;
-
-    if (hasAssignments) {
-      toast.warning(t('manager.rooms.toasts.delete_not_empty', { name: room.roomName }));
-      return;
-    }
-
     setConfirmDelete({
       isOpen: true,
-      title: t('manager.rooms.toasts.delete_confirm') || "Delete Room?",
-      description: `Are you sure you want to delete room "${room.roomName}"? This action cannot be undone.`,
+      title: t('manager.rooms.toasts.delete_confirm') || "Xác nhận xóa?",
+      description: t('manager.rooms.toasts.delete_confirm_desc') || `Bạn có chắc chắn muốn xóa "${room.roomName}"? Hành động này không thể hoàn tác.`,
       onConfirm: async () => {
         try {
           setConfirmDelete(prev => ({ ...prev, isLoading: true }));
           await roomService.deleteRoom(room.id);
-          toast.success(t('manager.rooms.toasts.delete_success'));
+          toast.success(t('manager.rooms.toasts.delete_success') || "Room deleted successfully");
           fetchRooms();
         } catch (e: any) {
+          console.error("Delete error:", e);
           const serverMsg = e.message || e.details || e.error;
-          toast.error(serverMsg || t('manager.rooms.toasts.delete_error'));
+          // Check for constraint error (status 400 or specific message)
+          if (serverMsg?.toLowerCase().includes('caregiver') || serverMsg?.toLowerCase().includes('elderly')) {
+            toast.error(t('manager.rooms.toasts.delete_not_empty', { name: room.roomName }) || "Vui lòng giải phóng không gian trước khi xóa.");
+          } else {
+            toast.error(serverMsg || t('manager.rooms.toasts.delete_error') || "Failed to delete room");
+          }
         } finally {
           setConfirmDelete(prev => ({ ...prev, isOpen: false, isLoading: false }));
         }
@@ -212,7 +210,7 @@ export default function RoomsManagerPage() {
            <DropdownMenu>
              <DropdownMenuTrigger asChild>
                <Button variant="outline" className="h-10 px-3.5 rounded-xl flex items-center gap-1.5 border-slate-200 bg-white dark:bg-slate-900 font-bold text-[11px] shadow-sm hover:bg-slate-50 transition-all select-none">
-                 <Users className="h-3.5 w-3.5 text-primary shrink-0" />
+                 <Baby className="h-3.5 w-3.5 text-primary shrink-0" />
                  <span className="leading-none">{occupancyFilter === 'all' ? t('manager.rooms.occupancy_all') : occupancyFilter === 'filled' ? t('manager.rooms.occupancy_filled') : t('manager.rooms.occupancy_empty')}</span>
                  <ChevronDown className="h-3 w-3 opacity-30 shrink-0" />
                </Button>
@@ -273,20 +271,11 @@ export default function RoomsManagerPage() {
                 </div>
               </CardHeader>
               <CardContent className="pt-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3 p-3 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-xl group-hover:bg-indigo-100/50 transition-colors">
-                    <Users className="h-5 w-5 text-indigo-500" />
-                    <div>
-                      <p className="text-[10px] uppercase font-black tracking-wider text-slate-400">{t('manager.rooms.card.caregivers')}</p>
-                      <p className="font-bold text-indigo-600">{room.caregivers?.length || 0}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-xl group-hover:bg-emerald-100/50 transition-colors">
-                    <Baby className="h-5 w-5 text-emerald-500" />
-                    <div>
-                      <p className="text-[10px] uppercase font-black tracking-wider text-slate-400">{t('manager.rooms.card.elderly')}</p>
-                      <p className="font-bold text-emerald-600">{room.elderlies?.length || 0}</p>
-                    </div>
+                <div className="flex items-center gap-3 p-3 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-xl group-hover:bg-emerald-100/50 transition-colors">
+                  <Baby className="h-5 w-5 text-emerald-500" />
+                  <div>
+                    <p className="text-[10px] uppercase font-black tracking-wider text-slate-400">{t('manager.rooms.card.elderly')}</p>
+                    <p className="font-bold text-emerald-600">{room.elderlies?.length || 0}</p>
                   </div>
                 </div>
 

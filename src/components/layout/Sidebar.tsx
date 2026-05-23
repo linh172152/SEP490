@@ -58,13 +58,6 @@ const careNavItems: NavItem[] = [
   { i18nKey: 'sidebar.alerts', href: '/dashboard/family/alerts', icon: Bell, roles: ['ELDERLY', 'FAMILYMEMBER'] },
   { i18nKey: 'sidebar.subscriptions', href: '/dashboard/family/packages', icon: Package, roles: ['ELDERLY', 'FAMILYMEMBER'] },
   { i18nKey: 'sidebar.settings', href: '/dashboard/family/settings', icon: Settings, roles: ['ELDERLY', 'FAMILYMEMBER'] },
-  { i18nKey: 'sidebar.dashboard', href: '/dashboard/caregiver', icon: LayoutDashboard, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.residents', href: '/dashboard/caregiver/elderly', icon: Users, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.care_tasks', href: '/dashboard/caregiver/care-tasks', icon: Activity, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.robot_interaction', href: '/dashboard/caregiver/robot', icon: Bot, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.alerts', href: '/dashboard/caregiver/alerts', icon: Bell, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.reports', href: '/dashboard/caregiver/reports', icon: FileText, roles: ['CAREGIVER'] },
-  { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['CAREGIVER'] },
 ];
 
 const navItems: NavItem[] = [...platformNavItems, ...careNavItems];
@@ -91,13 +84,13 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
 
   return (
     <aside className={cn(
-      "fixed left-0 top-0 z-40 h-screen transition-all duration-300 ease-in-out border-r bg-white flex flex-col shadow-sm",
+      "fixed left-0 top-0 z-40 h-screen transition-all duration-300 ease-in-out border-r bg-sidebar flex flex-col shadow-sm dark:shadow-none dark:border-sidebar-border",
       isCollapsed ? "w-20" : "w-72",
       isMobileOpen ? "translate-x-0" : "-translate-x-full sm:translate-x-0"
     )}>
       {/* Brand Logo Header */}
       <div className={cn(
-        "flex h-20 items-center justify-between px-6 bg-slate-50/50 border-b",
+        "flex h-20 items-center justify-between px-6 bg-background/50 border-b dark:border-sidebar-border",
         isCollapsed ? "justify-center px-2" : ""
       )}>
         <Link href="/" className="flex items-center gap-3 group overflow-hidden">
@@ -105,13 +98,13 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
             <Bot className="h-6 w-6 text-white" />
           </div>
           {!isCollapsed && (
-            <span className="text-xl font-black tracking-tighter text-slate-900 whitespace-nowrap animate-in fade-in slide-in-from-left-2">
+            <span className="text-xl font-black tracking-tighter text-foreground whitespace-nowrap animate-in fade-in slide-in-from-left-2">
               CAREBOT<span className="text-primary font-light">MH</span>
             </span>
           )}
         </Link>
         {isMobileOpen && (
-           <Button variant="ghost" size="icon" onClick={onCloseMobile} className="sm:hidden">
+           <Button variant="ghost" size="icon" onClick={onCloseMobile} className="sm:hidden text-foreground">
               <X className="h-5 w-5" />
            </Button>
         )}
@@ -134,13 +127,13 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
                   'group flex items-center transition-all duration-200 rounded-xl',
                   isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3 text-sm font-bold',
                   isActive
-                    ? 'bg-primary text-white shadow-md shadow-primary/20 translate-x-1'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 hover:translate-x-1'
+                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20 translate-x-1'
+                    : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-1'
                 )}
                 title={isCollapsed ? getNavLabel(item) : ''}
               >
                 <Icon className={cn('h-5 w-5 transition-transform group-hover:scale-110 shrink-0', 
-                  isActive ? 'text-white' : 'text-slate-400 group-hover:text-primary')} />
+                  isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-primary')} />
                 {!isCollapsed && (
                   <span className="whitespace-nowrap animate-in fade-in slide-in-from-left-2">
                     {getNavLabel(item)}
@@ -148,7 +141,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
                 )}
 
                 {isActive && !isCollapsed && (
-                   <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white opacity-50" />
+                   <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary-foreground opacity-50" />
                 )}
               </Link>
             );
@@ -156,12 +149,12 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
         </nav>
       </div>
 
-      <div className={cn("p-4 border-t bg-slate-50/30", isCollapsed ? "flex justify-center" : "")}>
+      <div className={cn("p-4 border-t bg-background/30 dark:border-sidebar-border", isCollapsed ? "flex justify-center" : "")}>
         <button
           onClick={() => logout()}
           className={cn(
-            "group flex items-center transition-all duration-200 text-rose-600 rounded-xl",
-            isCollapsed ? "p-3" : "w-full gap-3 px-4 py-3 text-sm font-bold hover:bg-rose-50 hover:translate-x-1"
+            "group flex items-center transition-all duration-200 text-rose-500 rounded-xl",
+            isCollapsed ? "p-3" : "w-full gap-3 px-4 py-3 text-sm font-bold hover:bg-rose-500/10 hover:translate-x-1"
           )}
           title={isCollapsed ? t('sidebar.logout') : ""}
         >

@@ -379,7 +379,7 @@ export default function UserManagementPage() {
         elderlyMap.set(profileId, {
           id: profileId,
           profileId: profileId,
-          name: "Resident in Room",
+          name: "Elderly in Room",
           roomId: info.roomId,
           roomName: info.roomName,
           isRoomOnly: true
@@ -529,7 +529,7 @@ export default function UserManagementPage() {
       <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setCurrentPage(1); }} className="w-full">
         <TabsList className="bg-slate-100/50 p-1 rounded-xl h-14 w-fit mb-4">
           <TabsTrigger value="elderly" className="h-12 px-8 rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            {t('common.roles.ELDERLYUSER') || "Residents"}
+            {t('common.roles.ELDERLYUSER') || "Elderly"}
           </TabsTrigger>
           <TabsTrigger value="family" className="h-12 px-8 rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
             {t('common.roles.FAMILYMEMBER')}

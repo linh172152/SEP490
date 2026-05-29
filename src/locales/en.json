@@ -25,6 +25,7 @@
       "pending": "Pending"
     },
     "loading": "Loading data...",
+    "partial_data": "Syncing partial data",
     "no_data": "No data found.",
     "active": "Active",
     "inactive": "Inactive",
@@ -273,7 +274,7 @@
     "reminders": "Reminders",
     "service_plans": "Service Plans",
     "exercises": "Robot Actions",
-    "residents": "Residents",
+    "residents": "My Elderly",
     "health_activity": "Health & Activity",
     "alerts": "Alerts",
     "reports": "Reports",
@@ -651,9 +652,9 @@
       "available_packages_desc": "Service configurations managed by the Manager.",
       "total_residents": "Elderly Managed",
       "ops_team": "Caregiver Team",
-      "user_distribution": "Personnel Correlation",
-      "user_desc": "Ratio between elderly and the caregiver team.",
-      "package_popularity": "Package Popularity",
+      "subscription_distribution": "Service Tier Distribution",
+      "subscription_desc": "Breakdown of active service plans across all residents.",
+      "package_popularity_title": "Package Popularity",
       "package_desc": "Usage rates of available service tiers.",
       "elderly_label": "Elderly",
       "caregiver_label": "Caregiver",
@@ -666,7 +667,13 @@
       "package_popularity": {
         "summary": "Accounts for {{percentage}}% of total packages",
         "no_data": "No service packages activated yet"
-      }
+      },
+      "family_stats_title": "Family Structure",
+      "family_stats_desc": "Family bonding and scale statistics",
+      "avg_care_ratio": "Care Ratio",
+      "registered_families": "Registered Families",
+      "total_elderly_label": "Total Elderly Residents",
+      "per_family": "per family"
     },
     "analytics": {
       "title": "Usage Analytics",

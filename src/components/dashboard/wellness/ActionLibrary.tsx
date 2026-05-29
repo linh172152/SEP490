@@ -92,20 +92,7 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
     }
   };
 
-  const getActionUsage = (actionId: number) => {
-    return packages.filter(pkg =>
-      pkg.robotActions?.some(ra => ra.id === actionId)
-    );
-  };
-
   const handleDelete = async (id: number) => {
-    const usages = getActionUsage(id);
-    if (usages.length > 0) {
-      const pkgNames = usages.map(u => u.name).join(", ");
-      toast.error(`${t('wellness.toasts.delete_error')}: ${t('wellness.toasts.in_use_error', 'This action is in use by packages')} [${pkgNames}]`);
-      return;
-    }
-
     if (!confirm(t("common.confirm_delete"))) return;
     try {
       await robotActionService.deleteAction(id);
@@ -141,7 +128,7 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
     return s.name.toLowerCase().includes(q) ||
       s.code.toLowerCase().includes(q) ||
       (s.description?.toLowerCase().includes(q) || "");
-  });
+  }).sort((a, b) => b.id - a.id); // Sắp xếp ID lớn nhất (mới nhất) lên đầu
 
   const totalPages = Math.ceil(filteredActions.length / itemsPerPage);
   const currentActions = filteredActions.slice(
@@ -218,21 +205,11 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
                     <TableCell>
                       <div className="flex flex-col">
                         <span className="font-bold text-slate-900 dark:text-slate-100">{action.name}</span>
-                        {getActionUsage(action.id).length > 0 && (
-                          <span className="text-[10px] text-amber-600 font-bold flex items-center gap-1 mt-0.5">
-                            <Lock className="h-3 w-3" /> {t('wellness.in_use', 'Part of Package')}
-                          </span>
-                        )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className={cn(
-                        "text-[10px] font-bold",
-                        action.type === 'ACTION' ? "bg-blue-100 text-blue-700 border-blue-200" :
-                          action.type === 'DANCE' ? "bg-purple-100 text-purple-700 border-purple-200" :
-                            "bg-pink-100 text-pink-700 border-pink-200"
-                      )}>
-                        {t(`wellness.types.${action.type || 'ACTION'}`)}
+                      <Badge variant="secondary" className="text-[10px] font-bold bg-blue-100 text-blue-700 border-blue-200">
+                        {t('wellness.types.ACTION')}
                       </Badge>
                     </TableCell>
                     <TableCell className="max-w-[200px]">
@@ -262,15 +239,10 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
                             <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl border-border/50 animate-in fade-in zoom-in duration-200">
                               <DropdownMenuItem
                                 onClick={() => handleDelete(action.id)}
-                                className={cn(
-                                  "cursor-pointer font-medium",
-                                  getActionUsage(action.id).length > 0
-                                    ? "text-slate-400 cursor-not-allowed opacity-70"
-                                    : "text-rose-600 focus:bg-rose-50 focus:text-rose-700"
-                                )}
+                                className="cursor-pointer font-medium text-rose-600 focus:bg-rose-50 focus:text-rose-700"
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                {getActionUsage(action.id).length > 0 ? t('wellness.locked', 'Locked') : t("common.delete")}
+                                {t("common.delete")}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>

@@ -6,7 +6,9 @@ import {
 
 class InteractionLogService {
   async getAll(): Promise<InteractionLogResponse[]> {
-    return apiClient.get<InteractionLogResponse[]>("/api/interaction-logs");
+    return apiClient.get<InteractionLogResponse[]>("/api/interaction-logs", {
+      headers: { "X-Silent-Error": "true" }
+    });
   }
 
   async getById(id: number): Promise<InteractionLogResponse> {

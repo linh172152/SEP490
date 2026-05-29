@@ -1,13 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { caregiverService } from '@/services/api/caregiverService';
 import { roomService } from '@/services/api/roomService';
 import { interactionLogService } from '@/services/api/interactionLogService';
 import { reminderService } from '@/services/api/reminderService';
 import { exerciseService } from '@/services/api/exerciseService';
-import { robotService } from '@/services/api/robotService';
 import type {
   InteractionLogResponse,
   ReminderLogResponse,
@@ -39,7 +38,6 @@ import {
   Dumbbell,
   Loader2,
   MessageSquare,
-  RefreshCw,
   Search,
   ShieldCheck,
   Users,
@@ -62,6 +60,7 @@ type RobotActivityFeedItem = {
 
 export default function CaregiverRobotPage() {
   const user = useAuthStore((state) => state.user);
+  const isRefreshingRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [roomElderlies, setRoomElderlies] = useState<RoomElderlySummary[]>([]);
@@ -71,13 +70,23 @@ export default function CaregiverRobotPage() {
   const [selectedElderlyId, setSelectedElderlyId] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const loadRobotData = useCallback(async () => {
+  const loadRobotData = useCallback(async (silent = false) => {
     if (!user?.id) {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
       return;
     }
 
-    setLoading(true);
+    if (isRefreshingRef.current) {
+      return;
+    }
+
+    isRefreshingRef.current = true;
+
+    if (!silent) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
@@ -89,7 +98,6 @@ export default function CaregiverRobotPage() {
         setRoomRobot(null);
         setInteractionLogs([]);
         setReminderLogs([]);
-        setLoading(false);
         return;
       }
 
@@ -106,7 +114,7 @@ export default function CaregiverRobotPage() {
       setRoomElderlies(elderlies);
       setRoomRobot(robot);
       setInteractionLogs(
-        allInteractions.filter((item) => elderlyIds.has(item.elderlyId) && (!robot || item.robotId === robot.id))
+        allInteractions.filter((item) => elderlyIds.has(item.elderlyId))
       );
       setReminderLogs(
         allReminderLogs.filter((item) => elderlyIds.has(item.elderlyId) && (!robot || item.robotId === robot.id))
@@ -114,12 +122,22 @@ export default function CaregiverRobotPage() {
     } catch (loadError: unknown) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load robot activity data.');
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
+      isRefreshingRef.current = false;
     }
   }, [user?.id]);
 
   useEffect(() => {
-    loadRobotData();
+    void loadRobotData(false);
+    const intervalId = setInterval(() => {
+      void loadRobotData(true);
+    }, 2000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [loadRobotData]);
 
   const filteredInteractions = useMemo(() => {
@@ -203,9 +221,6 @@ export default function CaregiverRobotPage() {
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Robot Interaction</h1>
           <p className="text-muted-foreground">API-backed robot activity center for your room. The page starts with all assigned elderly profiles and can then be filtered by EL.</p>
         </div>
-        <Button variant="outline" onClick={loadRobotData}>
-          <RefreshCw className="mr-2 h-4 w-4" /> Refresh Robot Activity
-        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

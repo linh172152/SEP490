@@ -30,9 +30,9 @@ export function RoleShowcase() {
       id: 'caregiver',
       name: t('landing.roles.tabs.caregiver', 'Caregiver'),
       title: t('landing.roles.caregiver.title', 'Caregiver (WIP)'),
-      description: t('landing.roles.caregiver.desc', 'Direct professional support for daily resident care routines.'),
+      description: t('landing.roles.caregiver.desc', 'Direct professional support for daily elderly care routines.'),
       features: [
-        t('landing.roles.caregiver.features.0', 'Assigned Resident Health Alerts'),
+        t('landing.roles.caregiver.features.0', 'Assigned Elderly Health Alerts'),
         t('landing.roles.caregiver.features.1', 'Task Reminders & Robot Controls'),
         t('landing.roles.caregiver.features.2', 'Real-time Behavior Monitoring'),
       ],

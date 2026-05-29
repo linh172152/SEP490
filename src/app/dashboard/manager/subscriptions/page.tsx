@@ -130,39 +130,35 @@ export default function SubscriptionsUnifiedPage() {
     setConfirmDelete({
       isOpen: true,
       title: t('common.confirm_delete') || "Xác nhận xóa?",
-      description: `[FORCE DELETE] Bạn có chắc chắn muốn xóa gói "${pkg?.name}"? Hệ thống sẽ tự động gỡ gói này khỏi tất cả người dùng đang sử dụng trước khi xóa. Hành động này không thể hoàn tác.`,
+      description: `Bạn có chắc chắn muốn xóa gói "${pkg?.name}"? Gói dịch vụ này sẽ bị ẩn khỏi danh sách và không thể hoàn tác.`,
       onConfirm: async () => {
         try {
           setConfirmDelete(prev => ({ ...prev, isLoading: true }));
           
-          // 1. Tìm tất cả các gán gói (user-packages) liên quan đến gói này
-          const allUserPkgs = await userPackageService.getAll();
-          const relatedAssignments = allUserPkgs.filter(up => up.servicePackageId === id);
-          
-          // 2. Gỡ bỏ các gán gói này
-          if (relatedAssignments.length > 0) {
-            console.log(`[FORCE DELETE] Unassigning ${relatedAssignments.length} users from package ${id}...`);
-            await Promise.all(relatedAssignments.map(up => userPackageService.delete(up.id)));
+          // 1. Kiểm tra xem có ai đang sử dụng gói này không
+          try {
+            const allUserPkgs = await userPackageService.getAll();
+            const activeUsers = allUserPkgs.filter((up: any) => up.servicePackageId === id);
+            
+            if (activeUsers.length > 0) {
+              toast.error(`Không thể xóa: Hiện đang có ${activeUsers.length} cư dân đang sử dụng gói này.`);
+              setConfirmDelete(prev => ({ ...prev, isOpen: false, isLoading: false }));
+              return;
+            }
+          } catch (checkError) {
+            // Nếu BE bị lỗi (ví dụ lỗi 400 NPE), chúng ta cho phép tiếp tục xóa để dọn dẹp data
+            console.warn("Bỏ qua bước kiểm tra người dùng do lỗi Backend:", checkError);
           }
 
-          // 3. Xóa các mapping Robot Action (Gia cố bằng cách update về rỗng)
+          // 2. Thực hiện vô hiệu hóa gói dịch vụ
           if (pkg) {
-            console.log(`[FORCE DELETE] Clearing robot actions for package ${id}...`);
-            await servicePackageService.update(id, {
-              ...pkg,
-              robotActionIds: []
-            });
+            await servicePackageService.deactivate(id, pkg);
+            toast.success(t('common.delete_success') || 'Disabled successfully');
           }
-
-          // 4. Thực hiện xóa gói dịch vụ
-          console.log(`[FORCE DELETE] Final deletion of package ${id}...`);
-          await servicePackageService.delete(id);
-          
-          toast.success(t('common.delete_success') || 'Deleted successfully');
           fetchData();
         } catch (error: any) {
-          console.error("Force delete package error:", error);
-          const msg = error.message || error.data || 'An error occurred during force delete';
+          console.error("Delete package error:", error);
+          const msg = error.message || error.data || 'An error occurred during deletion';
           toast.error(msg);
         } finally {
           setConfirmDelete(prev => ({ ...prev, isOpen: false, isLoading: false }));

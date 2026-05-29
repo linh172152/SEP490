@@ -69,7 +69,6 @@ export function AdminDashboard() {
   const { t } = useI18nStore();
   const [loading, setLoading] = useState(true);
 
-  // Real Data State
   const [stats, setStats] = useState({
     totalAccounts: 0,
     totalRobots: 0,
@@ -80,16 +79,32 @@ export function AdminDashboard() {
     robotStatusDistribution: emptyFleetData as any[],
     recentLogs: [] as any[]
   });
+  const [hasPartialErrors, setHasPartialErrors] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [accounts, robots, exercises, logs] = await Promise.all([
+      setHasPartialErrors(false);
+      
+      const results = await Promise.allSettled([
         accountService.getAccounts(),
         robotService.getAll(),
         exerciseService.getAllScripts(),
         systemLogService.getAll()
       ]);
+
+      // Check if any API failed
+      const rejected = results.filter(r => r.status === 'rejected');
+      if (rejected.length > 0) {
+        console.warn("Admin Dashboard: Some data failed to load", rejected);
+        setHasPartialErrors(true);
+      }
+
+      // Safe access to results
+      const accounts = results[0].status === 'fulfilled' ? results[0].value : [];
+      const robots = results[1].status === 'fulfilled' ? results[1].value : [];
+      const exercises = results[2].status === 'fulfilled' ? results[2].value : [];
+      const logs = results[3].status === 'fulfilled' ? results[3].value : [];
 
       // Aggregate User Roles
       const accList = Array.isArray(accounts) ? accounts : [];
@@ -104,7 +119,6 @@ export function AdminDashboard() {
       let active = 0, maint = 0, offline = 0;
       robotList.forEach(r => {
         const s = String(r.status || '').toUpperCase();
-        // Normalize various 'online' or 'active' strings from DB
         if (s === 'ACTIVE' || s === 'ONLINE') active++;
         else if (s === 'MAINTENANCE') maint++;
         else offline++;
@@ -114,13 +128,15 @@ export function AdminDashboard() {
         totalAccounts: accList.length,
         totalRobots: robotList.length,
         activeRobots: active,
-        totalPackages: 0, // No longer tracked here
+        totalPackages: 0, 
         totalExercises: Array.isArray(exercises) ? exercises.length : 0,
-        roleDistribution: Object.entries(roles).map(([name, value]) => ({
-          name: t(`common.roles.${name}`) || name,
-          value,
-          roleKey: name
-        })).filter(item => item.value > 0),
+        roleDistribution: Object.entries(roles)
+          .map(([name, value]) => ({
+            name: t(`common.roles.${name}`) || name,
+            value,
+            roleKey: name
+          }))
+          .filter(item => item.value > 0),
         robotStatusDistribution: [
           { name: t('common.status.active'), value: active, color: '#10b981' },
           { name: t('common.status.maintenance'), value: maint, color: '#f59e0b' },
@@ -129,7 +145,7 @@ export function AdminDashboard() {
         recentLogs: Array.isArray(logs) ? logs : []
       });
     } catch (error) {
-      console.error("Dashboard Fetch Error:", error);
+      console.error("Dashboard Fetch Critical Error:", error);
     } finally {
       setLoading(false);
     }
@@ -151,6 +167,7 @@ export function AdminDashboard() {
             {t('admin.dashboard.subtitle')}
           </p>
         </div>
+
       </div>
 
       {/* Admin Central Stats */}
@@ -217,74 +234,12 @@ export function AdminDashboard() {
         )}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        {/* User Distribution Chart */}
-        <Card className="lg:col-span-4 border-none shadow-sm h-full relative overflow-hidden">
+      <div className="grid gap-6">
+        {/* Fleet Distribution - Expanded to full width */}
+        <Card className="border-none shadow-sm h-full">
           <CardHeader>
             <CardTitle className="text-lg font-bold flex items-center gap-2">
-              <Users className="h-5 w-5 text-indigo-500" />
-              {t('admin.dashboard.charts.user_distribution_title')}
-            </CardTitle>
-            <CardDescription>{t('admin.dashboard.charts.user_distribution_desc')}</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[350px] pb-20">
-            {loading ? (
-              <div className="flex items-center justify-center h-full">
-                <Skeleton className="h-64 w-64 rounded-full" />
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={stats.roleDistribution}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={70}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {stats.roleDistribution.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={
-                          entry.roleKey === 'ADMINISTRATOR' ? '#4f46e5' :
-                            entry.roleKey === 'MANAGER' ? '#0ea5e9' :
-                              entry.roleKey === 'CAREGIVER' ? '#10b981' :
-                                '#8b5cf6'
-                        }
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-            {!loading && stats.roleDistribution.length > 0 && (
-              <div className="absolute bottom-4 inset-x-0 flex flex-wrap justify-center gap-x-4 gap-y-2 px-6">
-                {stats.roleDistribution.map((item, index) => (
-                  <div key={item.name} className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase whitespace-nowrap">
-                    <span className="h-2 w-2 rounded-sqaure shrink-0" style={{
-                      backgroundColor:
-                        item.roleKey === 'ADMINISTRATOR' ? '#4f46e5' :
-                          item.roleKey === 'MANAGER' ? '#0ea5e9' :
-                            item.roleKey === 'CAREGIVER' ? '#10b981' :
-                              '#8b5cf6'
-                    }} />
-                    {item.name}
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Fleet Distribution */}
-        <Card className="lg:col-span-3 border-none shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg font-bold">
+              <Cpu className="h-5 w-5 text-blue-500" />
               {t('admin.dashboard.charts.fleet_status_title')}
             </CardTitle>
             <CardDescription>{t('admin.dashboard.charts.fleet_status_desc')}</CardDescription>
@@ -301,20 +256,20 @@ export function AdminDashboard() {
                 <ResponsiveContainer width="100%" height={240}>
                   <BarChart data={stats.robotStatusDistribution} layout="vertical">
                     <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 11 }} width={80} />
+                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 11 }} width={120} />
                     <Tooltip cursor={{ fill: 'transparent' }} />
-                    <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
-                      {stats.robotStatusDistribution.map((entry, index) => (
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
+                      {stats.robotStatusDistribution.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
                 <div className="mt-8 grid grid-cols-3 gap-4 text-center">
-                  {stats.robotStatusDistribution.map((item) => (
+                  {stats.robotStatusDistribution.map((item: any) => (
                     <div key={item.name}>
-                      <div className="text-xl font-black" style={{ color: item.color }}>{item.value}</div>
-                      <div className="text-[9px] font-bold text-muted-foreground uppercase">{item.name}</div>
+                      <div className="text-2xl font-black" style={{ color: item.color }}>{item.value}</div>
+                      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{item.name}</div>
                     </div>
                   ))}
                 </div>

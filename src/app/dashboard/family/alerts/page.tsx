@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useFamilyStore } from '@/store/useFamilyStore';
 import { alertService } from '@/services/api/alertService';
@@ -37,7 +37,6 @@ import {
   Clock, 
   Filter, 
   Loader2, 
-  RefreshCw, 
   Search, 
   UserCircle 
 } from 'lucide-react';
@@ -47,10 +46,10 @@ import { cn, parseServerDate } from '@/lib/utils';
 export default function FamilyAlertsPage() {
   const { user } = useAuthStore();
   const { elderlyList, fetchDashboardData } = useFamilyStore();
+  const isRefreshingRef = useRef(false);
   
   const [alerts, setAlerts] = useState<AlertNotificationResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Filters
@@ -58,13 +57,17 @@ export default function FamilyAlertsPage() {
   const [elderlyFilter, setElderlyFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const loadData = async (isRefresh = false) => {
+  const loadData = useCallback(async (silent = false) => {
     if (!user?.id) return;
-    
-    if (isRefresh) {
-        setRefreshing(true);
-    } else {
-        setLoading(true);
+
+    if (isRefreshingRef.current) {
+      return;
+    }
+
+    isRefreshingRef.current = true;
+
+    if (!silent) {
+      setLoading(true);
     }
     
     setError(null);
@@ -80,14 +83,23 @@ export default function FamilyAlertsPage() {
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unable to load alerts.');
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (!silent) {
+        setLoading(false);
+      }
+      isRefreshingRef.current = false;
     }
-  };
+  }, [elderlyList, fetchDashboardData, user?.id]);
 
   useEffect(() => {
-    loadData();
-  }, [user?.id]);
+    void loadData(false);
+    const intervalId = setInterval(() => {
+      void loadData(true);
+    }, 2000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [loadData]);
 
   const filteredAlerts = useMemo(() => {
     return alerts.filter(alert => {
@@ -136,15 +148,6 @@ export default function FamilyAlertsPage() {
             Monitoring safety and wellness across all your assigned elderly family members.
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={() => loadData(true)} 
-          disabled={refreshing}
-          className="rounded-xl font-bold uppercase tracking-wider text-[10px] h-9"
-        >
-          {refreshing ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-2 h-3.5 w-3.5" />}
-          Refresh Feed
-        </Button>
       </div>
 
       {/* Summary Cards */}

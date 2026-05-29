@@ -3,7 +3,9 @@ import { UserPackageRequest, UserPackageResponse } from "./types";
 
 class UserPackageService {
   async getAll(): Promise<UserPackageResponse[]> {
-    return apiClient.get<UserPackageResponse[]>("/api/user-packages");
+    return apiClient.get<UserPackageResponse[]>("/api/user-packages", {
+      headers: { "X-Silent-Error": "true" }
+    });
   }
 
   async getById(id: number): Promise<UserPackageResponse> {

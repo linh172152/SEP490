@@ -25,6 +25,7 @@
       "pending": "Đang chờ"
     },
     "loading": "Đang tải dữ liệu...",
+    "partial_data": "Dữ liệu đang đồng bộ",
     "no_data": "Không tìm thấy dữ liệu.",
     "active": "Đang Hoạt Động",
     "inactive": "Ngưng Hoạt Động",
@@ -693,9 +694,9 @@
       "available_packages_desc": "Các cấu hình dịch vụ Manager đang điều phối.",
       "total_residents": "Người cao tuổi đang quản lý",
       "ops_team": "Đội ngũ Người chăm sóc",
-      "user_distribution": "Tương quan nhân sự",
-      "user_desc": "Tỷ lệ giữa người cao tuổi và đội ngũ người chăm sóc.",
-      "package_popularity": "Gói dịch vụ phổ biến",
+      "subscription_distribution": "Phân bổ Gói dịch vụ",
+      "subscription_desc": "Tỷ lệ các gói dịch vụ đang hoạt động trong hệ thống.",
+      "package_popularity_title": "Gói dịch vụ phổ biến",
       "package_desc": "Tỷ lệ sử dụng các gói dịch vụ hiện có.",
       "elderly_label": "Người cao tuổi",
       "caregiver_label": "Người chăm sóc",
@@ -708,7 +709,13 @@
       "package_popularity": {
         "summary": "Chiếm {{percentage}}% tổng số gói",
         "no_data": "Chưa có gói dịch vụ nào kích hoạt"
-      }
+      },
+      "family_stats_title": "Cấu trúc Gia hệ",
+      "family_stats_desc": "Thống kê quy mô gia đình gắn kết",
+      "avg_care_ratio": "Tỷ lệ Chăm sóc",
+      "registered_families": "Người nhà đăng ký",
+      "total_elderly_label": "Người cao tuổi tổng cộng",
+      "per_family": "người / gia đình"
     },
     "analytics": {
       "title": "Phân Tích Sử Dụng",

@@ -28,15 +28,24 @@ import { ChevronLeft, HeartPulse, Loader2, MessageSquare, Save, UserCog } from '
 
 const MAX_DATE_OF_BIRTH = '1980-12-31';
 
+const nameSuggestions = ['John Carter', 'Maria Lopez', 'David Nguyen', 'Emma Wilson'];
+const healthNoteSuggestions = [
+  'Hypertension, needs morning and evening blood pressure reminders.',
+  'Type-2 diabetes, requires meal timing prompts and hydration checks.',
+  'Reduced mobility, needs slow speaking guidance and walking support.',
+  'Mild memory loss, needs medication confirmation and repetition.',
+  'Sleep disturbance, prefers low-volume voice prompts at night.',
+];
+
 const editSchema = z.object({
-  name: z.string().min(2, 'Tên phải có ít nhất 2 ký tự'),
+  name: z.string().min(2, 'Name must be at least 2 characters'),
   dateOfBirth: z
     .string()
-    .min(1, 'Vui lòng nhập ngày sinh')
-    .refine((v) => v <= MAX_DATE_OF_BIRTH, 'Năm sinh không được sau 1980'),
-  healthNotes: z.string().min(1, 'Vui lòng nhập ghi chú sức khoẻ'),
-  preferredLanguage: z.string().min(1, 'Vui lòng chọn ngôn ngữ'),
-  speakingSpeed: z.string().min(1, 'Vui lòng chọn tốc độ'),
+    .min(1, 'Date of birth is required')
+    .refine((v) => v <= MAX_DATE_OF_BIRTH, 'Year of birth must not be later than 1980'),
+  healthNotes: z.string().min(1, 'Please provide health notes'),
+  preferredLanguage: z.string().min(1, 'Please select language'),
+  speakingSpeed: z.string().min(1, 'Please select speaking speed'),
   roomId: z.string().optional(),
 });
 
@@ -87,7 +96,7 @@ export default function EditElderlyPage() {
           roomId: profile.roomId ? String(profile.roomId) : '',
         });
       } catch {
-        toast.error('Không thể tải thông tin hồ sơ.');
+        toast.error('Unable to load profile information.');
         router.push('/dashboard/family/elderly');
       } finally {
         setLoadingProfile(false);
@@ -108,21 +117,25 @@ export default function EditElderlyPage() {
         roomId: data.roomId ? Number(data.roomId) : null,
       });
 
-      toast.success('Cập nhật hồ sơ thành công!');
+      toast.success('Profile updated successfully!');
       if (user?.id) {
         await fetchDashboardData(Number(user.id));
       }
       router.push('/dashboard/family/elderly');
     } catch {
-      toast.error('Cập nhật thất bại. Vui lòng thử lại.');
+      toast.error('Update failed. Please try again.');
     }
+  };
+
+  const applyHealthNoteSuggestion = (value: string) => {
+    form.setValue('healthNotes', value, { shouldDirty: true, shouldValidate: true });
   };
 
   if (loadingProfile) {
     return (
       <div className="flex h-[420px] items-center justify-center">
         <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" /> Đang tải hồ sơ...
+          <Loader2 className="h-5 w-5 animate-spin" /> Loading profile...
         </div>
       </div>
     );
@@ -146,7 +159,7 @@ export default function EditElderlyPage() {
             <span className="text-slate-500">Edit</span>
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">
-            Chỉnh sửa hồ sơ người cao tuổi
+            Edit Elderly Profile
           </h1>
         </div>
       </div>
@@ -161,8 +174,8 @@ export default function EditElderlyPage() {
                   <UserCog className="h-5 w-5 text-sky-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-bold">Thông tin cơ bản</CardTitle>
-                  <CardDescription>Tên và ngày sinh của người cao tuổi.</CardDescription>
+                  <CardTitle className="text-xl font-bold">Basic Information</CardTitle>
+                  <CardDescription>Name and date of birth of the elderly member.</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -173,10 +186,11 @@ export default function EditElderlyPage() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Họ và tên</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Full Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nguyễn Văn A" className="h-10 rounded-xl border-none bg-slate-50 focus:ring-sky-500 dark:bg-slate-800" {...field} />
+                        <Input list="elderly-name-suggestions" placeholder="Enter full name" className="h-10 rounded-xl border-none bg-slate-50 focus:ring-sky-500 dark:bg-slate-800" {...field} />
                       </FormControl>
+                      <FormDescription className="text-[10px] italic">Quick examples: John Carter, Maria Lopez, David Nguyen.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -186,7 +200,7 @@ export default function EditElderlyPage() {
                   name="dateOfBirth"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Ngày sinh</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Date of Birth</FormLabel>
                       <FormControl>
                         <Input
                           type="date"
@@ -195,7 +209,7 @@ export default function EditElderlyPage() {
                           {...field}
                         />
                       </FormControl>
-                      <FormDescription className="text-[10px] italic">Không nhập năm sinh sau 1980.</FormDescription>
+                      <FormDescription className="text-[10px] italic">Year of birth must not be later than 1980.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -212,8 +226,8 @@ export default function EditElderlyPage() {
                   <MessageSquare className="h-5 w-5 text-violet-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-bold">Giao tiếp Robot</CardTitle>
-                  <CardDescription>Ngôn ngữ và tốc độ nói ưa thích.</CardDescription>
+                  <CardTitle className="text-xl font-bold">Robot Communication</CardTitle>
+                  <CardDescription>Preferred language and speaking speed.</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -224,11 +238,11 @@ export default function EditElderlyPage() {
                   name="preferredLanguage"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Ngôn ngữ</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Language</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger className="h-10 rounded-xl border-none bg-slate-50 focus:ring-sky-500 dark:bg-slate-800">
-                            <SelectValue placeholder="Chọn ngôn ngữ" />
+                            <SelectValue placeholder="Select language" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -237,6 +251,7 @@ export default function EditElderlyPage() {
                           <SelectItem value="Japanese">Japanese</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormDescription className="text-[10px] italic">Quick picks: Vietnamese, English, Japanese.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -246,19 +261,20 @@ export default function EditElderlyPage() {
                   name="speakingSpeed"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Tốc độ nói</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Speaking Speed</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger className="h-10 rounded-xl border-none bg-slate-50 focus:ring-sky-500 dark:bg-slate-800">
-                            <SelectValue placeholder="Chọn tốc độ" />
+                            <SelectValue placeholder="Select speed" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="slow">Chậm</SelectItem>
-                          <SelectItem value="normal">Bình thường</SelectItem>
-                          <SelectItem value="fast">Nhanh</SelectItem>
+                          <SelectItem value="slow">Slow</SelectItem>
+                          <SelectItem value="normal">Normal</SelectItem>
+                          <SelectItem value="fast">Fast</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormDescription className="text-[10px] italic">Quick picks: slow, normal, fast.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -275,8 +291,8 @@ export default function EditElderlyPage() {
                   <HeartPulse className="h-5 w-5 text-rose-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-bold">Sức khoẻ & Phòng</CardTitle>
-                  <CardDescription>Ghi chú sức khoẻ và phòng được gán.</CardDescription>
+                  <CardTitle className="text-xl font-bold">Health & Room</CardTitle>
+                  <CardDescription>Health notes and assigned room.</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -286,15 +302,30 @@ export default function EditElderlyPage() {
                 name="healthNotes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Ghi chú sức khoẻ</FormLabel>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Health Notes</FormLabel>
+                    <div className="flex flex-wrap gap-2">
+                      {healthNoteSuggestions.map((suggestion) => (
+                        <Button
+                          key={suggestion}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 rounded-full px-3 text-[11px]"
+                          onClick={() => applyHealthNoteSuggestion(suggestion)}
+                        >
+                          {suggestion}
+                        </Button>
+                      ))}
+                    </div>
                     <FormControl>
                       <Textarea
                         rows={4}
-                        placeholder="Huyết áp cao, tiểu đường loại 2..."
+                        placeholder="Example: Hypertension, Type-2 diabetes..."
                         className="rounded-xl border-none bg-slate-50 focus:ring-rose-400 dark:bg-slate-800"
                         {...field}
                       />
                     </FormControl>
+                    <FormDescription className="text-[10px] italic">Click one suggestion above to fill quickly.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -305,15 +336,15 @@ export default function EditElderlyPage() {
                   name="roomId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Phòng</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Room</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value ?? ''}>
                         <FormControl>
                           <SelectTrigger className="h-10 rounded-xl border-none bg-slate-50 focus:ring-sky-500 dark:bg-slate-800">
-                            <SelectValue placeholder="Chưa gán phòng" />
+                            <SelectValue placeholder="Unassigned room" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Chưa gán phòng</SelectItem>
+                          <SelectItem value="">Unassigned room</SelectItem>
                           {rooms.map((r) => (
                             <SelectItem key={r.id} value={String(r.id)}>
                               {r.roomName} (ID: {r.id})
@@ -329,10 +360,16 @@ export default function EditElderlyPage() {
             </CardContent>
           </Card>
 
+          <datalist id="elderly-name-suggestions">
+            {nameSuggestions.map((suggestion) => (
+              <option key={suggestion} value={suggestion} />
+            ))}
+          </datalist>
+
           {/* Actions */}
           <div className="flex gap-3 justify-end">
             <Button type="button" variant="outline" asChild>
-              <Link href="/dashboard/family/elderly">Huỷ</Link>
+              <Link href="/dashboard/family/elderly">Cancel</Link>
             </Button>
             <Button
               type="submit"
@@ -340,9 +377,9 @@ export default function EditElderlyPage() {
               className="bg-sky-600 hover:bg-sky-700 min-w-[140px]"
             >
               {form.formState.isSubmitting ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang lưu...</>
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
               ) : (
-                <><Save className="mr-2 h-4 w-4" /> Lưu thay đổi</>
+                <><Save className="mr-2 h-4 w-4" /> Save Changes</>
               )}
             </Button>
           </div>

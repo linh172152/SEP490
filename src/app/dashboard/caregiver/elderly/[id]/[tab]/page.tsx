@@ -8,7 +8,6 @@ const validTabs = new Set<CaregiverWorkspaceTab>([
   'reminders',
   'robot',
   'logs',
-  'room-device',
   'exercise',
   'package-exercise',
 ]);

@@ -40,7 +40,7 @@ export function Features() {
     },
     {
       name: t('landing.features.items.tracking.name', 'Localized Tracking'),
-      description: t('landing.features.items.tracking.desc', 'Precise room-based assignment system linking physical assets directly to specific residents and staff.'),
+      description: t('landing.features.items.tracking.desc', 'Precise room-based assignment system linking physical assets directly to specific elderly members and staff.'),
       icon: MapPin,
     },
     {

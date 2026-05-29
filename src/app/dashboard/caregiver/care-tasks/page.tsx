@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getReminderPatternLabel, getReminderTypeLabel, normalizeReminderType, normalizeReminderPattern, REMINDER_PATTERN_OPTIONS, REMINDER_TYPE_OPTIONS } from '@/lib/reminderOptions';
 import { alertService } from '@/services/api/alertService';
@@ -39,7 +39,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { AlertTriangle, Bell, CheckCircle2, Clock, Edit, Loader2, Plus, RefreshCw, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { AlertTriangle, Bell, CheckCircle2, Clock, Edit, Loader2, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
 
 const getCaregiverIdentifiers = (profile: { id?: number | null; accountId?: number | null } | null, userId?: string) => {
   return Array.from(
@@ -68,8 +68,11 @@ const createDefaultReminderForm = (caregiverId = 0, elderlyId = 0): ReminderRequ
   active: true,
 });
 
+const ROWS_PER_PAGE_OPTIONS = [10, 20, 50, 100] as const;
+
 export default function CaregiverCareTasksPage() {
   const { user } = useAuthStore();
+  const isRefreshingRef = useRef(false);
   const [profile, setProfile] = useState<CaregiverProfileResponse | null>(null);
   const [reminders, setReminders] = useState<ReminderResponse[]>([]);
   const [reminderLogs, setReminderLogs] = useState<ReminderLogResponse[]>([]);
@@ -77,7 +80,6 @@ export default function CaregiverCareTasksPage() {
   const [elderlies, setElderlies] = useState<RoomElderlySummary[]>([]);
 
   const [loading, setLoading] = useState(true);
-  const [refreshingReminders, setRefreshingReminders] = useState(false);
   const [actioningReminderId, setActioningReminderId] = useState<number | null>(null);
   const [resolvingAlertId, setResolvingAlertId] = useState<number | null>(null);
   const [savingReminder, setSavingReminder] = useState(false);
@@ -87,18 +89,29 @@ export default function CaregiverCareTasksPage() {
   const [error, setError] = useState<string | null>(null);
   const [elderlyFilter, setElderlyFilter] = useState<number | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'missed'>('all');
+  const [reminderSortOrder, setReminderSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [alertSortOrder, setAlertSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [remindersRowsPerPage, setRemindersRowsPerPage] = useState<number>(10);
+  const [remindersPage, setRemindersPage] = useState<number>(1);
+  const [activityRowsPerPage, setActivityRowsPerPage] = useState<number>(10);
+  const [activityPage, setActivityPage] = useState<number>(1);
 
-  const load = async (options?: { remindersOnly?: boolean }) => {
+  const load = async (options?: { remindersOnly?: boolean; silent?: boolean }) => {
     if (!user?.id) {
       setLoading(false);
       return;
     }
 
     const remindersOnly = options?.remindersOnly ?? false;
+    const silent = options?.silent ?? false;
 
-    if (remindersOnly) {
-      setRefreshingReminders(true);
-    } else {
+    if (isRefreshingRef.current) {
+      return;
+    }
+
+    isRefreshingRef.current = true;
+
+    if (!remindersOnly && !silent) {
       setLoading(true);
     }
 
@@ -137,49 +150,86 @@ export default function CaregiverCareTasksPage() {
       // Try to get specific reminders for this caregiver to avoid 400 Access Denied on global endpoint
       let relevantReminders: ReminderResponse[] = [];
       if (currentProfile?.id) {
-        relevantReminders = await reminderService.getByCaregiverId(currentProfile.id).catch(() => [] as ReminderResponse[]);
+        const caregiverReminders = await reminderService.getByCaregiverId(currentProfile.id).catch(() => [] as ReminderResponse[]);
+        if (caregiverReminders.length > 0) {
+          relevantReminders = caregiverReminders;
+        } else {
+          relevantReminders = await reminderService.getAll().catch(() => [] as ReminderResponse[]);
+        }
       } else {
         const allReminders = await reminderService.getAll().catch(() => [] as ReminderResponse[]);
         relevantReminders = allReminders.filter((item) => caregiverIdentifiers.includes(item.caregiverId));
       }
 
+      const normalizedElderlyIds = new Set(
+        Array.from(elderlyIds)
+          .map((value) => Number(value))
+          .filter((value) => Number.isFinite(value))
+      );
+
       setReminders(
-        relevantReminders.filter((item) => elderlyIds.has(item.elderlyId))
+        relevantReminders.filter((item) => normalizedElderlyIds.has(Number(item.elderlyId)))
       );
       setElderlies(elderlyData);
     } catch (loadError: unknown) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load caregiver care tasks.');
     } finally {
-      if (remindersOnly) {
-        setRefreshingReminders(false);
-      } else {
+      if (!remindersOnly && !silent) {
         setLoading(false);
       }
+      isRefreshingRef.current = false;
     }
   };
 
   useEffect(() => {
-    load();
+    void load();
+    const intervalId = setInterval(() => {
+      void load({ silent: true });
+    }, 2000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
     // The shared load function is intentionally keyed to auth changes here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   const sortedReminders = useMemo(
-    () => reminders.slice().sort((left, right) => parseServerDate(left.scheduleTime).getTime() - parseServerDate(right.scheduleTime).getTime()),
-    [reminders]
+    () => reminders.slice().sort((left, right) => {
+      const diff = parseServerDate(right.scheduleTime).getTime() - parseServerDate(left.scheduleTime).getTime();
+      return reminderSortOrder === 'newest' ? diff : -diff;
+    }),
+    [reminders, reminderSortOrder]
+  );
+
+  const sortedAlerts = useMemo(
+    () => alerts.slice().sort((left, right) => {
+      const diff = parseServerDate(right.createdAt).getTime() - parseServerDate(left.createdAt).getTime();
+      return alertSortOrder === 'newest' ? diff : -diff;
+    }),
+    [alerts, alertSortOrder]
   );
 
   const filteredReminders = useMemo(() => {
     return sortedReminders.filter((r) => {
-      if (elderlyFilter !== 'all' && r.elderlyId !== elderlyFilter) return false;
-      const elderly = elderlies.find(e => e.id === r.elderlyId);
+      if (elderlyFilter !== 'all' && Number(r.elderlyId) !== elderlyFilter) return false;
+      const elderly = elderlies.find(e => Number(e.id) === Number(r.elderlyId));
       const info = getReminderDetailedStatus(r, reminderLogs, elderly?.gender);
-      if (info.status === 'COMPLETED') return false; // moves to Recent Activity
       if (statusFilter === 'active') return info.status === 'UPCOMING' || info.status === 'WAITING_ROBOT' || info.status === 'WAITING_USER_RESPONSE';
       if (statusFilter === 'missed') return info.status === 'ROBOT_NOT_RESPONDING' || info.status === 'MISSED_USER_NO_RESPONSE';
       return true;
     });
   }, [sortedReminders, elderlyFilter, statusFilter, elderlies, reminderLogs]);
+
+  useEffect(() => {
+    setRemindersPage(1);
+  }, [elderlyFilter, statusFilter, remindersRowsPerPage, filteredReminders.length]);
+
+  const remindersTotalPages = Math.max(1, Math.ceil(filteredReminders.length / remindersRowsPerPage));
+  const pagedReminders = useMemo(() => {
+    const start = (remindersPage - 1) * remindersRowsPerPage;
+    return filteredReminders.slice(start, start + remindersRowsPerPage);
+  }, [filteredReminders, remindersPage, remindersRowsPerPage]);
 
   /** Confirmed reminder-logs for "Recent Activity" section, newest first */
   const completedLogs = useMemo(
@@ -193,6 +243,16 @@ export default function CaregiverCareTasksPage() {
         ),
     [reminderLogs],
   );
+
+  useEffect(() => {
+    setActivityPage(1);
+  }, [activityRowsPerPage, completedLogs.length]);
+
+  const activityTotalPages = Math.max(1, Math.ceil(completedLogs.length / activityRowsPerPage));
+  const pagedCompletedLogs = useMemo(() => {
+    const start = (activityPage - 1) * activityRowsPerPage;
+    return completedLogs.slice(start, start + activityRowsPerPage);
+  }, [completedLogs, activityPage, activityRowsPerPage]);
 
   const activeReminderCount = useMemo(() => reminders.filter((item) => {
     if (!item.active) return false;
@@ -384,9 +444,20 @@ export default function CaregiverCareTasksPage() {
                   </CardDescription>
                 </div>
                 {alerts.length > 0 && (
-                  <Badge variant="destructive" className="text-sm px-3 py-1">
-                    {alerts.length} open
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Select value={alertSortOrder} onValueChange={(v) => setAlertSortOrder(v as 'newest' | 'oldest')}>
+                      <SelectTrigger className="h-8 w-[140px] text-xs">
+                        <SelectValue placeholder="Newest first" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="newest">Newest first</SelectItem>
+                        <SelectItem value="oldest">Oldest first</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Badge variant="destructive" className="text-sm px-3 py-1">
+                      {alerts.length} open
+                    </Badge>
+                  </div>
                 )}
               </div>
             </CardHeader>
@@ -398,7 +469,7 @@ export default function CaregiverCareTasksPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {alerts.map((alert) => (
+                  {sortedAlerts.map((alert) => (
                     <div
                       key={alert.id}
                       className="rounded-xl border border-rose-100 bg-rose-50 p-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3"
@@ -450,11 +521,8 @@ export default function CaregiverCareTasksPage() {
                     <CardDescription>Active and upcoming reminders. Completed ones appear in Recent Activity below.</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline" onClick={() => load({ remindersOnly: true })} disabled={refreshingReminders}>
-                      {refreshingReminders ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                    </Button>
                     <Button size="sm" onClick={handleOpenCreateReminder} disabled={!profile?.id || elderlies.length === 0}>
-                      <Plus className="mr-2 h-4 w-4" /> Thêm mới
+                      <Plus className="mr-2 h-4 w-4" /> Add new
                     </Button>
                   </div>
                 </div>
@@ -472,7 +540,7 @@ export default function CaregiverCareTasksPage() {
                         )}
                         onClick={() => setStatusFilter(f)}
                       >
-                        {f === 'all' ? 'Tất cả' : f === 'active' ? 'Đang chờ' : 'Trễ'}
+                        {f === 'all' ? 'All' : f === 'active' ? 'Pending' : 'Overdue'}
                       </button>
                     ))}
                   </div>
@@ -481,13 +549,22 @@ export default function CaregiverCareTasksPage() {
                     onValueChange={(v) => setElderlyFilter(v === 'all' ? 'all' : Number(v))}
                   >
                     <SelectTrigger className="h-9 w-full sm:w-52 text-xs">
-                      <SelectValue placeholder="Lọc theo người cao tuổi" />
+                      <SelectValue placeholder="Filter by elderly" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tất cả người cao tuổi</SelectItem>
+                      <SelectItem value="all">All elderly profiles</SelectItem>
                       {elderlies.map(e => (
                         <SelectItem key={e.id} value={String(e.id)}>{e.name}</SelectItem>
                       ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={reminderSortOrder} onValueChange={(v) => setReminderSortOrder(v as 'newest' | 'oldest')}>
+                    <SelectTrigger className="h-9 w-full sm:w-44 text-xs">
+                      <SelectValue placeholder="Newest first" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest first</SelectItem>
+                      <SelectItem value="oldest">Oldest first</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -495,32 +572,55 @@ export default function CaregiverCareTasksPage() {
                 {/* Reminders table */}
                 {filteredReminders.length === 0 ? (
                   <div className="rounded-xl border border-dashed p-6 text-sm text-center text-muted-foreground">
-                    {reminders.length === 0 ? 'Chưa có reminder nào được tạo.' : 'Không có reminder khớp với bộ lọc hiện tại.'}
+                    {reminders.length === 0 ? 'No reminders have been created yet.' : 'No reminders match the current filters.'}
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-slate-100 overflow-hidden">
+                  <div className="space-y-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2">
+                      <div className="text-xs text-muted-foreground">
+                        Showing {(remindersPage - 1) * remindersRowsPerPage + 1}-{Math.min(remindersPage * remindersRowsPerPage, filteredReminders.length)} of {filteredReminders.length} reminders
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Rows</span>
+                        <Select value={String(remindersRowsPerPage)} onValueChange={(v) => setRemindersRowsPerPage(Number(v))}>
+                          <SelectTrigger className="h-8 w-[88px] text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ROWS_PER_PAGE_OPTIONS.map((option) => (
+                              <SelectItem key={option} value={String(option)}>{option}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button size="sm" variant="outline" className="h-8 px-2" disabled={remindersPage <= 1} onClick={() => setRemindersPage((p) => Math.max(1, p - 1))}>Prev</Button>
+                        <span className="min-w-[70px] text-center text-xs text-muted-foreground">{remindersPage}/{remindersTotalPages}</span>
+                        <Button size="sm" variant="outline" className="h-8 px-2" disabled={remindersPage >= remindersTotalPages} onClick={() => setRemindersPage((p) => Math.min(remindersTotalPages, p + 1))}>Next</Button>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-100 overflow-hidden">
                     <Table>
                       <TableHeader className="bg-slate-50/50">
                         <TableRow>
-                          <TableHead className="font-bold">Người cao tuổi</TableHead>
-                          <TableHead className="font-bold">Tiêu đề</TableHead>
-                          <TableHead className="font-bold">Loại</TableHead>
-                          <TableHead className="font-bold">Giờ hẹn</TableHead>
-                          <TableHead className="font-bold">Lặp lại</TableHead>
-                          <TableHead className="font-bold">Trạng thái</TableHead>
-                          <TableHead className="text-right font-bold pr-4">Thao tác</TableHead>
+                          <TableHead className="font-bold">Elderly</TableHead>
+                          <TableHead className="font-bold">Title</TableHead>
+                          <TableHead className="font-bold">Type</TableHead>
+                          <TableHead className="font-bold">Schedule</TableHead>
+                          <TableHead className="font-bold">Repeat</TableHead>
+                          <TableHead className="font-bold">Status</TableHead>
+                          <TableHead className="text-right font-bold pr-4">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredReminders.map((reminder) => {
-                          const elderly = elderlies.find(e => e.id === reminder.elderlyId);
+                        {pagedReminders.map((reminder) => {
+                          const elderly = elderlies.find(e => Number(e.id) === Number(reminder.elderlyId));
                           const info = getReminderDetailedStatus(reminder, reminderLogs, elderly?.gender);
                           const isBusy = actioningReminderId === reminder.id;
 
                           const statusLabel =
-                            (info.status === 'ROBOT_NOT_RESPONDING' || info.status === 'MISSED_USER_NO_RESPONSE') ? 'Trễ' :
-                            (info.status === 'WAITING_ROBOT' || info.status === 'WAITING_USER_RESPONSE') ? 'Đang chờ...' :
-                            'Sắp tới';
+                            (info.status === 'ROBOT_NOT_RESPONDING' || info.status === 'MISSED_USER_NO_RESPONSE') ? 'Overdue' :
+                            (info.status === 'WAITING_ROBOT' || info.status === 'WAITING_USER_RESPONSE') ? 'Pending...' :
+                            'Upcoming';
 
                           const statusClassName =
                             (info.status === 'ROBOT_NOT_RESPONDING' || info.status === 'MISSED_USER_NO_RESPONSE')
@@ -578,6 +678,7 @@ export default function CaregiverCareTasksPage() {
                       </TableBody>
                     </Table>
                   </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -598,19 +699,42 @@ export default function CaregiverCareTasksPage() {
                   No completed activity yet.
                 </div>
               ) : (
-                <div className="rounded-xl border border-slate-100 overflow-hidden">
+                <div className="space-y-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2">
+                    <div className="text-xs text-muted-foreground">
+                      Showing {(activityPage - 1) * activityRowsPerPage + 1}-{Math.min(activityPage * activityRowsPerPage, completedLogs.length)} of {completedLogs.length} activities
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Rows</span>
+                      <Select value={String(activityRowsPerPage)} onValueChange={(v) => setActivityRowsPerPage(Number(v))}>
+                        <SelectTrigger className="h-8 w-[88px] text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ROWS_PER_PAGE_OPTIONS.map((option) => (
+                            <SelectItem key={option} value={String(option)}>{option}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button size="sm" variant="outline" className="h-8 px-2" disabled={activityPage <= 1} onClick={() => setActivityPage((p) => Math.max(1, p - 1))}>Prev</Button>
+                      <span className="min-w-[70px] text-center text-xs text-muted-foreground">{activityPage}/{activityTotalPages}</span>
+                      <Button size="sm" variant="outline" className="h-8 px-2" disabled={activityPage >= activityTotalPages} onClick={() => setActivityPage((p) => Math.min(activityTotalPages, p + 1))}>Next</Button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-100 overflow-hidden">
                   <Table>
                     <TableHeader className="bg-slate-50/50">
                       <TableRow>
-                        <TableHead className="font-bold">Người cao tuổi</TableHead>
+                        <TableHead className="font-bold">Elderly</TableHead>
                         <TableHead className="font-bold">Reminder</TableHead>
-                        <TableHead className="font-bold">Kích hoạt lúc</TableHead>
-                        <TableHead className="font-bold">Xác nhận lúc</TableHead>
-                        <TableHead className="font-bold">Kết quả</TableHead>
+                        <TableHead className="font-bold">Triggered at</TableHead>
+                        <TableHead className="font-bold">Confirmed at</TableHead>
+                        <TableHead className="font-bold">Result</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {completedLogs.map((log) => (
+                      {pagedCompletedLogs.map((log) => (
                         <TableRow key={log.id} className="hover:bg-slate-50/50">
                           <TableCell className="font-medium text-slate-700 text-sm">{log.elderlyName}</TableCell>
                           <TableCell className="font-semibold text-slate-900">{log.reminderTitle}</TableCell>
@@ -630,13 +754,14 @@ export default function CaregiverCareTasksPage() {
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-100 font-bold px-2.5 py-0.5">
-                              Hoàn thành
+                              Completed
                             </Badge>
                           </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
+                </div>
                 </div>
               )}
             </CardContent>

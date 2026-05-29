@@ -72,17 +72,21 @@ export class ApiClient {
         const method = error.config?.method?.toUpperCase() || 'UNKNOWN';
         const url = error.config?.url || 'UNKNOWN URL';
 
-        console.error(`❌ API Error: ${method} ${url}`, {
-          type: isNetworkError ? "NETWORK_OR_TIMEOUT_OR_CORS" : "SERVER_RESPONSE_ERROR",
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data,
-          message: error.message,
-          error: error
-        });
+        const isSilent = error.config?.headers?.['X-Silent-Error'] === 'true';
 
-        if (error.response?.status) {
-          console.error(`🔴 STATUS CODE: ${error.response.status} | DATA:`, error.response.data);
+        if (!isSilent) {
+          console.error(`❌ API Error: ${method} ${url}`, {
+            type: isNetworkError ? "NETWORK_OR_TIMEOUT_OR_CORS" : "SERVER_RESPONSE_ERROR",
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            message: error.message,
+            error: error
+          });
+
+          if (error.response?.status) {
+            console.error(`🔴 STATUS CODE: ${error.response.status} | DATA:`, error.response.data);
+          }
         }
 
         // Handle specific error cases

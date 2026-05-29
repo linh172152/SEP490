@@ -1,21 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Package, Plus, Loader2, Trash2, Edit2, Activity, ChevronRight, Play, CreditCard, CheckCircle2, AlertCircle, Copy, Clock, Filter, AlertTriangle } from 'lucide-react';
+import { Package, Plus, Loader2, Trash2, Edit2, Activity, Filter, AlertTriangle } from 'lucide-react';
 import { useI18nStore } from '@/store/useI18nStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-toastify';
 import { ServicePackageModal } from './ServicePackageModal';
 import { servicePackageService } from '@/services/api/servicePackageService';
 import { exerciseService } from '@/services/api/exerciseService';
-import { paymentService } from '@/services/api/paymentService';
+import { userPackageService } from '@/services/api/userPackageService';
 import {
   ServicePackageResponse,
   ServicePackageRequest,
   RobotAction,
   UserPackageResponse
 } from '@/services/api/types';
-import { PackageExerciseSelector } from './PackageExerciseSelector';
 import { parseServerDate } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -54,25 +53,17 @@ export default function SubscriptionsUnifiedPage() {
   // Data State
   const [packages, setPackages] = useState<ServicePackageResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [packageExercises, setPackageExercises] = useState<RobotAction[]>([]);
-  const [exerciseLoading, setExerciseLoading] = useState(false);
-  const [pendingPayments, setPendingPayments] = useState<UserPackageResponse[]>([]);
-  const [paymentLoading, setPaymentLoading] = useState(false);
 
   // UI State
   const [activeTab, setActiveTab] = useState('definitions');
-  const [selectedPkgId, setSelectedPkgId] = useState<number | null>(null);
 
   // Modal State
   const [isPkgModalOpen, setIsPkgModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedPackage, setSelectedPackage] = useState<ServicePackageResponse | null>(null);
-  const [isExerciseSelectorOpen, setIsExerciseSelectorOpen] = useState(false);
 
   const [isConfirming, setIsConfirming] = useState(false);
   const [searchPaymentQuery, setSearchPaymentQuery] = useState('');
-  const [filterPackageLevel, setFilterPackageLevel] = useState('ALL');
-  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   // Confirm Dialog State
   const [confirmDelete, setConfirmDelete] = useState<{
@@ -90,25 +81,14 @@ export default function SubscriptionsUnifiedPage() {
 
   const fetchData = async () => {
     setLoading(true);
-    setPaymentLoading(true);
     try {
-      const [pkgs, pendings] = await Promise.all([
-        servicePackageService.getAll(),
-        paymentService.getManagerPending()
-      ]);
-      
+      const pkgs = await servicePackageService.getAll();
       setPackages(pkgs || []);
-      setPendingPayments(pendings || []);
-
-      if (pkgs && pkgs.length > 0 && !selectedPkgId) {
-        setSelectedPkgId(pkgs[0].id);
-      }
     } catch (e) {
       console.error(e);
       toast.error(t('common.error'));
     } finally {
       setLoading(false);
-      setPaymentLoading(false);
     }
   };
 
@@ -116,24 +96,6 @@ export default function SubscriptionsUnifiedPage() {
     fetchData();
   }, []);
 
-  const fetchPackageExercises = async (id: number) => {
-    setExerciseLoading(true);
-    try {
-      const data = await servicePackageService.getRobotActions(id);
-      setPackageExercises(data || []);
-    } catch (e) {
-      console.error(e);
-      toast.error(t('common.error'));
-    } finally {
-      setExerciseLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (selectedPkgId) {
-      fetchPackageExercises(selectedPkgId);
-    }
-  }, [selectedPkgId]);
 
   const handleAddPackage = () => {
     setModalMode('create');
@@ -164,88 +126,40 @@ export default function SubscriptionsUnifiedPage() {
   };
 
   const handleDeletePackage = async (id: number) => {
+    const pkg = packages.find(p => p.id === id);
     setConfirmDelete({
       isOpen: true,
-      title: t('common.confirm_delete') || "Are you sure?",
-      description: "This action will permanently remove the service package. This cannot be undone.",
-      onConfirm: async () => {
-        try {
-          setConfirmDelete(prev => ({ ...prev, isLoading: true }));
-          await servicePackageService.delete(id);
-          toast.success(t('common.delete_success') || 'Deleted successfully');
-          fetchData();
-        } catch (error) {
-          toast.error(t('common.error') || 'An error occurred');
-        } finally {
-          setConfirmDelete(prev => ({ ...prev, isOpen: false, isLoading: false }));
-        }
-      }
-    });
-  };
-
-  const handleUpdateExercises = async (actionIds: number[]) => {
-    if (!selectedPkgId) return;
-    
-    // Find current package data to avoid overwriting with empty fields
-    const currentPkg = packages.find(p => p.id === selectedPkgId);
-    if (!currentPkg) return;
-
-    try {
-      const updateData: ServicePackageRequest = {
-        name: currentPkg.name,
-        description: currentPkg.description,
-        level: currentPkg.level,
-        price: currentPkg.price,
-        active: currentPkg.active,
-        durationDays: currentPkg.durationDays,
-        robotActionIds: actionIds
-      };
-
-      await servicePackageService.update(selectedPkgId, updateData);
-      toast.success(t('common.update_success'));
-      fetchPackageExercises(selectedPkgId);
-      // Refresh packages to reflect changes
-      fetchData();
-    } catch (e) {
-      console.error(e);
-      toast.error(t('common.error'));
-    }
-  };
-
-  const handleRemoveExerciseFromPkg = async (exerciseId: number) => {
-    if (!selectedPkgId) return;
-
-    setConfirmDelete({
-      isOpen: true,
-      title: t('common.confirm_delete') || "Are you sure?",
-      description: "Do you want to remove this exercise from the current service package?",
+      title: t('common.confirm_delete') || "Xác nhận xóa?",
+      description: `Bạn có chắc chắn muốn xóa gói "${pkg?.name}"? Gói dịch vụ này sẽ bị ẩn khỏi danh sách và không thể hoàn tác.`,
       onConfirm: async () => {
         try {
           setConfirmDelete(prev => ({ ...prev, isLoading: true }));
           
-          const currentPkg = packages.find(p => p.id === selectedPkgId);
-          if (!currentPkg) return;
+          // 1. Kiểm tra xem có ai đang sử dụng gói này không
+          try {
+            const allUserPkgs = await userPackageService.getAll();
+            const activeUsers = allUserPkgs.filter((up: any) => up.servicePackageId === id);
+            
+            if (activeUsers.length > 0) {
+              toast.error(`Không thể xóa: Hiện đang có ${activeUsers.length} cư dân đang sử dụng gói này.`);
+              setConfirmDelete(prev => ({ ...prev, isOpen: false, isLoading: false }));
+              return;
+            }
+          } catch (checkError) {
+            // Nếu BE bị lỗi (ví dụ lỗi 400 NPE), chúng ta cho phép tiếp tục xóa để dọn dẹp data
+            console.warn("Bỏ qua bước kiểm tra người dùng do lỗi Backend:", checkError);
+          }
 
-          const updatedActionIds = packageExercises
-            .map(ex => ex.id)
-            .filter(id => id !== exerciseId);
-
-          const updateData: ServicePackageRequest = {
-            name: currentPkg.name,
-            description: currentPkg.description,
-            level: currentPkg.level,
-            price: currentPkg.price,
-            active: currentPkg.active,
-            durationDays: currentPkg.durationDays,
-            robotActionIds: updatedActionIds
-          };
-
-          await servicePackageService.update(selectedPkgId, updateData);
-          toast.success(t('common.update_success') || 'Updated successfully');
-          fetchPackageExercises(selectedPkgId);
+          // 2. Thực hiện vô hiệu hóa gói dịch vụ
+          if (pkg) {
+            await servicePackageService.deactivate(id, pkg);
+            toast.success(t('common.delete_success') || 'Disabled successfully');
+          }
           fetchData();
-        } catch (error) {
-          toast.error(t('common.error') || 'An error occurred');
+        } catch (error: any) {
+          console.error("Delete package error:", error);
+          const msg = error.message || error.data || 'An error occurred during deletion';
+          toast.error(msg);
         } finally {
           setConfirmDelete(prev => ({ ...prev, isOpen: false, isLoading: false }));
         }
@@ -253,22 +167,9 @@ export default function SubscriptionsUnifiedPage() {
     });
   };
 
-  const handleManualConfirm = async (desc: string, amount: number) => {
-    setIsConfirming(true);
-    try {
-      await paymentService.confirmPayment(desc, amount);
-      toast.success(t('manager.subscriptions.confirm_success'));
-      fetchData(); 
-    } catch (err) {
-      console.error(err);
-      toast.error(t('manager.subscriptions.confirm_error'));
-    } finally {
-      setIsConfirming(false);
-    }
-  };
+
 
   const canManage = user?.role === 'MANAGER' || user?.role === 'ADMIN' || user?.role === 'ADMINISTRATOR';
-  const currentConfigPkg = packages.find(p => p.id === selectedPkgId);
 
   return (
     <div className="space-y-6">
@@ -286,14 +187,8 @@ export default function SubscriptionsUnifiedPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl h-14 border border-slate-200">
-          <TabsTrigger value="definitions" className="rounded-xl px-8 h-11 data-[state=active]:bg-white data-[state=active]:shadow-lg gap-2 font-bold">
+          <TabsTrigger value="definitions" className="rounded-xl px-12 h-11 data-[state=active]:bg-white data-[state=active]:shadow-lg gap-2 font-bold">
             <Package className="h-4 w-4" /> {t('manager.subscriptions.tab_packages')}
-          </TabsTrigger>
-          <TabsTrigger value="sessions" className="rounded-xl px-8 h-11 data-[state=active]:bg-white data-[state=active]:shadow-lg gap-2 font-bold">
-            <Activity className="h-4 w-4" /> {t('manager.subscriptions.tab_sessions')}
-          </TabsTrigger>
-          <TabsTrigger value="payments" className="rounded-xl px-8 h-11 data-[state=active]:bg-white data-[state=active]:shadow-lg gap-2 font-bold text-indigo-600">
-            <CreditCard className="h-4 w-4" /> {t('manager.subscriptions.tab_payments')}
           </TabsTrigger>
         </TabsList>
 
@@ -321,6 +216,7 @@ export default function SubscriptionsUnifiedPage() {
                   <TableRow className="bg-slate-50/50">
                     <TableHead className="font-bold">{t('admin.packages.table.level')}</TableHead>
                     <TableHead className="font-bold">{t('admin.packages.table.name')}</TableHead>
+                    <TableHead className="font-bold">{t('admin.packages.table.desc')}</TableHead>
                     <TableHead className="font-bold">{t('admin.packages.table.price')}</TableHead>
                     <TableHead className="font-bold">{t('admin.packages.table.duration')}</TableHead>
                     <TableHead className="font-bold">{t('admin.packages.table.status')}</TableHead>
@@ -330,14 +226,14 @@ export default function SubscriptionsUnifiedPage() {
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10">
+                      <TableCell colSpan={7} className="text-center py-10">
                         <Loader2 className="h-8 w-8 animate-spin mx-auto text-indigo-600" />
                         <span className="text-sm text-muted-foreground mt-2 block">{t('common.loading')}</span>
                       </TableCell>
                     </TableRow>
                   ) : packages.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10 italic text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-10 italic text-muted-foreground">
                         {t('admin.packages.table.no_data')}
                       </TableCell>
                     </TableRow>
@@ -350,6 +246,9 @@ export default function SubscriptionsUnifiedPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="font-bold">{pkg.name}</TableCell>
+                        <TableCell className="max-w-[250px]">
+                           <p className="text-xs text-slate-700 line-clamp-2 font-bold italic">{pkg.description || '---'}</p>
+                        </TableCell>
                         <TableCell className="font-black text-slate-700">{pkg.price.toLocaleString()} ₫</TableCell>
                         <TableCell>{pkg.durationDays} days</TableCell>
                         <TableCell>
@@ -376,282 +275,7 @@ export default function SubscriptionsUnifiedPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="sessions">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-1 border-none shadow-xl shadow-slate-200/50 rounded-2xl p-4 space-y-4">
-              <h3 className="font-black text-lg px-2">{t('manager.subscriptions.package_select')}</h3>
-              <ScrollArea className="h-[400px] pr-4">
-                <div className="space-y-2">
-                  {packages.map((pkg) => (
-                    <button
-                      key={pkg.id}
-                      onClick={() => setSelectedPkgId(pkg.id)}
-                      className={cn(
-                        "w-full flex items-center justify-between p-4 rounded-xl text-left transition-all border",
-                        selectedPkgId === pkg.id
-                          ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100 translate-x-1"
-                          : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50 hover:border-slate-200 hover:translate-x-1"
-                      )}
-                    >
-                      <div className="flex flex-col">
-                        <span className="font-black truncate">{pkg.name}</span>
-                        <span className={cn("text-[10px] uppercase font-bold", selectedPkgId === pkg.id ? "text-indigo-100" : "text-slate-400")}>
-                          {pkg.level}
-                        </span>
-                      </div>
-                      <ChevronRight className={cn("h-4 w-4", selectedPkgId === pkg.id ? "text-white" : "text-slate-300")} />
-                    </button>
-                  ))}
-                </div>
-              </ScrollArea>
-            </Card>
 
-            <Card className="lg:col-span-2 border-none shadow-xl shadow-slate-200/50 rounded-2xl overflow-hidden">
-              <CardHeader className="bg-slate-50/50 border-b">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Activity className="h-5 w-5 text-indigo-600" />
-                      {t('manager.subscriptions.exercises_title')}
-                    </CardTitle>
-                    <CardDescription>
-                      {currentConfigPkg?.name} ({currentConfigPkg?.level})
-                    </CardDescription>
-                  </div>
-                    {canManage && (
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          onClick={() => setIsExerciseSelectorOpen(true)} 
-                          variant="outline" 
-                          size="sm" 
-                          className="rounded-lg gap-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50"
-                        >
-                          <Plus className="h-3 w-3" /> {t('manager.subscriptions.action_mapping.assign_btn') || t('manager.subscriptions.add_exercise')}
-                        </Button>
-                      </div>
-                    )}
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <ScrollArea className="h-[400px] lg:h-[500px]">
-                  <Table>
-                    <TableHeader className="sticky top-0 bg-slate-50 z-10 shadow-sm">
-                      <TableRow className="hover:bg-transparent border-none">
-                        <TableHead className="pl-6 pt-4">{t('wellness.table.name')}</TableHead>
-                        <TableHead className="pt-4">{t('wellness.table.type') || 'Type'}</TableHead>
-                        <TableHead className="pt-4 text-center">{t('wellness.table.preview') || 'Preview'}</TableHead>
-                        <TableHead className="text-right pr-6 pt-4">{t('common.actions')}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {exerciseLoading ? (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center py-20 text-muted-foreground">
-                            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 opacity-20" />
-                            {t('common.loading')}
-                          </TableCell>
-                        </TableRow>
-                      ) : packageExercises.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic">
-                            {t('manager.subscriptions.no_exercises')}
-                          </TableCell>
-                        </TableRow>) : (
-                        packageExercises.map((ex) => (
-                          <TableRow key={ex.id} className="group hover:bg-slate-50 transition-colors border-slate-50">
-                            <TableCell className="pl-6 font-bold text-slate-700">{ex.name}</TableCell>
-                            <TableCell>
-                              <Badge variant="secondary" className="bg-slate-100 text-slate-600 uppercase text-[10px] font-bold">
-                                {ex.type}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                              >
-                                <Play className="h-5 w-5 fill-current" />
-                              </Button>
-                            </TableCell>
-                            <TableCell className="text-right pr-6">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleRemoveExerciseFromPkg(ex.id)}
-                                className="text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="payments">
-          <div className="py-4">
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
-                 <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 shrink-0">
-                    <Clock className="h-6 w-6 text-indigo-600" /> {t('manager.subscriptions.pending_list_title')}
-                 </h3>
-                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <div className="relative w-full sm:w-64">
-                      <Input
-                        placeholder={t('common.search', 'Search ID or UP:ID...')}
-                        value={searchPaymentQuery}
-                        onChange={(e) => setSearchPaymentQuery(e.target.value)}
-                        className="h-10 rounded-xl border-slate-200 bg-white pl-9 text-xs font-bold"
-                      />
-                      <Activity className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    </div>
-                    
-                    <DropdownMenu>
-                       <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="rounded-xl text-slate-600 font-bold gap-2 h-10 border-slate-200">
-                             <Filter className="h-4 w-4" /> Filter
-                          </Button>
-                       </DropdownMenuTrigger>
-                       <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
-                          <DropdownMenuLabel className="font-black text-xs text-slate-400 uppercase tracking-widest px-3 pt-3">
-                             {t('common.sort_label', 'Sort By')}
-                          </DropdownMenuLabel>
-                          <DropdownMenuRadioGroup value={sortOrder} onValueChange={(v) => setSortOrder(v as any)}>
-                             <DropdownMenuRadioItem value="newest" className="rounded-xl font-bold">{t('admin.users.filters.sort_newest', 'Newest')}</DropdownMenuRadioItem>
-                             <DropdownMenuRadioItem value="oldest" className="rounded-xl font-bold">{t('admin.users.filters.sort_oldest', 'Oldest')}</DropdownMenuRadioItem>
-                          </DropdownMenuRadioGroup>
-                          
-                          <DropdownMenuSeparator className="my-2" />
-                          
-                          <DropdownMenuLabel className="font-black text-xs text-slate-400 uppercase tracking-widest px-3">
-                             {t('admin.packages.table.level', 'Package Level')}
-                          </DropdownMenuLabel>
-                          <DropdownMenuRadioGroup value={filterPackageLevel} onValueChange={setFilterPackageLevel}>
-                             <DropdownMenuRadioItem value="ALL" className="rounded-xl font-bold">{t('common.all', 'All Levels')}</DropdownMenuRadioItem>
-                             {Array.from(new Set(packages.map(p => p.level))).map(level => (
-                                <DropdownMenuRadioItem key={level} value={level} className="rounded-xl font-bold">
-                                   {level}
-                                </DropdownMenuRadioItem>
-                             ))}
-                          </DropdownMenuRadioGroup>
-                       </DropdownMenuContent>
-                    </DropdownMenu>
-                 </div>
-              </div>
-              <div className="grid gap-4">
-                {paymentLoading ? (
-                  <div className="py-20 text-center">
-                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-indigo-600 opacity-20" />
-                    <p className="text-sm text-slate-400 mt-2">{t('common.loading')}</p>
-                  </div>
-                ) : pendingPayments.length === 0 ? (
-                  <div className="bg-white rounded-3xl p-12 text-center border-2 border-dashed border-slate-100">
-                    <CheckCircle2 className="h-12 w-12 text-emerald-200 mx-auto mb-4" />
-                    <h4 className="font-black text-slate-800">{t('manager.subscriptions.no_pending_title', 'All Caught Up!')}</h4>
-                    <p className="text-sm text-slate-400 mt-1">{t('manager.subscriptions.no_pending_desc', 'There are no pending payments to confirm at the moment.')}</p>
-                  </div>
-                ) : (
-                  pendingPayments
-                    .filter(item => {
-                      const description = `UP:${item.id}`.toLowerCase();
-                      const query = searchPaymentQuery.toLowerCase();
-                      const pkg = packages.find(p => p.id === item.servicePackageId);
-                      
-                      const matchesSearch = description.includes(query) || 
-                                          item.elderlyProfileId?.toString().includes(query);
-                      
-                      const matchesLevel = filterPackageLevel === 'ALL' || (pkg && pkg.level === filterPackageLevel);
-                      const hasValidPrice = pkg && (pkg.price || 0) > 0;
-                      
-                      return matchesSearch && matchesLevel && hasValidPrice;
-                    })
-                    .sort((a, b) => {
-                      const dateA = parseServerDate(a.assignedAt || '1970-01-01T00:00:00Z').getTime();
-                      const dateB = parseServerDate(b.assignedAt || '1970-01-01T00:00:00Z').getTime();
-                      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
-                    })
-                    .map((item) => {
-                    const pkg = packages.find(p => p.id === item.servicePackageId);
-                    const description = `UP:${item.id}`;
-                    
-                    return (
-                      <Card key={item.id} className="border-none shadow-md shadow-slate-200/40 rounded-3xl group hover:shadow-xl hover:shadow-indigo-100/50 transition-all border-l-4 border-amber-400">
-                        <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-                          <div className="flex items-center gap-5 w-full md:w-auto">
-                            <div className="h-14 w-14 bg-amber-50 rounded-2xl flex items-center justify-center shrink-0">
-                               <Activity className="h-7 w-7 text-amber-500" />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-black text-slate-800">
-                                  {t('common.elderly', 'Elderly')} ID: {item.elderlyProfileId || 'N/A'}
-                                </span>
-                                <Badge variant="outline" className="bg-slate-50 text-slate-500 font-bold text-[10px] rounded-lg">
-                                   {pkg?.name || t('common.package', 'Package')}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                 <code className="text-[12px] bg-slate-100 px-2 py-0.5 rounded-lg font-mono text-slate-600 border border-slate-200">
-                                   {description}
-                                 </code>
-                                 <span className="text-[11px] font-bold text-slate-400">
-                                   {item.assignedAt ? parseServerDate(item.assignedAt).toLocaleString() : ''}
-                                 </span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-4 md:pt-0">
-                             <div className="text-right mr-4">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('manager.subscriptions.amount', 'Amount')}</p>
-                                <p className="text-xl font-black text-emerald-600">{(pkg?.price || 0).toLocaleString()} ₫</p>
-                             </div>
-                             <div className="flex gap-2">
-                               <Button
-                                 onClick={() => {
-                                   setConfirmDelete({
-                                     isOpen: true,
-                                     title: t('common.confirm') || 'Confirm Payment',
-                                     description: `Confirm payment for package ${pkg?.name || 'ID ' + item.id}? This will activate the subscription.`,
-                                     onConfirm: async () => {
-                                       try {
-                                         setConfirmDelete(prev => ({ ...prev, isLoading: true }));
-                                         await handleManualConfirm(description, pkg?.price || 0);
-                                       } finally {
-                                         setConfirmDelete(prev => ({ ...prev, isOpen: false, isLoading: false }));
-                                       }
-                                     }
-                                   });
-                                 }}
-                                 disabled={isConfirming}
-                                 className="h-12 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black px-6 transition-all shadow-lg shadow-indigo-100"
-                               >
-                                 <CheckCircle2 className="h-4 w-4 mr-2" />
-                                 {t('common.confirm', 'Confirm')}
-                               </Button>
-                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })
-                )}
-              </div>
-
-              <div className="bg-slate-50 rounded-3xl p-8 border border-dashed border-slate-200 text-center">
-                 <p className="text-sm text-slate-400 font-medium italic">
-                    {t('manager.subscriptions.payment_instruction', 'Use the unique UP:ID from the bank transfer description to confirm payments here.')}
-                 </p>
-              </div>
-            </div>
-          </div>
-        </TabsContent>
       </Tabs>
 
       <ServicePackageModal
@@ -662,13 +286,6 @@ export default function SubscriptionsUnifiedPage() {
         mode={modalMode}
       />
 
-      <PackageExerciseSelector
-        isOpen={isExerciseSelectorOpen}
-        onClose={() => setIsExerciseSelectorOpen(false)}
-        currentIds={packageExercises.map(ex => ex.id)}
-        onSave={handleUpdateExercises}
-        packageLevel={currentConfigPkg?.level || ''}
-      />
 
       <AlertDialog 
         open={confirmDelete.isOpen} 

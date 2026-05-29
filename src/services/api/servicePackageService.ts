@@ -18,8 +18,21 @@ class ServicePackageService {
     return apiClient.put<ServicePackageResponse>(`/api/service-packages/${id}`, data);
   }
 
-  async delete(id: number): Promise<void> {
-    return apiClient.delete<void>(`/api/service-packages/${id}`);
+  async deactivate(id: number, currentData: ServicePackageResponse): Promise<void> {
+    // Chuyển sang dùng PUT thay vì PATCH để tránh lỗi 403 Forbidden/CORS
+    await this.update(id, {
+      name: currentData.name,
+      description: currentData.description,
+      level: currentData.level,
+      price: currentData.price,
+      durationDays: currentData.durationDays,
+      active: false,
+      robotActionIds: currentData.robotActions?.map(a => a.id) || []
+    });
+  }
+
+  async activate(id: number): Promise<ServicePackageResponse> {
+    return apiClient.patch<ServicePackageResponse>(`/api/service-packages/${id}/activate`, {});
   }
 
   async getRobotActions(pkgId: number): Promise<RobotAction[]> {

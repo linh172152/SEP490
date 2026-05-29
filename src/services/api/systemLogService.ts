@@ -3,7 +3,9 @@ import { SystemLogRequest, SystemLogResponse } from "./types";
 
 class SystemLogService {
   async getAll(): Promise<SystemLogResponse[]> {
-    return apiClient.get<SystemLogResponse[]>("/api/system-logs");
+    return apiClient.get<SystemLogResponse[]>("/api/system-logs", {
+      headers: { "X-Silent-Error": "true" }
+    });
   }
 
   async getById(id: number): Promise<SystemLogResponse> {

@@ -44,7 +44,9 @@ class PaymentService {
   }
 
   async getManagerPending(): Promise<UserPackageResponse[]> {
-    return apiClient.get<UserPackageResponse[]>("/api/payments/manager/pending");
+    return apiClient.get<UserPackageResponse[]>("/api/payments/manager/pending", {
+      headers: { "X-Silent-Error": "true" }
+    });
   }
 }
 

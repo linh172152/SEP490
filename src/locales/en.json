@@ -14,6 +14,7 @@
     "edit": "Edit",
     "view": "View",
     "view_profile": "View Profile",
+    "description": "Description",
     "close": "Close",
     "actions": "Actions",
     "name": "Full Name",
@@ -24,6 +25,7 @@
       "pending": "Pending"
     },
     "loading": "Loading data...",
+    "partial_data": "Syncing partial data",
     "no_data": "No data found.",
     "active": "Active",
     "inactive": "Inactive",
@@ -264,7 +266,7 @@
     "robot_mgt": "Robot Management",
     "robot_fleet": "Fleet Hub",
     "subscriptions": "Subscriptions",
-    "rooms": "Room Management",
+    "rooms": "Space Management",
     "wellness": "Wellness Hub",
     "settings": "Settings",
     "logout": "Logout",
@@ -650,9 +652,9 @@
       "available_packages_desc": "Service configurations managed by the Manager.",
       "total_residents": "Elderly Managed",
       "ops_team": "Caregiver Team",
-      "user_distribution": "Personnel Correlation",
-      "user_desc": "Ratio between elderly and the caregiver team.",
-      "package_popularity": "Package Popularity",
+      "subscription_distribution": "Service Tier Distribution",
+      "subscription_desc": "Breakdown of active service plans across all residents.",
+      "package_popularity_title": "Package Popularity",
       "package_desc": "Usage rates of available service tiers.",
       "elderly_label": "Elderly",
       "caregiver_label": "Caregiver",
@@ -665,7 +667,13 @@
       "package_popularity": {
         "summary": "Accounts for {{percentage}}% of total packages",
         "no_data": "No service packages activated yet"
-      }
+      },
+      "family_stats_title": "Family Structure",
+      "family_stats_desc": "Family bonding and scale statistics",
+      "avg_care_ratio": "Care Ratio",
+      "registered_families": "Registered Families",
+      "total_elderly_label": "Total Elderly Residents",
+      "per_family": "per family"
     },
     "analytics": {
       "title": "Usage Analytics",
@@ -677,7 +685,7 @@
       "subtitle": "Set up service levels and map specific robot actions to each plan.",
       "tab_packages": "Package Levels",
       "tab_sessions": "Action Mapping",
-      "tab_payments": "Payment Confirmation",
+      "tab_payments": "Payment",
       "assign_exercises": "Map Actions",
       "no_exercises": "No actions have been mapped to this package yet.",
       "package_select": "Select a package to configure",
@@ -720,16 +728,17 @@
       }
     },
     "nav": {
-      "rooms": "Manage via Rooms"
+      "rooms": "Manage via Spaces",
+      "unassigned": "Unassigned"
     },
     "staff": {
       "title": "User Management",
       "subtitle": "Manage caregiver and family member accounts.",
       "add_btn": "Create New Account",
       "list_title": "Account List",
-      "unassigned_room": "Unassigned Room",
+      "unassigned_room": "Unassigned Space",
       "room_note": "* Each Caregiver is assigned to exactly one room.",
-      "room_prefix": "Room",
+      "room_prefix": "Space",
       "table": {
         "name": "Full Name",
         "email_phone": "Email / Phone",
@@ -794,10 +803,10 @@
       }
     },
     "rooms": {
-      "title": "Nursing Home Rooms",
-      "subtitle": "Manage rooms, assign caregivers, elderly, and robots.",
-      "add_btn": "Add New Room",
-      "search_placeholder": "Search rooms by name or elderly...",
+      "title": "Service Spaces",
+      "subtitle": "Manage spaces, assign elderly, and robots.",
+      "add_btn": "Add New Space",
+      "search_placeholder": "Search spaces by name or elderly...",
       "search_placeholder_patient": "Search by elderly name...",
       "filter_robot": "Robot Assignment",
       "filter_occupancy": "Elderly Occupancy",
@@ -947,6 +956,7 @@
       "create_error": "Error adding action",
       "delete_success": "Action deleted",
       "delete_error": "Error deleting action",
+      "in_use_error": "This action is already part of one or more packages",
       "trigger_success": "Execution command sent: {{code}}",
       "trigger_error": "Error sending command to robot",
       "load_error": "Could not load exercise library.",
@@ -1007,7 +1017,9 @@
       "easy": "Basic",
       "medium": "Advanced",
       "hard": "Complex"
-    }
+    },
+    "in_use": "Part of Package",
+    "locked": "Locked"
   },
   "landing": {
     "header": {

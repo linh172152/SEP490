@@ -88,11 +88,10 @@ export default function UserManagementPage() {
   const [accounts, setAccounts] = useState<AccountResponse[]>([]);
   const [elderlyList, setElderlyList] = useState<ElderlyProfileResponse[]>([]);
   const [rooms, setRooms] = useState<RoomResponse[]>([]);
-  const [caregiverProfiles, setCaregiverProfiles] = useState<CaregiverProfileResponse[]>([]);
   const [loading, setLoading] = useState(true);
   
   // View States
-  const [activeTab, setActiveTab] = useState("caregivers");
+  const [activeTab, setActiveTab] = useState("elderly");
   const [searchQuery, setSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState("ALL"); // ALL, TODAY, WEEK
   const [currentPage, setCurrentPage] = useState(1);
@@ -123,16 +122,14 @@ export default function UserManagementPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [accRes, eldRes, roomRes, profileRes] = await Promise.all([
+      const [accRes, eldRes, roomRes] = await Promise.all([
         accountService.getAccounts(),
         elderlyService.getAll(),
-        roomService.getAllRooms(),
-        caregiverService.getAll()
+        roomService.getAllRooms()
       ]);
       setAccounts(accRes || []);
       setElderlyList(eldRes || []);
       setRooms(roomRes || []);
-      setCaregiverProfiles(profileRes || []);
     } catch (error) {
       toast.error(t("common.error"));
     } finally {
@@ -151,7 +148,7 @@ export default function UserManagementPage() {
     if (!raw) return;
     try {
       const allRecords: BackupRecord[] = JSON.parse(raw);
-      const allowedRoles = ["CAREGIVER", "FAMILYMEMBER", "ROLE_CAREGIVER", "ROLE_FAMILYMEMBER"];
+      const allowedRoles = ["FAMILYMEMBER", "ROLE_FAMILYMEMBER"];
       
       // Filter for display state only. DO NOT overwrite the storage here.
       const displayList = allRecords.filter(r => {
@@ -233,9 +230,7 @@ export default function UserManagementPage() {
           // 1. Remove from Room instead of deleting profile (Manager permission friendly)
           if (profileId && account.roomId) {
             const role = (account.role || "").toUpperCase();
-            if (role.includes("CAREGIVER")) {
-              await roomService.removeCaregiverFromRoom(account.roomId, profileId).catch(err => console.warn("Room unassign failed:", err));
-            } else if (role.includes("ELDERLY") || activeTab === "elderly") {
+            if (role.includes("ELDERLY") || activeTab === "elderly") {
               await roomService.removeElderlyFromRoom(account.roomId, profileId).catch(err => console.warn("Room unassign failed:", err));
             }
           }
@@ -284,9 +279,7 @@ export default function UserManagementPage() {
             const roomId = account.roomId;
 
             if (profileId && roomId) {
-              const role = (account.role || "").toUpperCase();
-              if (role.includes("CAREGIVER")) await roomService.removeCaregiverFromRoom(roomId, profileId).catch(() => {});
-              else await roomService.removeElderlyFromRoom(roomId, profileId).catch(() => {});
+              await roomService.removeElderlyFromRoom(roomId, profileId).catch(() => {});
             }
             if (accountId) await accountService.deleteAccount(accountId).catch(() => {});
           }));
@@ -318,9 +311,7 @@ export default function UserManagementPage() {
           
           // 1. Unassign from Room instead of deleting profile (Manager safe approach)
           if (profileId && item.roomId) {
-            if (activeTab === "caregivers") {
-              await roomService.removeCaregiverFromRoom(item.roomId, profileId).catch(err => console.warn("Unassign failed:", err));
-            } else if (activeTab === "elderly") {
+            if (activeTab === "elderly") {
               await roomService.removeElderlyFromRoom(item.roomId, profileId).catch(err => console.warn("Unassign failed:", err));
             }
           }
@@ -344,104 +335,6 @@ export default function UserManagementPage() {
   };
 
   // -- Filtering & Sorting --
-  const unifiedCaregivers = useMemo(() => {
-    const accountMap = new Map();
-    accounts.forEach(acc => {
-      if (acc.email) accountMap.set(acc.email.toLowerCase(), acc);
-    });
-
-    const processedProfileIds = new Set<number>();
-    const processedAccountEmails = new Set<string>();
-
-    const roomCaregivers = new Map();
-    rooms.forEach(room => {
-      room.caregivers?.forEach(cg => {
-        roomCaregivers.set(cg.id, { ...cg, roomId: room.id, roomName: room.roomName });
-      });
-    });
-
-    const result = new Map();
-    caregiverProfiles.forEach(p => {
-      const email = p.accountEmail?.toLowerCase();
-      const acc = email ? accountMap.get(email) : null;
-      const roomCg = roomCaregivers.get(p.id);
-      
-      const key = email || `p-${p.id}`;
-      result.set(key, {
-        ...acc,
-        ...p,
-        id: p.accountId || acc?.id || p.id,
-        accountId: p.accountId || acc?.id,
-        profileId: p.id,
-        // Priority: Profile Name > Account Name
-        fullName: p.name || acc?.fullName || acc?.FullName || ('accountEmail' in p ? p.accountEmail : ''),
-        email: ('accountEmail' in p ? p.accountEmail : '') || acc?.email || '',
-        role: acc?.role || "CAREGIVER",
-        roomId: roomCg?.roomId || p.roomId || acc?.roomId, 
-        roomName: roomCg?.roomName,
-        deleted: acc?.deleted,
-        createdAt: acc?.createdAt || new Date().toISOString(), 
-        isProfileOnly: !acc
-      });
-      processedProfileIds.add(p.id);
-      if (email) processedAccountEmails.add(email);
-    });
-
-    // Add remaining from Rooms (Caregivers in room but profile missing from main list - rare)
-    roomCaregivers.forEach((cg, profileId) => {
-      if (!processedProfileIds.has(profileId)) {
-        const email = cg.email?.toLowerCase();
-        const acc = email ? accountMap.get(email) : null;
-        const key = email || `p-room-${profileId}`;
-        
-        result.set(key, {
-          ...acc,
-          id: acc?.id || profileId,
-          accountId: acc?.id,
-          profileId: profileId,
-          fullName: cg.name || acc?.fullName,
-          email: cg.email || acc?.email,
-          role: acc?.role || "CAREGIVER",
-          roomId: cg.roomId,
-          roomName: cg.roomName,
-          deleted: acc?.deleted,
-          createdAt: acc?.createdAt || new Date().toISOString(),
-          isRoomOnly: !acc 
-        });
-        processedProfileIds.add(profileId);
-        if (email) processedAccountEmails.add(email);
-      }
-    });
-
-    // Add remaining from Accounts (Accounts with role Caregiver but no profile yet)
-    accounts.forEach(acc => {
-      const email = acc.email?.toLowerCase();
-      if (email && !processedAccountEmails.has(email)) {
-        const r = (acc.role || "").toUpperCase();
-        if (r.includes("CAREGIVER")) {
-          result.set(email, {
-            ...acc,
-            fullName: acc.fullName || acc.FullName,
-            email: acc.email,
-            createdAt: acc.createdAt,
-            accountId: acc.id
-          });
-          processedAccountEmails.add(email);
-        }
-      }
-    });
-
-    return Array.from(result.values()).filter(item => {
-      // 1. Hide soft-deleted accounts
-      if (item.deleted) return false;
-
-      // 2. Hide Ghost Records (Profile exists but Account is permanently gone)
-      // If the profile has an accountId but we didn't find an account, it's a ghost.
-      if (item.profileId && item.accountId && item.isProfileOnly) return false;
-
-      return true;
-    });
-  }, [accounts, caregiverProfiles, rooms]);
 
   const unifiedElderly = useMemo(() => {
     const accountIdMap = new Map();
@@ -543,11 +436,10 @@ export default function UserManagementPage() {
   };
 
   const currentTabItems = useMemo(() => {
-    if (activeTab === "caregivers") return getFilteredData(unifiedCaregivers);
     if (activeTab === "elderly") return getFilteredData(unifiedElderly);
     if (activeTab === "family") return getFilteredData(families);
     return [];
-  }, [activeTab, unifiedCaregivers, unifiedElderly, families, searchQuery, dateRange]);
+  }, [activeTab, unifiedElderly, families, searchQuery, dateRange]);
 
   const paginatedItems = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -567,7 +459,6 @@ export default function UserManagementPage() {
   // -- Helpers --
   const getRoleBadge = (role: any) => {
     const roleStr = (typeof role === 'string' ? role : "").toUpperCase();
-    if (roleStr.includes("CAREGIVER")) return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/20">{t('common.roles.CAREGIVER')}</Badge>;
     if (roleStr.includes("FAMILY")) return <Badge className="bg-purple-500/15 text-purple-600 border-purple-500/20">{t('common.roles.FAMILYMEMBER')}</Badge>;
     return <Badge variant="outline">{t('common.roles.ELDERLYUSER')}</Badge>;
   };
@@ -601,7 +492,7 @@ export default function UserManagementPage() {
             )}
           </Button>
 
-          {activeTab === "caregivers" && (
+          {activeTab === "family" && (
             <Button className="h-11 px-6 shadow-lg shadow-primary/20 gap-2 font-bold" onClick={() => { setSelectedUser(null); setIsStaffFormOpen(true); }}>
               <Plus className="h-5 w-5" /> {t('manager.staff.add_btn')}
             </Button>
@@ -637,9 +528,6 @@ export default function UserManagementPage() {
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setCurrentPage(1); }} className="w-full">
         <TabsList className="bg-slate-100/50 p-1 rounded-xl h-14 w-fit mb-4">
-          <TabsTrigger value="caregivers" className="h-12 px-8 rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            {t('common.roles.CAREGIVER')}
-          </TabsTrigger>
           <TabsTrigger value="elderly" className="h-12 px-8 rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
             {t('common.roles.ELDERLYUSER') || "Elderly"}
           </TabsTrigger>

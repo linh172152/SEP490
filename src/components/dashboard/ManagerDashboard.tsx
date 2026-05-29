@@ -40,7 +40,8 @@ import {
   PieChart as PieChartIcon,
   DollarSign,
   ArrowUpRight,
-  Calendar
+  Calendar,
+  Users
 } from 'lucide-react';
 import { 
   ResponsiveContainer,
@@ -86,7 +87,8 @@ export function ManagerDashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Use allSettled so one failing API (like logs) doesn't kill the whole dashboard
+        setHasPartialErrors(false);
+        // Use allSettled so one failing API (like logs or user-packages) doesn't kill the whole dashboard
         const results = await Promise.allSettled([
           robotService.getAll(),
           servicePackageService.getAll(),
@@ -98,12 +100,13 @@ export function ManagerDashboard() {
         ]);
         
         // Check if any major API failed
-        const anyFailed = results.some(r => r.status === 'rejected');
-        if (anyFailed) {
-          console.warn("Some Dashboard APIs failed to load. Displaying partial data.");
+        const rejectedCount = results.filter(r => r.status === 'rejected').length;
+        if (rejectedCount > 0) {
+          console.warn(`${rejectedCount} Manager Dashboard APIs failed to load. Displaying partial data.`);
           setHasPartialErrors(true);
         }
 
+        // Map results safely
         if (results[0].status === 'fulfilled') setRobots(results[0].value || []);
         if (results[1].status === 'fulfilled') setServicePackages(results[1].value || []);
         if (results[2].status === 'fulfilled') setUserPackages(results[2].value || []);
@@ -136,17 +139,29 @@ export function ManagerDashboard() {
   const maintenanceRobots = robots.filter(r => r.status?.toLowerCase().includes('maintenance') || r.status?.toLowerCase().includes('error')).length;
   
   const elderlyCount = elderlyProfiles.length;
-  const caregiverCount = accounts.filter(a => a.role === 'CAREGIVER').length;
+  const familyCount = accounts.filter(a => a.role === 'FAMILYMEMBER').length;
+  
+  // Logic hiển thị tỷ lệ theo khoảng (ví dụ 1.2 -> 1 ~ 2)
+  const avgCareRatioDisplay = useMemo(() => {
+    if (familyCount === 0) return "0";
+    const raw = elderlyCount / familyCount;
+    if (raw % 1 === 0) return raw.toString(); // Số nguyên đẹp
+    return `${Math.floor(raw)} ~ ${Math.ceil(raw)}`; // Dạng khoảng 1 ~ 2
+  }, [elderlyCount, familyCount]);
 
-  const personnelDist = [
-    { name: t('manager.dashboard.elderly_label'), value: elderlyCount },
-    { name: t('manager.dashboard.caregiver_label'), value: caregiverCount },
-  ].filter(d => d.value > 0);
+  const subscriptionDist = servicePackages.map(pkg => ({
+    name: pkg.name,
+    value: userPackages.filter(up => up.servicePackageId === pkg.id).length
+  })).sort((a, b) => b.value - a.value);
 
   const pkgStats = servicePackages.map(pkg => ({
     name: pkg.name,
     value: userPackages.filter(up => up.servicePackageId === pkg.id).length
-  })).filter(p => p.value > 0);
+  })).sort((a, b) => b.value - a.value);
+  
+  // Show at most 4 for a clean UI, but ensure we have something to show if any packages exist
+  // Show at most 8 to ensure new packages are visible
+  const displayPkgStats = pkgStats.slice(0, 8);
 
   // Filter only confirmed packages for revenue calculations
   const confirmedPackages = useMemo(() => {
@@ -204,7 +219,7 @@ export function ManagerDashboard() {
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4].map((i) => (
             <Card key={i} className="border-none shadow-md overflow-hidden">
               <CardHeader className="pb-2">
@@ -284,17 +299,11 @@ export function ManagerDashboard() {
           </p>
         </div>
 
-        {hasPartialErrors && (
-          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 py-1.5 px-3 rounded-full flex items-center gap-2 animate-pulse">
-            <AlertCircle className="h-3.5 w-3.5" />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Partial Data Mode</span>
-          </Badge>
-        )}
       </div>
 
       {/* Financial & Operational KPIs */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-none shadow-xl shadow-emerald-100/50 dark:shadow-none bg-emerald-700 text-white">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="border-none shadow-xl shadow-emerald-500/10 dark:shadow-none bg-gradient-to-br from-emerald-600 to-emerald-700 text-white transition-all hover:scale-[1.02]">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-bold uppercase tracking-wider opacity-80">{t('manager.dashboard.revenue_overview')}</CardTitle>
             <DollarSign className="h-5 w-5 opacity-80" />
@@ -304,7 +313,7 @@ export function ManagerDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-xl shadow-indigo-100/50 dark:shadow-none bg-indigo-600 text-white">
+        <Card className="border-none shadow-xl shadow-indigo-500/10 dark:shadow-none bg-gradient-to-br from-indigo-600 to-indigo-700 text-white transition-all hover:scale-[1.02]">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-bold uppercase tracking-wider opacity-80">{t('manager.dashboard.robot_group')}</CardTitle>
             <Bot className="h-5 w-5 opacity-80" />
@@ -312,11 +321,11 @@ export function ManagerDashboard() {
           <CardContent>
             <div className="text-3xl font-black">{robots.length}</div>
             <div className="flex items-center gap-2 mt-2">
-               <Badge variant="secondary" className="bg-white/20 text-white border-none">
+               <Badge variant="secondary" className="bg-white/20 text-white border-none shadow-inner">
                  {activeRobots} {t('common.status.online')}
                </Badge>
                {maintenanceRobots > 0 && (
-                 <Badge variant="secondary" className="bg-amber-400/20 text-amber-100 border-none">
+                 <Badge variant="secondary" className="bg-amber-400/20 text-amber-100 border-none shadow-inner">
                    {maintenanceRobots} {t('common.status.error')}
                  </Badge>
                )}
@@ -324,7 +333,7 @@ export function ManagerDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-xl shadow-blue-100/50 dark:shadow-none bg-blue-600 text-white">
+        <Card className="border-none shadow-xl shadow-blue-500/10 dark:shadow-none bg-gradient-to-br from-blue-600 to-blue-700 text-white transition-all hover:scale-[1.02]">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-bold uppercase tracking-wider opacity-80">{t('manager.dashboard.total_residents')}</CardTitle>
             <Heart className="h-5 w-5 opacity-80" />
@@ -335,16 +344,6 @@ export function ManagerDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-xl shadow-rose-100/50 dark:shadow-none bg-rose-600 text-white">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-bold uppercase tracking-wider opacity-80">{t('manager.dashboard.ops_team')}</CardTitle>
-            <Stethoscope className="h-5 w-5 opacity-80" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-black">{caregiverCount}</div>
-            <p className="text-xs mt-2 opacity-80 font-medium italic">{t('manager.dashboard.ops_team')}</p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Financial Analytics - Row 1: Full Width Chart */}
@@ -451,50 +450,44 @@ export function ManagerDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-3 border-none shadow-xl shadow-slate-200/50 dark:shadow-none bg-slate-50/50">
+        <Card className="lg:col-span-3 border-none shadow-xl shadow-slate-200/50 dark:shadow-none bg-indigo-50/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl font-bold">
-               <PieChartIcon className="h-5 w-5 text-indigo-500" />
-               {t('manager.dashboard.user_distribution')}
+               <Users className="h-5 w-5 text-indigo-600" />
+               {t('manager.dashboard.family_stats_title')}
             </CardTitle>
             <CardDescription>
-               {t('manager.dashboard.user_desc')}
+               {t('manager.dashboard.family_stats_desc')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="h-[350px] flex flex-col items-center">
-            {loading ? <Loader2 className="animate-spin mt-12" /> : (
-              <>
-                <ResponsiveContainer width="100%" height="80%">
-                  <PieChart>
-                    <Pie
-                      data={personnelDist}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {personnelDist.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="grid grid-cols-2 gap-8 w-full mt-4">
-                  {personnelDist.map((entry, index) => (
-                    <div key={entry.name} className="flex flex-col items-center">
-                      <div className="flex items-center gap-2">
-                        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter">{entry.name}</span>
-                      </div>
-                      <span className="text-2xl font-black">{entry.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
+          <CardContent className="h-[350px] flex flex-col justify-center gap-8">
+            <div className="flex items-center gap-6 p-6 rounded-2xl bg-white shadow-sm transition-all hover:scale-[1.02]">
+              <div className="p-4 rounded-xl bg-indigo-100">
+                <Users className="h-8 w-8 text-indigo-600" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t('manager.dashboard.registered_families')}</p>
+                <div className="text-4xl font-black text-indigo-700">{familyCount}</div>
+                <p className="text-[10px] font-medium text-slate-400 mt-1 italic">{t('common.roles.FAMILYMEMBER')}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-6 p-6 rounded-2xl bg-white shadow-sm transition-all hover:scale-[1.02]">
+              <div className="p-4 rounded-xl bg-emerald-100">
+                <TrendingUp className="h-8 w-8 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t('manager.dashboard.avg_care_ratio')}</p>
+                <div className="text-4xl font-black text-emerald-700">{avgCareRatioDisplay}</div>
+                <p className="text-[10px] font-medium text-slate-400 mt-1 italic">{t('manager.dashboard.per_family')}</p>
+              </div>
+            </div>
+
+            <div className="mt-2 text-center">
+              <Badge variant="outline" className="bg-white border-indigo-200 text-indigo-700 font-bold px-4 py-1">
+                {elderlyCount} {t('manager.dashboard.total_elderly_label')}
+              </Badge>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -502,20 +495,20 @@ export function ManagerDashboard() {
       {/* Package Popularity Section */}
       <Card className="border-none shadow-xl shadow-slate-200/50 dark:shadow-none">
         <CardHeader className="border-b border-slate-100 mb-2">
-          <CardTitle className="text-lg font-bold">{t('manager.dashboard.package_popularity')}</CardTitle>
+          <CardTitle className="text-lg font-bold">{t('manager.dashboard.package_popularity_title')}</CardTitle>
           <CardDescription>{t('manager.dashboard.package_desc')}</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? <div className="p-4 flex justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div> : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pt-4">
-              {pkgStats.length === 0 ? (
+              {displayPkgStats.length === 0 ? (
                 <div className="col-span-full text-center py-12 text-muted-foreground font-medium italic">
                   {t('manager.dashboard.package_popularity.no_data')}
                 </div>
-              ) : pkgStats.slice(0, 4).sort((a,b) => b.value - a.value).map((stat, index) => {
+              ) : displayPkgStats.map((stat, index) => {
                 const percentage = userPackages.length > 0 ? Math.round((stat.value / userPackages.length) * 100) : 0;
                 return (
-                  <div key={stat.name} className="space-y-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100">
+                  <div key={stat.name} className="space-y-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 transition-all hover:shadow-md">
                     <div className="flex items-center justify-between font-bold text-sm">
                       <span className="flex items-center gap-2">
                         <div className="h-2 w-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />

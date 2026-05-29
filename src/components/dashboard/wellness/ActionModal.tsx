@@ -111,7 +111,7 @@ export function ActionModal({
                   control={form.control}
                   name="code"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="col-span-2">
                       <FormLabel className="text-xs font-black uppercase tracking-widest opacity-70">{t("wellness.modal.fields.code")}</FormLabel>
                       <FormControl>
                         <div className="relative">
@@ -119,29 +119,6 @@ export function ActionModal({
                           <Input placeholder={t("wellness.modal.fields.code_placeholder")} {...field} className="pl-10 h-11 bg-slate-50/50 rounded-xl font-mono" />
                         </div>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-black uppercase tracking-widest opacity-70">{t("wellness.modal.fields.type")}</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="h-11 bg-slate-50/50 rounded-xl">
-                            <SelectValue placeholder={t("wellness.modal.fields.type_placeholder")} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="rounded-xl shadow-xl">
-                          <SelectItem value="ACTION">{t('wellness.types.ACTION')}</SelectItem>
-                          <SelectItem value="DANCE">{t('wellness.types.DANCE')}</SelectItem>
-                          <SelectItem value="EMOTION">{t('wellness.types.EMOTION')}</SelectItem>
-                        </SelectContent>
-                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

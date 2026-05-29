@@ -13,14 +13,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useI18nStore } from '@/store/useI18nStore';
-import { RoomRequest, RoomResponse, CaregiverDTO, ElderlyDTO, RobotDTO, AccountResponse, ElderlyProfileResponse, RobotResponse, CaregiverProfileResponse } from '@/services/api/types';
+import { RoomResponse, ElderlyDTO, ElderlyProfileResponse, RobotResponse } from '@/services/api/types';
 import { roomService } from '@/services/api/roomService';
 import { accountService } from '@/services/api/accountService';
 import { elderlyService } from '@/services/api/elderlyService';
 import { robotService } from '@/services/api/robotService';
-import { caregiverService } from '@/services/api/caregiverService';
 import { toast } from 'react-toastify';
-import { Loader2, Plus, Bot, Home, Check, Users, Trash2, X, Search } from 'lucide-react';
+import { Loader2, Plus, Bot, Home, Check, Baby, Trash2, X, Search } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -40,12 +39,10 @@ export function RoomModal({ isOpen, onClose, room, onRefresh, managerId }: RoomM
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Assignment states
-  const [caregivers, setCaregivers] = useState<CaregiverProfileResponse[]>([]);
   const [elderlies, setElderlies] = useState<ElderlyProfileResponse[]>([]);
   const [robots, setRobots] = useState<RobotResponse[]>([]);
   const [occupiedRobotIds, setOccupiedRobotIds] = useState<Set<number>>(new Set());
   const [occupiedElderlyIds, setOccupiedElderlyIds] = useState<Set<number>>(new Set());
-  const [occupiedCaregiverIds, setOccupiedCaregiverIds] = useState<Set<number>>(new Set());
   const [loadingLists, setLoadingLists] = useState(false);
 
   // Search states
@@ -71,18 +68,16 @@ export function RoomModal({ isOpen, onClose, room, onRefresh, managerId }: RoomM
   const loadSelectionLists = async () => {
     setLoadingLists(true);
     try {
-      const [caregiversRes, elderlyRes, robotsRes, allRoomsRes, accountsRes] = await Promise.all([
-        caregiverService.getAll(),
+      const [elderlyRes, robotsRes, allRoomsRes, accountsRes] = await Promise.all([
         elderlyService.getAll(),
         robotService.getAll(),
         roomService.getAllRooms(),
         accountService.getAccounts()
       ]);
       
-      // Identify robots, patients and STAFF assigned to OTHER rooms
+      // Identify robots and patients assigned to OTHER rooms
       const occupiedRobots = new Set<number>();
       const occupiedElderly = new Set<number>();
-      const occupiedCaregivers = new Set<number>();
       
       allRoomsRes.forEach(r => {
         if (room && r.id === room.id) return; // Skip current room
@@ -93,9 +88,6 @@ export function RoomModal({ isOpen, onClose, room, onRefresh, managerId }: RoomM
         r.elderlies?.forEach(e => {
           occupiedElderly.add(e.id);
         });
-        r.caregivers?.forEach(c => {
-          occupiedCaregivers.add(c.id);
-        });
       });
 
       // Filter out deleted or ghost caregivers/elderlies
@@ -104,13 +96,6 @@ export function RoomModal({ isOpen, onClose, room, onRefresh, managerId }: RoomM
         if (!acc.deleted) activeAccountsMap.set(acc.email?.toLowerCase(), acc);
       });
 
-      const filteredCaregivers = (caregiversRes || []).filter(cg => {
-        if (!cg.accountEmail) return true; // Keep new profiles without accounts
-        const acc = activeAccountsMap.get(cg.accountEmail.toLowerCase());
-        // Hide if there's an accountId but the account is missing/deleted
-        if (cg.accountId && !acc) return false;
-        return true;
-      });
 
       const filteredElderlies = (elderlyRes || []).filter(el => {
         if (!el.accountId) return true;
@@ -119,12 +104,10 @@ export function RoomModal({ isOpen, onClose, room, onRefresh, managerId }: RoomM
         return acc && !acc.deleted;
       });
 
-      setCaregivers(filteredCaregivers);
       setElderlies(filteredElderlies);
       setRobots(robotsRes);
       setOccupiedRobotIds(occupiedRobots);
       setOccupiedElderlyIds(occupiedElderly);
-      setOccupiedCaregiverIds(occupiedCaregivers);
     } catch (e) {
       console.error(e);
       toast.error("Failed to load members lists");
@@ -160,28 +143,6 @@ export function RoomModal({ isOpen, onClose, room, onRefresh, managerId }: RoomM
     }
   };
 
-  const handleAssignCaregiver = async (caregiverId: number) => {
-    if (!room) return;
-    try {
-      await roomService.addCaregiverToRoom(room.id, caregiverId);
-      toast.success(t('manager.rooms.modal.status_assigned') || "Caregiver assigned");
-      onRefresh();
-    } catch (e: any) {
-      toast.error(e.message || t('manager.staff.toasts.error_generic'));
-    }
-  };
-
-  const handleRemoveCaregiver = async (caregiverId: number) => {
-    if (!room) return;
-    try {
-      await roomService.removeCaregiverFromRoom(room.id, caregiverId);
-      toast.success(t('manager.rooms.toasts.remove_success') || "Caregiver removed from room");
-      onRefresh();
-      loadSelectionLists(); 
-    } catch (e: any) {
-      toast.error(e.message || t('common.error'));
-    }
-  };
 
   const handleAssignElderly = async (elderlyId: number) => {
     if (!room) return;
@@ -240,9 +201,8 @@ export function RoomModal({ isOpen, onClose, room, onRefresh, managerId }: RoomM
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6 bg-slate-100/50 p-1 rounded-xl">
+          <TabsList className="grid w-full grid-cols-3 mb-6 bg-slate-100/50 p-1 rounded-xl">
             <TabsTrigger value="basic" className="rounded-lg font-bold">{t('manager.rooms.modal.tab_info')}</TabsTrigger>
-            <TabsTrigger value="caregivers" disabled={!room} className="rounded-lg font-bold">{t('manager.rooms.modal.tab_staff')}</TabsTrigger>
             <TabsTrigger value="elderlies" disabled={!room} className="rounded-lg font-bold">{t('manager.rooms.modal.tab_elderly')}</TabsTrigger>
             <TabsTrigger value="robot" disabled={!room} className="rounded-lg font-bold">{t('manager.rooms.modal.tab_robot')}</TabsTrigger>
           </TabsList>
@@ -267,106 +227,11 @@ export function RoomModal({ isOpen, onClose, room, onRefresh, managerId }: RoomM
             </DialogFooter>
           </TabsContent>
 
-          <TabsContent value="caregivers" className="space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-3">
-              <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Users className="h-4 w-4" /> {t('manager.rooms.modal.staff_desc')}
-              </div>
-              <Badge variant={room && room.caregivers?.length >= 2 ? "destructive" : "secondary"} className="rounded-xl font-black text-[10px] tracking-wider uppercase">
-                {room?.caregivers?.length || 0} / 2 
-              </Badge>
-            </div>
-            
-            <div className="relative mb-3">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder={t('common.search', 'Search...')} 
-                value={searchStaff}
-                onChange={(e) => setSearchStaff(e.target.value)}
-                className="pl-9 h-10 rounded-xl bg-white shadow-sm border-slate-200 focus-visible:ring-primary/20"
-              />
-            </div>
-
-            <ScrollArea className="h-[280px] border border-slate-100 rounded-xl p-2 bg-slate-50/30">
-              {loadingLists ? (
-                <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary/40 h-10 w-10" /></div>
-              ) : (
-                <div className="space-y-4">
-                  {(() => {
-                    const availableCaregivers = caregivers.filter(cg => !occupiedCaregiverIds.has(cg.id));
-                    const filteredCaregivers = availableCaregivers.filter(cg => 
-                      (cg.name || cg.accountEmail || '').toLowerCase().includes(searchStaff.toLowerCase())
-                    );
-                    const assignedList = filteredCaregivers.filter(cg => room?.caregivers.some((rc: CaregiverDTO) => rc.id === cg.id));
-                    const unassignedList = filteredCaregivers.filter(cg => !room?.caregivers.some((rc: CaregiverDTO) => rc.id === cg.id));
-
-                    return (
-                      <>
-                        {assignedList.length > 0 && (
-                          <div className="space-y-2">
-                            <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">{t('common.assigned', 'Assigned')}</h5>
-                            {assignedList.map(cg => (
-                              <div key={cg.id} className="flex items-center justify-between p-3 rounded-xl border bg-indigo-50/30 shadow-sm border-indigo-100 transition-all hover:border-indigo-300">
-                                <div>
-                                  <p className="font-bold text-sm text-indigo-900">{cg.name || cg.accountEmail}</p>
-                                  <p className="text-[10px] uppercase font-black tracking-wider text-indigo-400">{cg.accountEmail}</p>
-                                </div>
-                                <Button 
-                                  size="sm" 
-                                  variant="destructive"
-                                  className="rounded-lg font-bold min-w-[100px] bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100 h-8"
-                                  onClick={() => handleRemoveCaregiver(cg.id)}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-1"/> {t('manager.rooms.modal.btn_remove') || "Remove"}
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {unassignedList.length > 0 && (
-                          <div className="space-y-2">
-                            <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2 pt-2">{t('common.available', 'Available')}</h5>
-                            {unassignedList.map(cg => {
-                              const limitReached = (room?.caregivers?.length || 0) >= 2;
-                              return (
-                                <div key={cg.id} className="flex items-center justify-between p-3 rounded-xl border bg-white shadow-sm border-slate-100 transition-all hover:border-primary/20 hover:shadow-md">
-                                  <div>
-                                    <p className="font-bold text-sm text-slate-900">{cg.name || cg.accountEmail}</p>
-                                    <p className="text-[10px] uppercase font-black tracking-wider text-slate-400">{cg.accountEmail}</p>
-                                  </div>
-                                  <Button 
-                                    size="sm" 
-                                    variant="default"
-                                    disabled={limitReached}
-                                    className={cn("rounded-lg font-bold min-w-[100px] shadow-sm h-8", limitReached && "opacity-50")}
-                                    onClick={() => handleAssignCaregiver(cg.id)}
-                                  >
-                                    <Plus className="h-4 w-4 mr-1"/> {t('manager.rooms.modal.btn_add')}
-                                  </Button>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {assignedList.length === 0 && unassignedList.length === 0 && (
-                          <div className="text-center py-10 text-sm font-medium text-slate-400 italic">
-                            {t('common.no_results', 'No results found.')}
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-              )}
-            </ScrollArea>
-          </TabsContent>
 
           <TabsContent value="elderlies" className="space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-3">
               <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Users className="h-4 w-4" /> {t('manager.rooms.modal.elderly_desc')}
+                <Baby className="h-4 w-4" /> {t('manager.rooms.modal.elderly_desc')}
               </div>
               <Badge variant={room && room.elderlies?.length >= 4 ? "destructive" : "secondary"} className="rounded-xl font-black text-[10px] tracking-wider uppercase">
                 {room?.elderlies?.length || 0} / 4 

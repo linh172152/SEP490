@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
 } from '@/components/ui/card';
-import { 
+import {
   Table,
   TableBody,
   TableCell,
@@ -17,12 +17,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { 
-  ShieldCheck, 
-  Cpu, 
-  History, 
-  Settings, 
-  Lock, 
+import {
+  ShieldCheck,
+  Cpu,
+  History,
+  Settings,
+  Lock,
   Server,
   Zap,
   Globe,
@@ -35,13 +35,13 @@ import {
   Package,
   Dumbbell
 } from 'lucide-react';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   BarChart,
   Bar,
@@ -68,8 +68,7 @@ const emptyFleetData = [
 export function AdminDashboard() {
   const { t } = useI18nStore();
   const [loading, setLoading] = useState(true);
-  
-  // Real Data State
+
   const [stats, setStats] = useState({
     totalAccounts: 0,
     totalRobots: 0,
@@ -80,47 +79,64 @@ export function AdminDashboard() {
     robotStatusDistribution: emptyFleetData as any[],
     recentLogs: [] as any[]
   });
+  const [hasPartialErrors, setHasPartialErrors] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [accounts, robots, exercises, logs] = await Promise.all([
+      setHasPartialErrors(false);
+      
+      const results = await Promise.allSettled([
         accountService.getAccounts(),
         robotService.getAll(),
         exerciseService.getAllScripts(),
         systemLogService.getAll()
       ]);
 
+      // Check if any API failed
+      const rejected = results.filter(r => r.status === 'rejected');
+      if (rejected.length > 0) {
+        console.warn("Admin Dashboard: Some data failed to load", rejected);
+        setHasPartialErrors(true);
+      }
+
+      // Safe access to results
+      const accounts = results[0].status === 'fulfilled' ? results[0].value : [];
+      const robots = results[1].status === 'fulfilled' ? results[1].value : [];
+      const exercises = results[2].status === 'fulfilled' ? results[2].value : [];
+      const logs = results[3].status === 'fulfilled' ? results[3].value : [];
+
       // Aggregate User Roles
       const accList = Array.isArray(accounts) ? accounts : [];
       const roles: Record<string, number> = { ADMINISTRATOR: 0, MANAGER: 0, CAREGIVER: 0, FAMILYMEMBER: 0 };
       accList.forEach(acc => {
-          const r = String(acc.role).toUpperCase();
-          if (roles[r] !== undefined) roles[r]++;
+        const r = String(acc.role).toUpperCase();
+        if (roles[r] !== undefined) roles[r]++;
       });
 
       // Aggregate Robot Status
       const robotList = Array.isArray(robots) ? robots : [];
       let active = 0, maint = 0, offline = 0;
       robotList.forEach(r => {
-          const s = String(r.status || '').toUpperCase();
-          // Normalize various 'online' or 'active' strings from DB
-          if (s === 'ACTIVE' || s === 'ONLINE') active++;
-          else if (s === 'MAINTENANCE') maint++;
-          else offline++;
+        const s = String(r.status || '').toUpperCase();
+        if (s === 'ACTIVE' || s === 'ONLINE') active++;
+        else if (s === 'MAINTENANCE') maint++;
+        else offline++;
       });
 
       setStats({
         totalAccounts: accList.length,
         totalRobots: robotList.length,
         activeRobots: active,
-        totalPackages: 0, // No longer tracked here
+        totalPackages: 0, 
         totalExercises: Array.isArray(exercises) ? exercises.length : 0,
-        roleDistribution: Object.entries(roles).map(([name, value]) => ({ 
-            name: t(`common.roles.${name}`) || name, 
+        roleDistribution: Object.entries(roles)
+          .map(([name, value]) => ({
+            name: t(`common.roles.${name}`) || name,
             value,
             roleKey: name
-        })).filter(item => item.value > 0),
+          }))
+          .filter(item => item.value > 0),
         robotStatusDistribution: [
           { name: t('common.status.active'), value: active, color: '#10b981' },
           { name: t('common.status.maintenance'), value: maint, color: '#f59e0b' },
@@ -129,7 +145,7 @@ export function AdminDashboard() {
         recentLogs: Array.isArray(logs) ? logs : []
       });
     } catch (error) {
-      console.error("Dashboard Fetch Error:", error);
+      console.error("Dashboard Fetch Critical Error:", error);
     } finally {
       setLoading(false);
     }
@@ -143,31 +159,32 @@ export function AdminDashboard() {
     <div className="space-y-6 pb-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">
-             {t('admin.dashboard.title')}
+          <h2 className="text-3xl font-black tracking-tight bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 dark:from-white dark:via-indigo-100 dark:to-indigo-200 bg-clip-text text-transparent">
+            {t('admin.dashboard.title')}
           </h2>
           <p className="text-muted-foreground mt-1 flex items-center gap-2">
             <Activity className="h-4 w-4 text-emerald-500 animate-pulse" />
-             {t('admin.dashboard.subtitle')}
+            {t('admin.dashboard.subtitle')}
           </p>
         </div>
+
       </div>
 
       {/* Admin Central Stats */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {loading ? (
-            Array.from({ length: 3 }).map((_, i) => (
-                <Card key={i} className="border-none shadow-lg animate-pulse">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <Skeleton className="h-4 w-24" />
-                        <Skeleton className="h-5 w-5 rounded-full" />
-                    </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-8 w-16 mb-2" />
-                        <Skeleton className="h-3 w-32" />
-                    </CardContent>
-                </Card>
-            ))
+          Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i} className="border-none shadow-lg animate-pulse">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-5 w-5 rounded-full" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16 mb-2" />
+                <Skeleton className="h-3 w-32" />
+              </CardContent>
+            </Card>
+          ))
         ) : (
           <>
             <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/10 transition-all hover:scale-[1.02]">
@@ -178,8 +195,8 @@ export function AdminDashboard() {
               <CardContent>
                 <div className="text-3xl font-black text-emerald-900 dark:text-emerald-300">{stats.totalAccounts}</div>
                 <div className="flex items-center gap-2 mt-2">
-                   <span className="flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-                   <p className="text-xs font-medium text-emerald-700 dark:text-emerald-500">{t('admin.dashboard.security_desc')}</p>
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                  <p className="text-xs font-medium text-emerald-700 dark:text-emerald-500">{t('admin.dashboard.security_desc')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -192,10 +209,10 @@ export function AdminDashboard() {
               <CardContent>
                 <div className="text-3xl font-black text-blue-900 dark:text-blue-300">{stats.totalRobots}</div>
                 <div className="flex items-center gap-2 mt-2">
-                   <TrendingUp className="h-3 w-3 text-blue-600" />
-                   <p className="text-xs font-medium text-blue-700 dark:text-blue-500">
-                      {t('common.status.active')}: {stats.activeRobots}
-                   </p>
+                  <TrendingUp className="h-3 w-3 text-blue-600" />
+                  <p className="text-xs font-medium text-blue-700 dark:text-blue-500">
+                    {t('common.status.active')}: {stats.activeRobots}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -209,7 +226,7 @@ export function AdminDashboard() {
               <CardContent>
                 <div className="text-3xl font-black text-amber-900 dark:text-amber-300">{stats.totalExercises}</div>
                 <p className="text-xs font-medium text-amber-700 dark:text-amber-500 mt-2">
-                    {t('wellness.desc')}
+                  {t('wellness.desc')}
                 </p>
               </CardContent>
             </Card>
@@ -217,107 +234,46 @@ export function AdminDashboard() {
         )}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        {/* User Distribution Chart */}
-        <Card className="lg:col-span-4 border-none shadow-sm h-full relative overflow-hidden">
+      <div className="grid gap-6">
+        {/* Fleet Distribution - Expanded to full width */}
+        <Card className="border-none shadow-sm h-full">
           <CardHeader>
             <CardTitle className="text-lg font-bold flex items-center gap-2">
-               <Users className="h-5 w-5 text-indigo-500" />
-               {t('admin.dashboard.charts.user_distribution_title')}
-            </CardTitle>
-            <CardDescription>{t('admin.dashboard.charts.user_distribution_desc')}</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[350px] pb-20">
-            {loading ? (
-                <div className="flex items-center justify-center h-full">
-                   <Skeleton className="h-64 w-64 rounded-full" />
-                </div>
-            ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                        <Pie
-                            data={stats.roleDistribution}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={70}
-                            outerRadius={100}
-                            paddingAngle={5}
-                            dataKey="value"
-                        >
-                            {stats.roleDistribution.map((entry, index) => (
-                                <Cell 
-                                    key={`cell-${index}`} 
-                                    fill={
-                                        entry.roleKey === 'ADMINISTRATOR' ? '#4f46e5' : 
-                                        entry.roleKey === 'MANAGER' ? '#0ea5e9' : 
-                                        entry.roleKey === 'CAREGIVER' ? '#10b981' : 
-                                        '#8b5cf6'
-                                    } 
-                                />
-                            ))}
-                        </Pie>
-                        <Tooltip 
-                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                        />
-                    </PieChart>
-                </ResponsiveContainer>
-            )}
-            {!loading && stats.roleDistribution.length > 0 && (
-                <div className="absolute bottom-4 inset-x-0 flex flex-wrap justify-center gap-x-4 gap-y-2 px-6">
-                    {stats.roleDistribution.map((item, index) => (
-                        <div key={item.name} className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase whitespace-nowrap">
-                           <span className="h-2 w-2 rounded-sqaure shrink-0" style={{ backgroundColor: 
-                                item.roleKey === 'ADMINISTRATOR' ? '#4f46e5' : 
-                                item.roleKey === 'MANAGER' ? '#0ea5e9' : 
-                                item.roleKey === 'CAREGIVER' ? '#10b981' : 
-                                '#8b5cf6'
-                           }} />
-                           {item.name}
-                        </div>
-                    ))}
-                </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Fleet Distribution */}
-        <Card className="lg:col-span-3 border-none shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg font-bold">
-                {t('admin.dashboard.charts.fleet_status_title')}
+              <Cpu className="h-5 w-5 text-blue-500" />
+              {t('admin.dashboard.charts.fleet_status_title')}
             </CardTitle>
             <CardDescription>{t('admin.dashboard.charts.fleet_status_desc')}</CardDescription>
           </CardHeader>
           <CardContent className="h-[350px]">
             {loading ? (
-                <div className="space-y-4 pt-10 px-4">
-                   <Skeleton className="h-20 w-full" />
-                   <Skeleton className="h-20 w-full" />
-                   <Skeleton className="h-20 w-full" />
-                </div>
+              <div className="space-y-4 pt-10 px-4">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </div>
             ) : (
-                <>
-                    <ResponsiveContainer width="100%" height={240}>
-                        <BarChart data={stats.robotStatusDistribution} layout="vertical">
-                            <XAxis type="number" hide />
-                            <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fill: '#9CA3AF', fontSize: 11}} width={80} />
-                            <Tooltip cursor={{fill: 'transparent'}} />
-                            <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
-                                {stats.robotStatusDistribution.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                    <div className="mt-8 grid grid-cols-3 gap-4 text-center">
-                        {stats.robotStatusDistribution.map((item) => (
-                            <div key={item.name}>
-                                <div className="text-xl font-black" style={{ color: item.color }}>{item.value}</div>
-                                <div className="text-[9px] font-bold text-muted-foreground uppercase">{item.name}</div>
-                            </div>
-                        ))}
+              <>
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={stats.robotStatusDistribution} layout="vertical">
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 11 }} width={120} />
+                    <Tooltip cursor={{ fill: 'transparent' }} />
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
+                      {stats.robotStatusDistribution.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                <div className="mt-8 grid grid-cols-3 gap-4 text-center">
+                  {stats.robotStatusDistribution.map((item: any) => (
+                    <div key={item.name}>
+                      <div className="text-2xl font-black" style={{ color: item.color }}>{item.value}</div>
+                      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{item.name}</div>
                     </div>
-                </>
+                  ))}
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

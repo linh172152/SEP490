@@ -105,7 +105,7 @@ export default function AdminFleetPage() {
         }
       });
       setRoomMap(mapping);
-    } catch {
+    } catch (error) {
       toast.error(t('admin.fleet.toasts.connect_error'));
     } finally {
       setLoading(false);
@@ -161,7 +161,7 @@ export default function AdminFleetPage() {
       await robotService.delete(id);
       fetchRobots();
       toast.success(t('admin.fleet.toasts.delete_success'));
-    } catch {
+    } catch (error) {
       toast.error(t('admin.fleet.toasts.delete_error'));
     }
   };

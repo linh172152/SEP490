@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Bot, Loader2 } from 'lucide-react';
+import { Bot, Loader2, Eye, EyeOff } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address.'),
@@ -57,6 +57,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -138,8 +139,31 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
                   <FormItem>
                     <FormLabel>{t('auth.login.password_label')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('auth.login.password_placeholder')} type="password" disabled={isLoading} {...field} />
+                      <div className="relative">
+                        <Input 
+                          placeholder={t('auth.login.password_placeholder')} 
+                          type={showPassword ? "text" : "password"} 
+                          disabled={isLoading} 
+                          className="pr-10"
+                          {...field} 
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
                     </FormControl>
+                    <div className="flex justify-end">
+                      <Link 
+                        href="/forgot-password" 
+                        className="text-xs text-primary hover:underline font-medium"
+                      >
+                        {t('auth.login.forgot_password_link') || 'Forgot password?'}
+                      </Link>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -171,4 +195,3 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
     </div>
   );
 }
-

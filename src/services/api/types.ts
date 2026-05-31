@@ -273,7 +273,18 @@ export interface AccountResponse {
 }
 
 export interface ChangePasswordRequest {
-  oldPassword?: string;
+  currentPassword?: string;
+  newPassword?: string;
+  confirmPassword?: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  otp: string;
   newPassword?: string;
   confirmPassword?: string;
 }

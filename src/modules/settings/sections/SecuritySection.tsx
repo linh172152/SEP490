@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { KeyRound } from 'lucide-react';
+import { KeyRound, Eye, EyeOff } from 'lucide-react';
 import { toast } from "react-toastify";
 import { settingsService } from '../services/settings.service';
 import { useI18nStore } from '@/store/useI18nStore';
@@ -22,12 +22,17 @@ interface SecuritySectionProps {
 
 export function SecuritySection({ isSaving }: SecuritySectionProps) {
   const { t } = useI18nStore();
-  const currentUser = useAuthStore((state) => state.user);
+  const currentUser = useAuthStore((state: any) => state.user);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isChangingPwd, setIsChangingPwd] = useState(false);
+
+  // Visibility states
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,20 +50,20 @@ export function SecuritySection({ isSaving }: SecuritySectionProps) {
 
     try {
       setIsChangingPwd(true);
-      // Backend UpdateAccount API allows setting password. 
-      // We pass the new password directly.
-      const success = await settingsService.changePassword(currentUser.id, newPassword);
+      const success = await settingsService.changePassword(
+        currentPassword, 
+        newPassword, 
+        confirmPassword
+      );
 
       if (success) {
         toast.success(t('settings.security.success_update'));
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
-      } else {
-        toast.error(t('settings.security.error_invalid'));
       }
-    } catch {
-      toast.error(t('settings.security.error_failed'));
+    } catch (error: any) {
+      toast.error(error.message || t('settings.security.error_failed'));
     } finally {
       setIsChangingPwd(false);
     }
@@ -94,52 +99,81 @@ export function SecuritySection({ isSaving }: SecuritySectionProps) {
                 <Label htmlFor="current-pwd" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                   {t('settings.security.current_password')}
                 </Label>
-                <Input
-                  id="current-pwd"
-                  type="password"
-                  autoComplete="current-password"
-                  placeholder="••••••••"
-                  className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  disabled={isChangingPwd}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="current-pwd"
+                    type={showCurrentPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 pr-10"
+                    value={currentPassword}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCurrentPassword(e.target.value)}
+                    disabled={isChangingPwd}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 <p className="text-[10px] text-muted-foreground italic">
                   * Hệ thống sẽ cập nhật mật khẩu mới trực tiếp vào tài khoản của bạn.
                 </p>
               </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="new-pwd" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                   {t('settings.security.new_password')}
                 </Label>
-                <Input
-                  id="new-pwd"
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="••••••••"
-                  className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  disabled={isChangingPwd}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="new-pwd"
+                    type={showNewPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    placeholder="••••••••"
+                    className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 pr-10"
+                    value={newPassword}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
+                    disabled={isChangingPwd}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="confirm-pwd" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                   {t('settings.security.confirm_password')}
                 </Label>
-                <Input
-                  id="confirm-pwd"
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="••••••••"
-                  className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  disabled={isChangingPwd}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="confirm-pwd"
+                    type={showConfirmPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    placeholder="••••••••"
+                    className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 pr-10"
+                    value={confirmPassword}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
+                    disabled={isChangingPwd}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
             </CardContent>
             <CardFooter className="bg-slate-50/50 dark:bg-slate-900/50 px-8 py-5 flex justify-end gap-3 mt-4 border-t">

@@ -5,6 +5,8 @@ import {
   AccountResponse,
   VerifyOtpRequest,
   ChangePasswordRequest,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
 } from "./types";
 
 class AuthService {
@@ -28,7 +30,15 @@ class AuthService {
   }
 
   async changePassword(data: ChangePasswordRequest): Promise<void> {
-    return apiClient.post<void>("/api/auth/change-password", data);
+    return apiClient.post<void>("/api/change-password", data);
+  }
+  
+  async forgotPassword(data: ForgotPasswordRequest): Promise<{ message: string }> {
+    return apiClient.post<{ message: string }>("/api/forgot-password", data);
+  }
+
+  async resetPassword(data: ResetPasswordRequest): Promise<{ message: string }> {
+    return apiClient.post<{ message: string }>("/api/reset-password", data);
   }
 
   logout(): void {

@@ -191,7 +191,7 @@ export function RoomModal({ isOpen, onClose, room, onRefresh, managerId }: RoomM
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
       <DialogContent className="sm:max-w-2xl rounded-2xl">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
@@ -254,12 +254,12 @@ export function RoomModal({ isOpen, onClose, room, onRefresh, managerId }: RoomM
               ) : (
                 <div className="space-y-4">
                   {(() => {
-                    const availableElderlies = elderlies.filter(el => !occupiedElderlyIds.has(el.id));
-                    const filteredElderlies = availableElderlies.filter(el => 
+                    const availableElderlies = elderlies.filter((el: ElderlyProfileResponse) => !occupiedElderlyIds.has(el.id));
+                    const filteredElderlies = availableElderlies.filter((el: ElderlyProfileResponse) => 
                       (el.name || '').toLowerCase().includes(searchElderly.toLowerCase())
                     );
-                    const assignedList = filteredElderlies.filter(el => room?.elderlies.some((re: ElderlyDTO) => re.id === el.id));
-                    const unassignedList = filteredElderlies.filter(el => !room?.elderlies.some((re: ElderlyDTO) => re.id === el.id));
+                    const assignedList = filteredElderlies.filter((el: ElderlyProfileResponse) => room?.elderlies?.some((re: ElderlyDTO) => re.id === el.id));
+                    const unassignedList = filteredElderlies.filter((el: ElderlyProfileResponse) => !room?.elderlies?.some((re: ElderlyDTO) => re.id === el.id));
 
                     return (
                       <>
@@ -348,8 +348,8 @@ export function RoomModal({ isOpen, onClose, room, onRefresh, managerId }: RoomM
               ) : (
                 <div className="space-y-4">
                   {(() => {
-                    const availableRobots = robots.filter(rb => !occupiedRobotIds.has(rb.id));
-                    const filteredRobots = availableRobots.filter(rb => 
+                    const availableRobots = robots.filter((rb: RobotResponse) => !occupiedRobotIds.has(rb.id));
+                    const filteredRobots = availableRobots.filter((rb: RobotResponse) => 
                       (rb.robotName || rb.serialNumber || '').toLowerCase().includes(searchRobot.toLowerCase())
                     );
                     const assignedList = filteredRobots.filter(rb => room?.robot?.id === rb.id);

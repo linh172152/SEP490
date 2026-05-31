@@ -133,7 +133,27 @@
       "error_unverified": "Tài khoản chưa được kích hoạt. Đang chuyển hướng đến trang xác thực...",
       "error_generic": "Đăng nhập thất bại. Vui lòng kiểm tra thông tin.",
       "already_have_account": "Đã có tài khoản?",
-      "login_link": "Đăng nhập tại đây"
+      "login_link": "Đăng nhập tại đây",
+      "forgot_password_link": "Quên mật khẩu?"
+    },
+    "forgot_password": {
+      "title": "Quên mật khẩu",
+      "subtitle": "Nhập email của bạn để nhận mã OTP đặt lại mật khẩu.",
+      "submit_btn": "Gửi mã OTP",
+      "back_to_login": "Quay lại đăng nhập",
+      "otp_sent_success": "Mã OTP đã được gửi đến email của bạn.",
+      "error_generic": "Không thể gửi mã OTP. Vui lòng thử lại."
+    },
+    "reset_password": {
+      "title": "Đặt lại mật khẩu",
+      "subtitle": "Nhập mã OTP và mật khẩu mới của bạn.",
+      "subtitle_step1": "Nhập mã OTP đã được gửi đến email của bạn.",
+      "subtitle_step2": "Thiết lập mật khẩu mới cho tài khoản của bạn.",
+      "submit_btn": "Đặt lại mật khẩu",
+      "new_password_label": "Mật khẩu mới",
+      "confirm_password_label": "Xác nhận mật khẩu mới",
+      "success": "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.",
+      "error_generic": "Đặt lại mật khẩu thất bại. Vui lòng kiểm tra lại mã OTP."
     },
     "register": {
       "title": "Tạo tài khoản",

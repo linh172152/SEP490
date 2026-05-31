@@ -54,17 +54,19 @@ export class SettingsService {
         await accountService.updateAccount(id, updatePayload);
     }
 
-    async changePassword(userId: string | number, newPass: string): Promise<boolean> {
-        const id = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+    async changePassword(currentPassword: string, newPassword: string, confirmPassword: string): Promise<boolean> {
         try {
-            await accountService.updateAccount(id, { 
-                password: newPass,
-                deleted: false // Mandatory for backend unboxing
+            const { authService } = await import('@/services/api/authService');
+            await authService.changePassword({ 
+                currentPassword,
+                newPassword,
+                confirmPassword
             });
             return true;
         } catch (error) {
             console.error("Failed to change password:", error);
-            return false;
+            const message = error instanceof Error ? error.message : String(error);
+            throw new Error(message);
         }
     }
 

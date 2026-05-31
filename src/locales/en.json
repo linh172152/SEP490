@@ -110,7 +110,27 @@
       "error_unverified": "Account not verified. Redirecting to verification page...",
       "error_generic": "Login failed. Please check your credentials.",
       "already_have_account": "Already have an account?",
-      "login_link": "Sign in here"
+      "login_link": "Sign in here",
+      "forgot_password_link": "Forgot password?"
+    },
+    "forgot_password": {
+      "title": "Forgot Password",
+      "subtitle": "Enter your email to receive a password reset OTP.",
+      "submit_btn": "Send OTP",
+      "back_to_login": "Back to login",
+      "otp_sent_success": "OTP has been sent to your email.",
+      "error_generic": "Failed to send OTP. Please try again."
+    },
+    "reset_password": {
+      "title": "Reset Password",
+      "subtitle": "Enter the OTP and your new password.",
+      "subtitle_step1": "Enter the OTP sent to your email.",
+      "subtitle_step2": "Choose a strong new password.",
+      "submit_btn": "Reset Password",
+      "new_password_label": "New Password",
+      "confirm_password_label": "Confirm Password",
+      "success": "Password reset successful. Please log in.",
+      "error_generic": "Failed to reset password. Please check your OTP."
     },
     "register": {
       "title": "Create an Account",

@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+'use client';
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { RegisterDTO, AccountResponse } from "@/services/api/types";
 import { useI18nStore } from "@/store/useI18nStore";
+import { Eye, EyeOff } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -44,13 +46,6 @@ interface UserFormModalProps {
   allowedRoles?: string[];
 }
 
-const MOCK_ROOMS = [
-  { id: 1, name: "Room 101 - A" },
-  { id: 2, name: "Room 102 - B" },
-  { id: 3, name: "Room 201 - VIP" },
-  { id: 4, name: "Room 205 - C" },
-];
-
 export function UserFormModal({
   open,
   onOpenChange,
@@ -61,6 +56,7 @@ export function UserFormModal({
 }: UserFormModalProps) {
   const { t } = useI18nStore();
   const isEditMode = !!user;
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -86,7 +82,6 @@ export function UserFormModal({
   const roleWatch = watch("role");
   const genderWatch = watch("gender");
   const statusWatch = watch("status");
-  const roomIdWatch = watch("roomId");
 
   useEffect(() => {
     if (user && open) {
@@ -100,6 +95,7 @@ export function UserFormModal({
         status: user.status || "ACTIVE",
         roomId: user.roomId
       });
+      setShowPassword(false);
     } else if (!user && open) {
       reset({
         name: "",
@@ -111,11 +107,11 @@ export function UserFormModal({
         status: "ACTIVE",
         roomId: undefined
       });
+      setShowPassword(false);
     }
-  }, [user, open, reset]);
+  }, [user, open, reset, allowedRoles]);
 
   const handleFormSubmit = (values: FormValues) => {
-    // If edit mode and password is empty, don't send it
     const dataToSubmit: any = { ...values };
     if (isEditMode && (!dataToSubmit.password || dataToSubmit.password.trim() === "")) {
       delete dataToSubmit.password;
@@ -162,12 +158,22 @@ export function UserFormModal({
               <Label htmlFor="password">
                 {isEditMode ? t('user_modal.new_password') : t('user_modal.password')}
               </Label>
-              <Input
-                id="password"
-                type="password"
-                {...register("password")}
-                placeholder={t('user_modal.placeholders.password')}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  {...register("password")}
+                  placeholder={t('user_modal.placeholders.password')}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
               {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
             </div>
 
@@ -178,7 +184,7 @@ export function UserFormModal({
                   value={roleWatch}
                   onValueChange={(val) => setValue("role", val as any)}
                 >
-                  <SelectTrigger className="h-11 rounded-xl border-slate-200">
+                  <SelectTrigger className="h-11 rounded-md border-slate-200">
                     <SelectValue placeholder={t('user_modal.placeholders.role')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -192,8 +198,6 @@ export function UserFormModal({
                 {errors.role && <p className="text-sm text-red-500">{errors.role.message}</p>}
               </div>
             )}
-
-
 
             <div className="grid gap-2">
               <Label htmlFor="gender">{t('user_modal.gender')}</Label>

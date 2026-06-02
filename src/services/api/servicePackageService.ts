@@ -11,7 +11,7 @@ class ServicePackageService {
   }
 
   async create(data: ServicePackageRequest): Promise<ServicePackageResponse> {
-    return apiClient.post<ServicePackageResponse>('/api/service-packages/auto', data);
+    return apiClient.post<ServicePackageResponse>('/api/service-packages', data);
   }
 
   async update(id: number, data: ServicePackageRequest): Promise<ServicePackageResponse> {
@@ -46,6 +46,10 @@ class ServicePackageService {
 
   async createAuto(data: ServicePackageRequest): Promise<ServicePackageResponse> {
     return apiClient.post<ServicePackageResponse>('/api/service-packages/auto', data);
+  }
+
+  async getAllAdmin(): Promise<ServicePackageResponse[]> {
+    return apiClient.get<ServicePackageResponse[]>("/api/service-packages/admin/all");
   }
 }
 

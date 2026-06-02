@@ -18,7 +18,7 @@
     "close": "Đóng",
     "actions": "Thao Tác",
     "name": "Họ và tên",
-    "status": "Trạng thái",
+    "status_label": "Trạng thái",
     "status_labels": {
       "success": "Thành công",
       "error": "Thất bại",
@@ -1008,7 +1008,8 @@
       "validation": {
         "name_min": "Mô tả phải ít nhất 2 ký tự",
         "code_required": "Tên (Mã code) là bắt buộc"
-      }
+      },
+      "delete_description": "Hành động này không thể hoàn tác. Dữ liệu liên quan sẽ bị xóa vĩnh viễn khỏi hệ thống."
     },
     "toasts": {
       "fetch_error": "Lỗi khi tải danh sách hành động",
@@ -1077,11 +1078,6 @@
         "duration": "Chu kỳ thực thi",
         "feedback": "Trạng thái kỹ thuật / Log"
       }
-    },
-    "difficulty": {
-      "easy": "Cơ bản",
-      "medium": "Nâng cao",
-      "hard": "Phức tạp"
     },
     "in_use": "Đang trong gói",
     "locked": "Đã khóa"
@@ -1188,14 +1184,6 @@
         }
       },
       "status": "HỆ_THỐNG_ONLINE"
-    },
-    "footer": {
-      "rights": "Bản quyền đã được bảo hộ.",
-      "links": {
-        "privacy": "Chính sách Bảo mật",
-        "terms": "Điều khoản Dịch vụ",
-        "contact": "Hỗ trợ liên hệ"
-      }
     }
   },
   "family": {

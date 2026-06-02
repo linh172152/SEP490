@@ -6,12 +6,12 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useI18nStore } from '@/store/useI18nStore';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
-import { 
-  Smile, 
-  LayoutDashboard, 
-  Users, 
-  Bot, 
-  Settings, 
+import {
+  Smile,
+  LayoutDashboard,
+  Users,
+  Bot,
+  Settings,
   LogOut,
   Video,
   Package,
@@ -60,7 +60,17 @@ const careNavItems: NavItem[] = [
   { i18nKey: 'sidebar.settings', href: '/dashboard/family/settings', icon: Settings, roles: ['ELDERLY', 'FAMILYMEMBER'] },
 ];
 
-const navItems: NavItem[] = [...platformNavItems, ...careNavItems];
+const caregiverNavItems: NavItem[] = [
+  { i18nKey: 'sidebar.overview', href: '/dashboard/caregiver', icon: LayoutDashboard, roles: ['CAREGIVER'] },
+  { i18nKey: 'sidebar.residents', href: '/dashboard/caregiver/elderly', icon: HeartPulse, roles: ['CAREGIVER'] },
+  { i18nKey: 'sidebar.care_tasks', href: '/dashboard/caregiver/care-tasks', icon: ShieldCheck, roles: ['CAREGIVER'] },
+  { i18nKey: 'sidebar.reminders', href: '/dashboard/caregiver/reminders', icon: Bell, roles: ['CAREGIVER'] },
+  { i18nKey: 'sidebar.wellness', href: '/dashboard/caregiver/exercises', icon: Smile, roles: ['CAREGIVER'] },
+  { i18nKey: 'sidebar.reports', href: '/dashboard/caregiver/reports', icon: FileText, roles: ['CAREGIVER'] },
+  { i18nKey: 'sidebar.settings', href: '/dashboard/caregiver/settings', icon: Settings, roles: ['CAREGIVER'] },
+];
+
+const navItems: NavItem[] = [...platformNavItems, ...careNavItems, ...caregiverNavItems];
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -104,9 +114,9 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
           )}
         </Link>
         {isMobileOpen && (
-           <Button variant="ghost" size="icon" onClick={onCloseMobile} className="sm:hidden text-foreground">
-              <X className="h-5 w-5" />
-           </Button>
+          <Button variant="ghost" size="icon" onClick={onCloseMobile} className="sm:hidden text-foreground">
+            <X className="h-5 w-5" />
+          </Button>
         )}
       </div>
 
@@ -132,7 +142,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
                 )}
                 title={isCollapsed ? getNavLabel(item) : ''}
               >
-                <Icon className={cn('h-5 w-5 transition-transform group-hover:scale-110 shrink-0', 
+                <Icon className={cn('h-5 w-5 transition-transform group-hover:scale-110 shrink-0',
                   isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-primary')} />
                 {!isCollapsed && (
                   <span className="whitespace-nowrap animate-in fade-in slide-in-from-left-2">
@@ -141,7 +151,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
                 )}
 
                 {isActive && !isCollapsed && (
-                   <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary-foreground opacity-50" />
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary-foreground opacity-50" />
                 )}
               </Link>
             );

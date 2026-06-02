@@ -19,6 +19,10 @@ class RobotActionService {
     return apiClient.delete<void>(`/api/action-library/${id}`);
   }
 
+  async updateAction(id: number, data: Partial<RobotActionLibrary>): Promise<RobotActionLibrary> {
+    return apiClient.put<RobotActionLibrary>(`/api/action-library/${id}`, data);
+  }
+
   // Robot Execution
   async triggerAction(actionCode: string): Promise<RobotAction> {
     return apiClient.post<RobotAction>("/api/robot-action", { action: actionCode });

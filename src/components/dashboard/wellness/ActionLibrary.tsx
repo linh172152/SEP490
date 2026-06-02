@@ -24,6 +24,16 @@ import {
   TableRow
 } from "@/components/ui/table";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -58,15 +68,15 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTriggering, setIsTriggering] = useState<number | null>(null);
 
+  // Delete Confirmation State
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const fetchActions = async () => {
     try {
       setIsLoading(true);
-      const [actionData, packageData] = await Promise.all([
-        robotActionService.getAllActions(),
-        servicePackageService.getAll()
-      ]);
+      const actionData = await robotActionService.getAllActions();
       setActions(actionData);
-      setPackages(packageData);
     } catch (error) {
       toast.error(t('wellness.toasts.fetch_error'));
     } finally {
@@ -78,36 +88,41 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
     fetchActions();
   }, []);
 
-  const handleCreate = async (data: Partial<RobotActionLibrary>) => {
+  const handleSubmit = async (data: Partial<RobotActionLibrary>) => {
     try {
       setIsSubmitting(true);
       await robotActionService.createAction(data);
-      toast.success(t('wellness.toasts.create_success'));
+      toast.success(t('wellness.toasts.create_success', 'Tạo hành động thành công.'));
       setIsModalOpen(false);
       fetchActions();
     } catch (error) {
-      toast.error(t('wellness.toasts.create_error'));
+      toast.error(t('wellness.toasts.create_error', 'Lỗi khi tạo mới.'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(t("common.confirm_delete"))) return;
+  const handleDelete = async () => {
+    if (!deleteConfirmId) return;
+
     try {
-      await robotActionService.deleteAction(id);
-      toast.success(t('wellness.toasts.delete_success'));
+      setIsDeleting(true);
+      await robotActionService.deleteAction(deleteConfirmId);
+      
+      toast.success(
+        <div className="flex items-center gap-2">
+          <Trash2 className="h-4 w-4 text-emerald-500" />
+          <span>{t('wellness.toasts.delete_success', 'Xóa hành động thành công.')}</span>
+        </div>
+      );
+      
+      setDeleteConfirmId(null);
       fetchActions();
     } catch (error: any) {
-      // Check if it's a foreign key constraint error (400)
-      const errorData = error.response?.data;
-      const errorMsg = typeof errorData === 'string' ? errorData : errorData?.message || '';
-
-      if (errorMsg.includes("foreign key constraint fails") || errorMsg.includes("servicepackage_robot_action")) {
-        toast.error(`${t('wellness.toasts.delete_error')}: ${t('wellness.toasts.in_use_error', 'This action is in use by packages and cannot be deleted.')}`);
-      } else {
-        toast.error(t('wellness.toasts.delete_error'));
-      }
+      console.error("Delete Action Error:", error);
+      toast.error(t('wellness.toasts.delete_error', 'Lỗi khi xóa hành động.'));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -171,7 +186,7 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
       <Card className="border-none shadow-xl bg-card/60 backdrop-blur-sm overflow-hidden rounded-2xl">
         <CardContent className="p-0">
           <Table>
-            <TableHeader className="bg-slate-50/50 dark:bg-slate-900/40">
+            <TableHeader className="bg-muted/30 dark:bg-muted/10">
               <TableRow className="hover:bg-transparent border-border/50">
                 <TableHead className="pl-6 py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t('wellness.table.code')}</TableHead>
                 <TableHead className="py-4 uppercase tracking-wider text-[11px] font-bold opacity-70">{t('wellness.table.name')}</TableHead>
@@ -196,9 +211,9 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
                 </TableRow>
               ) : (
                 currentActions.map((action) => (
-                  <TableRow key={action.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 border-border/40 transition-colors">
+                  <TableRow key={action.id} className="group hover:bg-muted/30 dark:hover:bg-primary/5 border-border/40 transition-colors">
                     <TableCell className="pl-6 py-4">
-                      <Badge variant="outline" className="font-mono bg-slate-50 dark:bg-slate-900 border-border/60 text-sm py-1">
+                      <Badge variant="outline" className="font-mono bg-muted/20 dark:bg-card border-border/60 text-sm py-1">
                         {action.code}
                       </Badge>
                     </TableCell>
@@ -222,7 +237,7 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-9 w-9 p-0 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-emerald-600 rounded-xl"
+                          className="h-9 w-9 p-0 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-600 rounded-xl"
                           onClick={() => handleTrigger(action.code, action.id)}
                           disabled={isTriggering === action.id}
                         >
@@ -232,19 +247,19 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
                         {!readOnly && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-9 w-9 p-0 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl">
+                              <Button variant="ghost" className="h-9 w-9 p-0 hover:bg-muted dark:hover:bg-accent rounded-xl">
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl border-border/50 animate-in fade-in zoom-in duration-200">
-                              <DropdownMenuItem
-                                onClick={() => handleDelete(action.id)}
-                                className="cursor-pointer font-medium text-rose-600 focus:bg-rose-50 focus:text-rose-700"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                {t("common.delete")}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
+                              <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl border-border/50 animate-in fade-in zoom-in duration-200">
+                                <DropdownMenuItem
+                                  onClick={() => setDeleteConfirmId(action.id)}
+                                  className="cursor-pointer font-medium text-rose-600 focus:bg-rose-50 focus:text-rose-700"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  {t("common.delete")}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
                           </DropdownMenu>
                         )}
                       </div>
@@ -291,9 +306,43 @@ export function ActionLibrary({ readOnly = false }: { readOnly?: boolean }) {
       <ActionModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSubmit={handleCreate}
+        onSubmit={handleSubmit}
+        initialData={selectedAction}
         isLoading={isSubmitting}
       />
+
+      {/* Premium Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmId !== null} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+        <AlertDialogContent className="max-w-md rounded-3xl border-none shadow-2xl p-0 overflow-hidden bg-card/95 backdrop-blur-md">
+          <div className="p-8 pb-0 flex flex-col items-center text-center">
+            <div className="h-20 w-20 rounded-3xl bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center mb-6 text-rose-500 shadow-inner">
+              <Trash2 className="h-10 w-10 animate-bounce" />
+            </div>
+            <AlertDialogTitle className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              {t("common.confirm_delete") || "Xác nhận xóa?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="mt-4 text-slate-500 dark:text-slate-400 leading-relaxed">
+              {t("wellness.modal.delete_description") || "Hành động này không thể hoàn tác. Dữ liệu liên quan sẽ bị xóa vĩnh viễn khỏi hệ thống."}
+            </AlertDialogDescription>
+          </div>
+          
+          <AlertDialogFooter className="p-8 pt-6 flex gap-3 sm:gap-0">
+            <AlertDialogCancel className="flex-1 rounded-xl h-12 border-slate-200 dark:border-border font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+              {t("common.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
+              disabled={isDeleting}
+              className="flex-1 rounded-xl h-12 bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-lg shadow-rose-200 dark:shadow-none transition-all active:scale-[0.98]"
+            >
+              {isDeleting ? t("common.deleting") : t("common.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

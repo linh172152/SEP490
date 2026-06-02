@@ -18,7 +18,7 @@
     "close": "Close",
     "actions": "Actions",
     "name": "Full Name",
-    "status": "Status",
+    "status_label": "Status",
     "status_labels": {
       "success": "Success",
       "error": "Error",
@@ -968,7 +968,8 @@
       "validation": {
         "name_min": "Name must be at least 2 characters",
         "code_required": "Code is required"
-      }
+      },
+      "delete_description": "This action cannot be undone. All related data will be permanently removed from the system."
     },
     "toasts": {
       "fetch_error": "Error loading action list",
@@ -1032,11 +1033,6 @@
         "duration": "Execution Cycle",
         "feedback": "Technical Status / Log"
       }
-    },
-    "difficulty": {
-      "easy": "Basic",
-      "medium": "Advanced",
-      "hard": "Complex"
     },
     "in_use": "Part of Package",
     "locked": "Locked"
@@ -1143,14 +1139,6 @@
         }
       },
       "status": "SYSTEM_ONLINE"
-    },
-    "footer": {
-      "rights": "All rights reserved.",
-      "links": {
-        "privacy": "Privacy Policy",
-        "terms": "Terms of Service",
-        "contact": "Contact Support"
-      }
     }
   },
   "family": {

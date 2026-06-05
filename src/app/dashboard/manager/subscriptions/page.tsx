@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Package, Plus, Loader2, Trash2, Edit2, Activity, Filter, AlertTriangle } from 'lucide-react';
+import { Package, Plus, Loader2, Trash2, Edit2, Activity, Filter, AlertTriangle, History as HistoryIcon } from 'lucide-react';
 import { useI18nStore } from '@/store/useI18nStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-toastify';
@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { OrderTrackingTab } from './OrderTrackingTab';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -187,8 +188,11 @@ export default function SubscriptionsUnifiedPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl h-14 border border-slate-200">
-          <TabsTrigger value="definitions" className="rounded-xl px-12 h-11 data-[state=active]:bg-white data-[state=active]:shadow-lg gap-2 font-bold">
+          <TabsTrigger value="definitions" className="rounded-xl px-12 h-11 data-[state=active]:bg-white data-[state=active]:shadow-lg gap-2 font-bold transition-all duration-300">
             <Package className="h-4 w-4" /> {t('manager.subscriptions.tab_packages')}
+          </TabsTrigger>
+          <TabsTrigger value="tracking" className="rounded-xl px-12 h-11 data-[state=active]:bg-white data-[state=active]:shadow-lg gap-2 font-bold transition-all duration-300">
+            <HistoryIcon className="h-4 w-4" /> {t('manager.subscriptions.tab_orders') || 'Order Tracking'}
           </TabsTrigger>
         </TabsList>
 
@@ -273,6 +277,10 @@ export default function SubscriptionsUnifiedPage() {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="tracking">
+          <OrderTrackingTab />
         </TabsContent>
 
 

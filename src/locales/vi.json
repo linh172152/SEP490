@@ -705,6 +705,7 @@
       "revenue_target": "Mục tiêu",
       "interaction_efficiency": "Hiệu Quả Tương Tác",
       "interaction_desc": "Phân tích mức độ gắn kết của người dùng với CareBot.",
+      "new_subscriptions": "Gói đăng ký mới",
       "completion_rate": "Tỷ lệ hoàn thành nhiệm vụ",
       "voice_feedback": "Phản hồi giọng nói chuẩn",
       "charging_success": "Tự động sạc thành công",
@@ -748,6 +749,14 @@
       "tab_packages": "Cấp độ Gói",
       "tab_sessions": "Gán hành động Robot",
       "tab_payments": "Thanh toán",
+      "tab_orders": "Theo dõi đơn hàng",
+      "upgrade_stats": "Thống kê Nâng cấp",
+      "upgrade_desc": "Phân bổ nâng cấp gói dịch vụ theo tháng",
+      "upgrade_total": "Tổng số lượt nâng cấp",
+      "upgrade_path": "Lộ trình Nâng cấp Phổ biến",
+      "upgrade_path_desc": "Các bước chuyển đổi gói dịch vụ thường gặp",
+      "upgrade_insight": "Người dùng thường nâng cấp lên các gói cao hơn sau khi trải nghiệm đầy đủ tính năng của Robot.",
+      "upgrade_badge": "Nâng cấp",
       "assign_exercises": "Thiết lập hành động",
       "no_exercises": "Chưa có hành động nào được gán cho gói này.",
       "package_select": "Chọn gói dịch vụ để gán hành động",
@@ -787,6 +796,22 @@
           "ready": "Sẵn sàng",
           "empty_actions": "Chưa có hành động nào được gán cho gói này"
         }
+      }
+    },
+    "orders": {
+      "title": "Quản lý Đơn hàng",
+      "subtitle": "Theo dõi trạng thái thanh toán và thông tin đăng ký của các gia đình.",
+      "table": {
+        "family": "Gia đình",
+        "package": "Gói dịch vụ",
+        "elderly": "Người cao tuổi",
+        "status": "Trạng thái",
+        "assigned_at": "Ngày đăng ký",
+        "expired_at": "Ngày hết hạn",
+        "remaining_days": "Còn lại",
+        "days_left": "{{days}} ngày",
+        "expired": "Đã hết hạn",
+        "upgrade_badge": "Nâng cấp"
       }
     },
     "nav": {
@@ -913,7 +938,8 @@
         "none": "Chưa ghi nhận"
       },
       "toasts": {
-        "delete_confirm": "Xác nhận xóa không gian này? Hành động này không thể hoàn tác.",
+        "delete_confirm": "Xác nhận xóa không gian",
+        "delete_confirm_desc": "Bạn có chắc chắn muốn xóa không gian này? Hành động này không thể hoàn tác.",
         "delete_success": "Xóa không gian thành công",
         "delete_error": "Lỗi khi xóa không gian",
         "delete_not_empty": "Không gian {{name}} không thể xóa vì vẫn còn thiết bị hoặc người cư trú gắn liền. Vui lòng giải phóng không gian trước khi xóa.",

@@ -663,6 +663,7 @@
       "revenue_target": "Target",
       "interaction_efficiency": "Interaction Efficiency",
       "interaction_desc": "User engagement analysis with CareBot.",
+      "new_subscriptions": "New Subscriptions",
       "completion_rate": "Task Completion Rate",
       "voice_feedback": "Voice Feedback Accuracy",
       "charging_success": "Auto-charging Success",
@@ -706,6 +707,14 @@
       "tab_packages": "Package Levels",
       "tab_sessions": "Action Mapping",
       "tab_payments": "Payment",
+      "tab_orders": "Order Tracking",
+      "upgrade_stats": "Subscription Upgrades",
+      "upgrade_desc": "Monthly upgrade distribution",
+      "upgrade_total": "Total Upgrades",
+      "upgrade_path": "Upgrade Popularity",
+      "upgrade_path_desc": "Common service package transitions",
+      "upgrade_insight": "Families frequently upgrade to higher tiers as they discover more robot features.",
+      "upgrade_badge": "UPGRADE",
       "assign_exercises": "Map Actions",
       "no_exercises": "No actions have been mapped to this package yet.",
       "package_select": "Select a package to configure",
@@ -745,6 +754,22 @@
           "ready": "Ready",
           "empty_actions": "No actions assigned to this package yet"
         }
+      }
+    },
+    "orders": {
+      "title": "Order Management",
+      "subtitle": "Track payment statuses and subscription info for all families.",
+      "table": {
+        "family": "Family",
+        "package": "Package",
+        "elderly": "Elderly",
+        "status": "Status",
+        "assigned_at": "Assigned At",
+        "expired_at": "Expired At",
+        "remaining_days": "Remaining",
+        "days_left": "{{days}} days",
+        "expired": "Expired",
+        "upgrade_badge": "Upgrade"
       }
     },
     "nav": {
@@ -873,7 +898,8 @@
         "none": "Not recorded"
       },
       "toasts": {
-        "delete_confirm": "Confirm delete room? This action cannot be undone.",
+        "delete_confirm": "Confirm Delete Space",
+        "delete_confirm_desc": "Are you sure you want to delete this space? This action cannot be undone.",
         "delete_success": "Room deleted successfully",
         "delete_error": "Error deleting room",
         "delete_not_empty": "Room {{name}} cannot be deleted because it still has assigned devices or residents. Please unassign everything before deleting.",

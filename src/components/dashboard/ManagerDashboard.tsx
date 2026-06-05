@@ -53,7 +53,9 @@ import {
   Tooltip,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  BarChart,
+  Bar
 } from 'recharts';
 import { robotService } from '@/services/api/robotService';
 import { servicePackageService } from '@/services/api/servicePackageService';
@@ -201,9 +203,77 @@ export function ManagerDashboard() {
         return sum;
       }, 0);
 
-      return { name: monthDisplay, actual: revenueInMonth };
+      // Calculate upgrades in this month
+      const upgradesInMonth = userPackages.filter(up => {
+         const dateStr = up.assignedAt;
+         if (!dateStr) return false;
+         try {
+           const assignedDate = parseISO(dateStr);
+           if (!isSameMonth(assignedDate, monthDate)) return false;
+           
+           // Check if this elderly already had a package before this one
+           return userPackages.some(prev => 
+             prev.elderlyProfileId === up.elderlyProfileId && 
+             prev.status === 'PAID' && 
+             new Date(prev.assignedAt).getTime() < new Date(up.assignedAt).getTime()
+           );
+         } catch (e) { return false; }
+      }).length;
+
+      // Calculate upgrades vs new
+      const totalUpgrades = userPackages.filter(up => {
+         return userPackages.some(prev => 
+           prev.elderlyProfileId === up.elderlyProfileId && 
+           prev.status === 'PAID' && 
+           new Date(prev.assignedAt).getTime() < new Date(up.assignedAt).getTime()
+         );
+      }).length;
+      const totalNew = userPackages.length - totalUpgrades;
+
+      return { 
+        name: monthDisplay, 
+        actual: revenueInMonth,
+        upgrades: upgradesInMonth,
+        totalNew,
+        totalUpgrades
+      };
     });
-  }, [confirmedPackages, servicePackages, timeRange, dateLocale]);
+  }, [confirmedPackages, servicePackages, userPackages, timeRange, dateLocale]);
+
+  const upgradePathData = useMemo(() => {
+    const paths: Record<string, number> = {};
+    
+    // Group packages by elderly
+    const elderlyPackages: Record<number, UserPackageResponse[]> = {};
+    userPackages.forEach(up => {
+      if (up.status !== 'PAID') return;
+      if (!elderlyPackages[up.elderlyProfileId as number]) {
+        elderlyPackages[up.elderlyProfileId as number] = [];
+      }
+      elderlyPackages[up.elderlyProfileId as number].push(up);
+    });
+
+    // Analyze transitions
+    Object.values(elderlyPackages).forEach(pkgs => {
+      // Sort by assigned date
+      const sorted = [...pkgs].sort((a, b) => new Date(a.assignedAt || 0).getTime() - new Date(b.assignedAt || 0).getTime());
+      
+      for (let i = 0; i < sorted.length - 1; i++) {
+        const fromPkg = servicePackages.find(p => p.id === sorted[i].servicePackageId);
+        const toPkg = servicePackages.find(p => p.id === sorted[i+1].servicePackageId);
+        
+        if (fromPkg && toPkg && fromPkg.id !== toPkg.id) {
+          const pathName = `${fromPkg.name} ➔ ${toPkg.name}`;
+          paths[pathName] = (paths[pathName] || 0) + 1;
+        }
+      }
+    });
+
+    return Object.entries(paths)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5); // Top 5 paths
+  }, [userPackages, servicePackages]);
 
   const totalRevenue = useMemo(() => {
     return monthlyRevenue.reduce((sum, item) => sum + item.actual, 0);
@@ -346,9 +416,9 @@ export function ManagerDashboard() {
 
       </div>
 
-      {/* Financial Analytics - Row 1: Full Width Chart */}
-      <div className="grid gap-6">
-        <Card className="border-none shadow-xl shadow-slate-200/50 dark:shadow-none">
+      {/* Row: Revenue & Upgrades */}
+      <div className="grid gap-6 lg:grid-cols-12">
+        <Card className="lg:col-span-8 border-none shadow-xl shadow-slate-200/50 dark:shadow-none">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2 text-xl font-bold">
@@ -413,6 +483,61 @@ export function ManagerDashboard() {
                 />
               </AreaChart>
             </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-4 border-none shadow-xl shadow-slate-200/50 dark:shadow-none bg-gradient-to-br from-indigo-50 to-white">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold flex items-center gap-2">
+               <ArrowUpRight className="h-5 w-5 text-indigo-600" />
+               {t('manager.subscriptions.upgrade_path') || 'Upgrade Popularity'}
+            </CardTitle>
+            <CardDescription>{t('manager.subscriptions.upgrade_path_desc') || 'Common service package transitions'}</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[320px] pt-4">
+             {upgradePathData.length === 0 ? (
+               <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                  <div className="p-4 rounded-full bg-slate-100 mb-4">
+                     <TrendingUp className="h-8 w-8 text-slate-300" />
+                  </div>
+                  <p className="text-sm font-medium text-slate-400 italic">No upgrade paths detected yet.</p>
+               </div>
+             ) : (
+               <>
+                 <div className="h-[200px]">
+                   <ResponsiveContainer width="100%" height="100%">
+                     <BarChart data={upgradePathData} layout="vertical" margin={{ left: -20, right: 20 }}>
+                       <XAxis type="number" hide />
+                       <YAxis 
+                          dataKey="name" 
+                          type="category" 
+                          axisLine={false} 
+                          tickLine={false} 
+                          tick={{ fill: '#6366f1', fontSize: 10, fontWeight: 'bold' }} 
+                          width={120} 
+                       />
+                       <Tooltip 
+                          cursor={{ fill: 'transparent' }}
+                          contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                       />
+                       <Bar 
+                          dataKey="value" 
+                          fill="#6366f1" 
+                          radius={[0, 4, 4, 0]} 
+                          barSize={20}
+                          animationDuration={1500}
+                       />
+                     </BarChart>
+                   </ResponsiveContainer>
+                 </div>
+                 <div className="mt-6 p-4 rounded-2xl bg-white/60 border border-indigo-100">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-none mb-2">Manager Insight</p>
+                    <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                       {upgradePathData[0] ? `Most families upgrade from ${upgradePathData[0].name.split('➔')[0].trim()} to ${upgradePathData[0].name.split('➔')[1].trim()}.` : 'No transitions recorded.'}
+                    </p>
+                 </div>
+               </>
+             )}
           </CardContent>
         </Card>
       </div>

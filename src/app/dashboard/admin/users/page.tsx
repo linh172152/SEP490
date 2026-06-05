@@ -364,7 +364,6 @@ export default function UsersManagePage() {
               <SelectItem value="ALL">{t("admin.users.filters.role_all")}</SelectItem>
               <SelectItem value="ADMINISTRATOR">{t("common.roles.ADMINISTRATOR")}</SelectItem>
               <SelectItem value="MANAGER">{t("common.roles.MANAGER")}</SelectItem>
-              <SelectItem value="CAREGIVER">{t("common.roles.CAREGIVER")}</SelectItem>
               <SelectItem value="FAMILYMEMBER">{t("common.roles.FAMILYMEMBER")}</SelectItem>
             </SelectContent>
           </Select>

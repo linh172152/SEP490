@@ -59,6 +59,18 @@ export function OrderTrackingTab() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<UserPackageResponse | null>(null);
 
+  // Timezone correction for Vietnam (UTC+7)
+  const adjustDateTime = (dateStr: string | undefined | null) => {
+    if (!dateStr) return null;
+    // If the date string doesn't have a timezone indicator, assume it's UTC
+    if (typeof dateStr === 'string' && !dateStr.includes('Z') && !dateStr.includes('+')) {
+      const isoStr = dateStr.includes('T') ? dateStr + 'Z' : dateStr.replace(' ', 'T') + 'Z';
+      const date = new Date(isoStr);
+      if (!isNaN(date.getTime())) return date;
+    }
+    return new Date(dateStr);
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -72,17 +84,26 @@ export function OrderTrackingTab() {
 
         setOrders(orderData || []);
         
-        const accMap: Record<number, AccountResponse> = {};
-        accountData.forEach((a: AccountResponse) => accMap[a.id] = a);
-        setAccounts(accMap);
+        const accMap: Record<string, AccountResponse> = {};
+        (accountData || []).forEach((a: any) => {
+          const id = a.id ?? a.Id ?? a.ID;
+          if (id !== undefined) accMap[String(id)] = a;
+        });
+        setAccounts(accMap as any);
 
-        const pkgMap: Record<number, ServicePackageResponse> = {};
-        packageData.forEach((p: ServicePackageResponse) => pkgMap[p.id] = p);
-        setPackages(pkgMap);
+        const pkgMap: Record<string, ServicePackageResponse> = {};
+        (packageData || []).forEach((p: any) => {
+          const id = p.id ?? p.Id ?? p.ID;
+          if (id !== undefined) pkgMap[String(id)] = p;
+        });
+        setPackages(pkgMap as any);
 
-        const eldMap: Record<number, ElderlyProfileResponse> = {};
-        elderlyData.forEach((e: ElderlyProfileResponse) => eldMap[e.id] = e);
-        setElderly(eldMap);
+        const eldMap: Record<string, ElderlyProfileResponse> = {};
+        (elderlyData || []).forEach((e: any) => {
+          const id = e.id ?? e.Id ?? e.ID;
+          if (id !== undefined) eldMap[String(id)] = e;
+        });
+        setElderly(eldMap as any);
 
       } catch (error) {
         console.error("Failed to fetch order data:", error);
@@ -275,9 +296,16 @@ export function OrderTrackingTab() {
                 </TableRow>
               ) : (
                   filteredOrders.map((order) => {
-                    const acc = accounts[order.accountId as number];
-                    const pkg = packages[order.servicePackageId as number];
-                    const eld = elderly[order.elderlyProfileId as number];
+                    const o = order as any;
+                    const accId = o.accountId ?? o.AccountId ?? o.account_id ?? o.AccountID;
+                    const pkgId = o.servicePackageId ?? o.ServicePackageId ?? o.service_package_id ?? o.ServicePackageID;
+                    const eldId = o.elderlyProfileId ?? o.ElderlyProfileId ?? o.elderly_profile_id ?? o.ElderlyProfileID;
+
+                    const acc = accId ? (accounts as any)[String(accId)] : null;
+                    const pkg = pkgId ? (packages as any)[String(pkgId)] : null;
+                    const eld = eldId ? (elderly as any)[String(eldId)] : null;
+                    
+                    const orderDate = adjustDateTime(o.assignedAt ?? o.AssignedAt ?? o.assigned_at);
                     
                     // Logic to calculate remaining days if expiredAt is missing
                     let effectiveExpiredAt = order.expiredAt;
@@ -305,10 +333,10 @@ export function OrderTrackingTab() {
                             <CreditCard className="h-6 w-6 text-slate-400 group-hover:text-indigo-600" />
                           </div>
                           <div>
-                            <div className="font-black text-slate-900 text-base leading-tight">Order #{order.id}</div>
+                            <div className="font-black text-slate-900 text-base leading-tight">Order #{(order as any).id || (order as any).Id}</div>
                             <div className="text-xs text-slate-400 font-bold flex items-center gap-1 mt-1">
                               <Calendar className="h-3 w-3" />
-                              {order.assignedAt ? format(new Date(order.assignedAt), 'dd/MM/yyyy HH:mm') : '---'}
+                              {orderDate ? format(orderDate, 'dd/MM/yyyy HH:mm') : '---'}
                             </div>
                           </div>
                         </div>
@@ -320,8 +348,10 @@ export function OrderTrackingTab() {
                             <User className="h-5 w-5 text-slate-400" />
                           </div>
                           <div>
-                            <div className="font-bold text-slate-700 leading-none">{eld?.fullName || eld?.name || '---'}</div>
-                            <div className="text-[10px] text-slate-400 font-black mt-1 uppercase tracking-tight">{t('manager.orders.table.family') || 'Family'}: {acc?.fullName || acc?.FullName || '---'}</div>
+                            <div className="font-bold text-slate-700 leading-none">{eld?.fullName || eld?.name || (eld as any)?.Name || '---'}</div>
+                            <div className="text-[10px] text-slate-400 font-black mt-1 uppercase tracking-tight">
+                              {t('manager.orders.table.family') || 'Family'}: {acc?.FullName || acc?.fullName || acc?.email || '---'}
+                            </div>
                           </div>
                         </div>
                       </TableCell>
@@ -435,7 +465,14 @@ export function OrderTrackingTab() {
                     </div>
                     <div>
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Customer (Family)</p>
-                       <p className="font-bold text-slate-900 mt-1">{accounts[selectedOrder.accountId as number]?.fullName || accounts[selectedOrder.accountId as number]?.FullName || '---'}</p>
+                       <p className="font-bold text-slate-900 mt-1">
+                         {(() => {
+                            const so = selectedOrder as any;
+                            const accId = so.accountId ?? so.AccountId ?? so.account_id ?? so.AccountID;
+                            const a = accId ? (accounts as any)[String(accId)] : null;
+                            return a?.FullName || a?.fullName || a?.email || '---';
+                         })()}
+                       </p>
                     </div>
                  </div>
 
@@ -460,63 +497,75 @@ export function OrderTrackingTab() {
                     </div>
                  </div>
 
-                {elderly[selectedOrder.elderlyProfileId as number] && (
-                  <div className="p-5 rounded-3xl bg-indigo-50/50 border border-indigo-100/50 space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-2xl bg-white flex items-center justify-center shadow-sm">
-                         <Stethoscope className="h-5 w-5 text-indigo-600" />
-                      </div>
-                      <div>
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{t('manager.orders.table.elderly') || 'Elderly Profile'}</p>
-                         <p className="font-bold text-slate-900 mt-1">{elderly[selectedOrder.elderlyProfileId as number]?.fullName || elderly[selectedOrder.elderlyProfileId as number]?.name}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Gender</p>
-                         <div className="flex items-center gap-1.5">
-                            {(() => {
-                              const g = elderly[selectedOrder.elderlyProfileId as number]?.gender?.toUpperCase();
-                              if (g === 'MALE' || g === 'M') return (
-                                <><div className="h-2 w-2 rounded-full bg-blue-500" /> <span className="text-xs font-bold text-slate-700">Nam</span></>
-                              );
-                              if (g === 'FEMALE' || g === 'F') return (
-                                <><div className="h-2 w-2 rounded-full bg-pink-500" /> <span className="text-xs font-bold text-slate-700">Nữ</span></>
-                              );
-                              return <span className="text-xs font-bold text-slate-700">{elderly[selectedOrder.elderlyProfileId as number]?.gender || '---'}</span>;
-                            })()}
-                         </div>
-                      </div>
-                      <div className="space-y-1">
-                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">DOB</p>
-                         <p className="text-xs font-bold text-slate-700">{elderly[selectedOrder.elderlyProfileId as number]?.dateOfBirth ? format(new Date(elderly[selectedOrder.elderlyProfileId as number].dateOfBirth), 'dd/MM/yyyy') : '---'}</p>
-                      </div>
-                    </div>
+                {(() => {
+                  const so = selectedOrder as any;
+                  const eldId = so.elderlyProfileId ?? so.ElderlyProfileId ?? so.elderly_profile_id ?? so.ElderlyProfileID;
+                  const eld = eldId ? (elderly as any)[String(eldId)] : null;
+                  if (!eld) return null;
 
-                    <div className="space-y-1 bg-white/50 p-3 rounded-xl">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Health Notes</p>
-                      <p className="text-[11px] text-slate-600 font-medium italic leading-relaxed">
-                        {elderly[selectedOrder.elderlyProfileId as number]?.healthNotes || 'No health notes recorded.'}
-                      </p>
+                  return (
+                    <div className="p-5 rounded-3xl bg-indigo-50/50 border border-indigo-100/50 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-2xl bg-white flex items-center justify-center shadow-sm">
+                           <Stethoscope className="h-5 w-5 text-indigo-600" />
+                        </div>
+                        <div>
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{t('manager.orders.table.elderly') || 'Elderly Profile'}</p>
+                           <p className="font-bold text-slate-900 mt-1">{eld.fullName || eld.name || (eld as any).Name || '---'}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="space-y-1">
+                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Date of Birth</p>
+                           <p className="text-xs font-bold text-slate-700">
+                             {eld.dateOfBirth ? format(new Date(eld.dateOfBirth), 'dd/MM/yyyy') : '---'}
+                           </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1 bg-white/50 p-3 rounded-xl">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Health Notes</p>
+                        <p className="text-[11px] text-slate-600 font-medium italic leading-relaxed">
+                          {eld.healthNotes || 'No health notes recorded.'}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
 
               <div className="space-y-3 pt-2 border-t border-slate-50">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-400 font-bold">{t('manager.orders.table.assigned_at') || 'Registration Date'}</span>
-                  <span className="text-slate-900 font-black">{selectedOrder.assignedAt ? format(new Date(selectedOrder.assignedAt), 'dd/MM/yyyy HH:mm') : '---'}</span>
+                  <span className="text-slate-900 font-black">
+                    {(() => {
+                      const d = adjustDateTime(selectedOrder.assignedAt || (selectedOrder as any).assignedAt || (selectedOrder as any).AssignedAt);
+                      return d ? format(d, 'dd/MM/yyyy HH:mm') : '---';
+                    })()}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-400 font-bold">{t('manager.orders.table.expired_at') || 'Expiry Date'}</span>
                   <span className="text-slate-900 font-black">
-                    {selectedOrder.expiredAt 
-                      ? format(new Date(selectedOrder.expiredAt), 'dd/MM/yyyy') 
-                      : (packages[selectedOrder.servicePackageId as number] && selectedOrder.assignedAt
-                          ? format(addDays(new Date(selectedOrder.assignedAt), packages[selectedOrder.servicePackageId as number].durationDays), 'dd/MM/yyyy')
-                          : 'Permanent / Ongoing')}
+                    {(() => {
+                      const expStr = selectedOrder.expiredAt || (selectedOrder as any).expiredAt || (selectedOrder as any).ExpiredAt;
+                      const assignedStr = selectedOrder.assignedAt || (selectedOrder as any).assignedAt || (selectedOrder as any).AssignedAt;
+                      const pkgId = selectedOrder.servicePackageId || (selectedOrder as any).ServicePackageId;
+                      const pkg = packages[pkgId as number];
+
+                      if (expStr) {
+                         const d = adjustDateTime(expStr);
+                         return d ? format(d, 'dd/MM/yyyy') : '---';
+                      }
+
+                      if (pkg && assignedStr) {
+                         const d = adjustDateTime(assignedStr);
+                         if (d) return format(addDays(d, pkg.durationDays), 'dd/MM/yyyy');
+                      }
+                      
+                      return 'Permanent / Ongoing';
+                    })()}
                   </span>
                 </div>
               </div>

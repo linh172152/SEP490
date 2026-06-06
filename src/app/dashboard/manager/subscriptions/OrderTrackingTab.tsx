@@ -349,9 +349,6 @@ export function OrderTrackingTab() {
                           </div>
                           <div>
                             <div className="font-bold text-slate-700 leading-none">{eld?.fullName || eld?.name || (eld as any)?.Name || '---'}</div>
-                            <div className="text-[10px] text-slate-400 font-black mt-1 uppercase tracking-tight">
-                              {t('manager.orders.table.family') || 'Family'}: {acc?.FullName || acc?.fullName || acc?.email || '---'}
-                            </div>
                           </div>
                         </div>
                       </TableCell>
@@ -459,23 +456,7 @@ export function OrderTrackingTab() {
               </div>
 
               <div className="space-y-4">
-                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center shadow-sm">
-                       <User className="h-5 w-5 text-indigo-600" />
-                    </div>
-                    <div>
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Customer (Family)</p>
-                       <p className="font-bold text-slate-900 mt-1">
-                         {(() => {
-                            const so = selectedOrder as any;
-                            const accId = so.accountId ?? so.AccountId ?? so.account_id ?? so.AccountID;
-                            const a = accId ? (accounts as any)[String(accId)] : null;
-                            return a?.FullName || a?.fullName || a?.email || '---';
-                         })()}
-                       </p>
-                    </div>
-                 </div>
-
+                 {/* Family Info Section Removed */}
                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-4">
                     <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center shadow-sm">
                        <Package className="h-5 w-5 text-indigo-600" />

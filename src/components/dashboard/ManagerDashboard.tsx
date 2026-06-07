@@ -66,6 +66,7 @@ import { elderlyService } from '@/services/api/elderlyService';
 import { paymentService } from '@/services/api/paymentService';
 import { RobotResponse, ServicePackageResponse, UserPackageResponse, AccountResponse, InteractionLogResponse, ElderlyProfileResponse } from '@/services/api/types';
 import { useI18nStore } from '@/store/useI18nStore';
+import { buildUpgradePathData, buildPackagePopularityStats, buildAccountMap, buildPackageMap, getDeletedAccountIds, getSoftDeletedAccountIdsFromBackup, getVisibleTrackingOrders, isUpgradeOrder } from '@/lib/userPackageUtils';
 
 const COLORS = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#3b82f6'];
 
@@ -76,6 +77,8 @@ export function ManagerDashboard() {
   const [userPackages, setUserPackages] = useState<UserPackageResponse[]>([]);
   const [pendingPackages, setPendingPackages] = useState<UserPackageResponse[]>([]);
   const [accounts, setAccounts] = useState<AccountResponse[]>([]);
+  const [accountMap, setAccountMap] = useState<Record<string, AccountResponse>>({});
+  const [packageMap, setPackageMap] = useState<Record<string, ServicePackageResponse>>({});
   const [interactionLogs, setInteractionLogs] = useState<InteractionLogResponse[]>([]);
   const [elderlyProfiles, setElderlyProfiles] = useState<ElderlyProfileResponse[]>([]);
   
@@ -110,9 +113,17 @@ export function ManagerDashboard() {
 
         // Map results safely
         if (results[0].status === 'fulfilled') setRobots(results[0].value || []);
-        if (results[1].status === 'fulfilled') setServicePackages(results[1].value || []);
+        if (results[1].status === 'fulfilled') {
+          const pkgs = results[1].value || [];
+          setServicePackages(pkgs);
+          setPackageMap(buildPackageMap(pkgs));
+        }
         if (results[2].status === 'fulfilled') setUserPackages(results[2].value || []);
-        if (results[3].status === 'fulfilled') setAccounts(results[3].value || []);
+        if (results[3].status === 'fulfilled') {
+          const accs = results[3].value || [];
+          setAccounts(accs);
+          setAccountMap(buildAccountMap(accs));
+        }
         if (results[4].status === 'fulfilled') setInteractionLogs(results[4].value || []);
         if (results[5].status === 'fulfilled') setElderlyProfiles(results[5].value || []);
         if (results[6].status === 'fulfilled') setPendingPackages(results[6].value || []);
@@ -151,31 +162,27 @@ export function ManagerDashboard() {
     return `${Math.floor(raw)} ~ ${Math.ceil(raw)}`; // Dạng khoảng 1 ~ 2
   }, [elderlyCount, familyCount]);
 
-  const subscriptionDist = servicePackages.map(pkg => ({
-    name: pkg.name,
-    value: userPackages.filter(up => up.servicePackageId === pkg.id).length
-  })).sort((a, b) => b.value - a.value);
+  const visibleOrders = useMemo(() => {
+    const excluded = getDeletedAccountIds(accounts);
+    getSoftDeletedAccountIdsFromBackup().forEach((id) => excluded.add(id));
+    return getVisibleTrackingOrders(userPackages, accountMap, packageMap, excluded);
+  }, [userPackages, accountMap, packageMap, accounts]);
 
-  const pkgStats = servicePackages.map(pkg => ({
-    name: pkg.name,
-    value: userPackages.filter(up => up.servicePackageId === pkg.id).length
-  })).sort((a, b) => b.value - a.value);
+  const pkgStats = buildPackagePopularityStats(packageMap, visibleOrders);
   
   // Show at most 4 for a clean UI, but ensure we have something to show if any packages exist
   // Show at most 8 to ensure new packages are visible
   const displayPkgStats = pkgStats.slice(0, 8);
+  const paidTrackableCount = visibleOrders.filter((up) => up.status === 'PAID').length;
 
   // Filter only confirmed packages for revenue calculations
   const confirmedPackages = useMemo(() => {
-    return userPackages.filter(up => {
-      // 1. Check if the ID is in the dedicated pending list (if available)
+    return visibleOrders.filter(up => {
       const inPendingList = pendingPackages.some(pending => pending.id === up.id);
       if (inPendingList) return false;
-      
-      // 2. Safety filter: explicitly check status if BE supports it
-      return up.status !== 'PENDING';
+      return up.status === 'PAID';
     });
-  }, [userPackages, pendingPackages]);
+  }, [visibleOrders, pendingPackages]);
 
   // Group and calculate real revenue trend for the last N months
   const monthlyRevenue = useMemo(() => {
@@ -203,32 +210,22 @@ export function ManagerDashboard() {
         return sum;
       }, 0);
 
-      // Calculate upgrades in this month
-      const upgradesInMonth = userPackages.filter(up => {
+      // Calculate upgrades in this month (sync with Order Tracking)
+      const upgradesInMonth = visibleOrders.filter(up => {
+         if (up.status !== 'PAID') return false;
          const dateStr = up.assignedAt;
          if (!dateStr) return false;
          try {
            const assignedDate = parseISO(dateStr);
            if (!isSameMonth(assignedDate, monthDate)) return false;
-           
-           // Check if this elderly already had a package before this one
-           return userPackages.some(prev => 
-             prev.elderlyProfileId === up.elderlyProfileId && 
-             (prev.status === 'PAID' || prev.status === 'REPLACED') && 
-             new Date(prev.assignedAt).getTime() < new Date(up.assignedAt).getTime()
-           );
+           return isUpgradeOrder(up, visibleOrders);
          } catch (e) { return false; }
       }).length;
 
-      // Calculate upgrades vs new
-      const totalUpgrades = userPackages.filter(up => {
-         return userPackages.some(prev => 
-           prev.elderlyProfileId === up.elderlyProfileId && 
-           (prev.status === 'PAID' || prev.status === 'REPLACED') && 
-           new Date(prev.assignedAt).getTime() < new Date(up.assignedAt).getTime()
-         );
-      }).length;
-      const totalNew = userPackages.length - totalUpgrades;
+      const totalUpgrades = visibleOrders.filter(up =>
+        up.status === 'PAID' && isUpgradeOrder(up, visibleOrders)
+      ).length;
+      const totalNew = visibleOrders.filter(up => up.status === 'PAID').length - totalUpgrades;
 
       return { 
         name: monthDisplay, 
@@ -238,43 +235,13 @@ export function ManagerDashboard() {
         totalUpgrades
       };
     });
-  }, [confirmedPackages, servicePackages, userPackages, timeRange, dateLocale]);
+  }, [confirmedPackages, servicePackages, visibleOrders, timeRange, dateLocale]);
 
   const upgradePathData = useMemo(() => {
-    const paths: Record<string, number> = {};
-    
-    // Group packages by elderly
-    const elderlyPackages: Record<number, UserPackageResponse[]> = {};
-    userPackages.forEach(up => {
-      // Include both PAID and REPLACED for transition analysis
-      if (up.status !== 'PAID' && up.status !== 'REPLACED') return;
-      if (!elderlyPackages[up.elderlyProfileId as number]) {
-        elderlyPackages[up.elderlyProfileId as number] = [];
-      }
-      elderlyPackages[up.elderlyProfileId as number].push(up);
-    });
-
-    // Analyze transitions
-    Object.values(elderlyPackages).forEach(pkgs => {
-      // Sort by assigned date
-      const sorted = [...pkgs].sort((a, b) => new Date(a.assignedAt || 0).getTime() - new Date(b.assignedAt || 0).getTime());
-      
-      for (let i = 0; i < sorted.length - 1; i++) {
-        const fromPkg = servicePackages.find(p => p.id === sorted[i].servicePackageId);
-        const toPkg = servicePackages.find(p => p.id === sorted[i+1].servicePackageId);
-        
-        if (fromPkg && toPkg && fromPkg.id !== toPkg.id) {
-          const pathName = `${fromPkg.name} ➔ ${toPkg.name}`;
-          paths[pathName] = (paths[pathName] || 0) + 1;
-        }
-      }
-    });
-
-    return Object.entries(paths)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5); // Top 5 paths
-  }, [userPackages, servicePackages]);
+    const excluded = getDeletedAccountIds(accounts);
+    getSoftDeletedAccountIdsFromBackup().forEach((id) => excluded.add(id));
+    return buildUpgradePathData(userPackages, accountMap, packageMap, excluded);
+  }, [userPackages, accountMap, packageMap, accounts]);
 
   const totalRevenue = useMemo(() => {
     return monthlyRevenue.reduce((sum, item) => sum + item.actual, 0);
@@ -632,7 +599,7 @@ export function ManagerDashboard() {
                   {t('manager.dashboard.package_popularity.no_data')}
                 </div>
               ) : displayPkgStats.map((stat, index) => {
-                const percentage = userPackages.length > 0 ? Math.round((stat.value / userPackages.length) * 100) : 0;
+                const percentage = paidTrackableCount > 0 ? Math.round((stat.value / paidTrackableCount) * 100) : 0;
                 return (
                   <div key={stat.name} className="space-y-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 transition-all hover:shadow-md">
                     <div className="flex items-center justify-between font-bold text-sm">

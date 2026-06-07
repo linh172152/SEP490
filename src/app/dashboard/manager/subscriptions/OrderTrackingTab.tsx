@@ -37,6 +37,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { format, addDays } from 'date-fns';
+import {
+  buildAccountMap,
+  buildPackageMap,
+  filterTrackingOrders,
+  getDeletedAccountIds,
+  getPreviousPaidOrders,
+  getSoftDeletedAccountIdsFromBackup,
+  getVisibleTrackingOrders,
+  isUpgradeOrder,
+  resolveOrderAccount,
+  resolveOrderPackage,
+} from '@/lib/userPackageUtils';
 import { Loader2 } from 'lucide-react';
 import {
   Dialog,
@@ -50,6 +62,7 @@ export function OrderTrackingTab() {
   const { t } = useI18nStore();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<UserPackageResponse[]>([]);
+  const [rawAccounts, setRawAccounts] = useState<AccountResponse[]>([]);
   const [accounts, setAccounts] = useState<Record<number, AccountResponse>>({});
   const [packages, setPackages] = useState<Record<number, ServicePackageResponse>>({});
 
@@ -82,20 +95,9 @@ export function OrderTrackingTab() {
         ]);
 
         setOrders(orderData || []);
-        
-        const accMap: Record<string, AccountResponse> = {};
-        (accountData || []).forEach((a: any) => {
-          const id = a.id ?? a.Id ?? a.ID;
-          if (id !== undefined) accMap[String(id)] = a;
-        });
-        setAccounts(accMap as any);
-
-        const pkgMap: Record<string, ServicePackageResponse> = {};
-        (packageData || []).forEach((p: any) => {
-          const id = p.id ?? p.Id ?? p.ID;
-          if (id !== undefined) pkgMap[String(id)] = p;
-        });
-        setPackages(pkgMap as any);
+        setRawAccounts(accountData || []);
+        setAccounts(buildAccountMap(accountData) as any);
+        setPackages(buildPackageMap(packageData) as any);
 
       } catch (error) {
         console.error("Failed to fetch order data:", error);
@@ -152,22 +154,21 @@ export function OrderTrackingTab() {
     return diffDays;
   };
 
-  const filteredOrders = useMemo(() => orders.filter(order => {
-      const acc = accounts[order.accountId as number];
-      const pkg = packages[order.servicePackageId as number];
-  
-      const matchesSearch = 
-        (acc?.fullName || acc?.FullName || acc?.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (pkg?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-  
-      return matchesSearch && matchesStatus;
-    }).sort((a, b) => {
-       const dateA = a.assignedAt ? new Date(a.assignedAt).getTime() : 0;
-       const dateB = b.assignedAt ? new Date(b.assignedAt).getTime() : 0;
-       return dateB - dateA;
-    }), [orders, accounts, packages, searchTerm, statusFilter]);
+  const excludedAccountIds = useMemo(() => {
+    const ids = getDeletedAccountIds(rawAccounts);
+    getSoftDeletedAccountIdsFromBackup().forEach((id) => ids.add(id));
+    return ids;
+  }, [rawAccounts]);
+
+  const visibleOrders = useMemo(
+    () => getVisibleTrackingOrders(orders, accounts, packages, excludedAccountIds),
+    [orders, accounts, packages, excludedAccountIds]
+  );
+
+  const filteredOrders = useMemo(
+    () => filterTrackingOrders(orders, accounts, packages, { searchTerm, statusFilter, excludedAccountIds }),
+    [orders, accounts, packages, searchTerm, statusFilter, excludedAccountIds]
+  );
 
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / itemsPerPage));
 
@@ -203,7 +204,10 @@ export function OrderTrackingTab() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-bold opacity-80 uppercase tracking-wider">{t('manager.dashboard.revenue_overview') || 'Total Revenue'}</CardTitle>
             <div className="text-3xl font-black flex items-baseline gap-2">
-              {orders.filter(o => o.status === 'PAID').reduce((acc, curr) => acc + (packages[curr.servicePackageId as number]?.price || 0), 0).toLocaleString()} ₫
+              {visibleOrders.filter(o => o.status === 'PAID').reduce((acc, curr) => {
+                const pkg = resolveOrderPackage(curr, packages);
+                return acc + (pkg?.price || 0);
+              }, 0).toLocaleString()} ₫
               <div className="bg-white/20 p-1 rounded-lg">
                 <ArrowUpRight className="h-4 w-4" />
               </div>
@@ -218,9 +222,9 @@ export function OrderTrackingTab() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t('manager.dashboard.active_subscriptions') || 'Active Subscriptions'}</CardTitle>
             <div className="text-3xl font-black text-slate-900 flex items-baseline gap-2">
-              {orders.filter(o => {
+              {visibleOrders.filter(o => {
                 if (o.status !== 'PAID') return false;
-                const pkg = packages[o.servicePackageId as number];
+                const pkg = resolveOrderPackage(o, packages);
                 let exp = o.expiredAt;
                 if (!exp && pkg && o.assignedAt) {
                   exp = addDays(new Date(o.assignedAt), pkg.durationDays).toISOString();
@@ -240,7 +244,7 @@ export function OrderTrackingTab() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t('manager.subscriptions.pending_list_title') || 'Pending Orders'}</CardTitle>
             <div className="text-3xl font-black text-amber-500 flex items-baseline gap-2">
-              {orders.filter(o => o.status === 'PENDING').length}
+              {visibleOrders.filter(o => o.status === 'PENDING').length}
               <Clock className="h-5 w-5 animate-pulse" />
             </div>
           </CardHeader>
@@ -315,16 +319,10 @@ export function OrderTrackingTab() {
                 </TableRow>
               ) : (
                   paginatedOrders.map((order) => {
+                    const acc = resolveOrderAccount(order, accounts);
+                    const pkg = resolveOrderPackage(order, packages);
                     const o = order as any;
-                    const accId = o.accountId ?? o.AccountId ?? o.account_id ?? o.AccountID;
-                    const pkgId = o.servicePackageId ?? o.ServicePackageId ?? o.service_package_id ?? o.ServicePackageID;
-
-                    const acc = accId ? (accounts as any)[String(accId)] : null;
-                    const pkg = pkgId ? (packages as any)[String(pkgId)] : null;
-                    
                     const orderDate = adjustDateTime(o.assignedAt ?? o.AssignedAt ?? o.assigned_at);
-                    
-                    // Logic to calculate remaining days if expiredAt is missing
                     let effectiveExpiredAt = order.expiredAt;
                     if (!effectiveExpiredAt && pkg && order.assignedAt) {
                       effectiveExpiredAt = addDays(new Date(order.assignedAt), pkg.durationDays).toISOString();
@@ -332,15 +330,11 @@ export function OrderTrackingTab() {
                     
                     const daysLeft = getRemainingDays(effectiveExpiredAt || null);
                   
-                    // Simple check for upgrade if family member has multiple paid packages
-                    const previousOrders = orders.filter(o => 
-                      o.accountId === order.accountId && 
-                      o.status === 'PAID' && 
-                      new Date(o.assignedAt).getTime() < new Date(order.assignedAt).getTime()
-                    ).sort((a, b) => new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime());
-
-                    const isUpgradeCandidate = previousOrders.length > 0;
-                    const prevPkg = isUpgradeCandidate ? packages[previousOrders[0].servicePackageId as number] : null;
+                    const previousOrders = getPreviousPaidOrders(order, visibleOrders);
+                    const isUpgradeCandidate = isUpgradeOrder(order, visibleOrders);
+                    const prevPkg = isUpgradeCandidate && previousOrders.length > 0
+                      ? resolveOrderPackage(previousOrders[previousOrders.length - 1], packages)
+                      : null;
 
                     return (
                     <TableRow key={order.id} className="group hover:bg-indigo-50/30 transition-all duration-300 border-b border-slate-50">
@@ -504,7 +498,7 @@ export function OrderTrackingTab() {
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Price</p>
                   <p className="font-black text-indigo-600 leading-none mt-1">
-                    {packages[selectedOrder.servicePackageId as number]?.price.toLocaleString()} ₫
+                    {resolveOrderPackage(selectedOrder, packages)?.price.toLocaleString()} ₫
                   </p>
                 </div>
               </div>
@@ -518,12 +512,8 @@ export function OrderTrackingTab() {
                     <div className="flex-1">
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Service Package</p>
                        <div className="flex items-center justify-between mt-1">
-                          <p className="font-bold text-slate-900">{packages[selectedOrder.servicePackageId as number]?.name || '---'}</p>
-                          {orders.filter(o => 
-                            o.accountId === selectedOrder.accountId && 
-                            o.status === 'PAID' && 
-                            new Date(o.assignedAt).getTime() < new Date(selectedOrder.assignedAt).getTime()
-                          ).length > 0 && (
+                          <p className="font-bold text-slate-900">{resolveOrderPackage(selectedOrder, packages)?.name || '---'}</p>
+                          {isUpgradeOrder(selectedOrder, visibleOrders) && (
                             <Badge variant="secondary" className="bg-indigo-100 text-indigo-600 text-[10px] font-black border-none px-2 rounded-lg">
                               {t('manager.orders.table.upgrade_badge') || 'UPGRADE'}
                             </Badge>
@@ -533,9 +523,7 @@ export function OrderTrackingTab() {
                  </div>
 
                 {(() => {
-                  const so = selectedOrder as any;
-                  const accId = so.accountId ?? so.AccountId ?? so.account_id ?? so.AccountID;
-                  const acc = accId ? (accounts as any)[String(accId)] : null;
+                  const acc = resolveOrderAccount(selectedOrder, accounts);
                   if (!acc) return null;
 
                   return (

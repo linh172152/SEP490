@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { 
   Search, 
   Filter, 
@@ -8,6 +8,7 @@ import {
   Clock, 
   User, 
   ChevronRight, 
+  ChevronLeft,
   ArrowUpRight, 
   CheckCircle2, 
   XCircle, 
@@ -17,19 +18,16 @@ import {
   TrendingUp,
   CreditCard,
   CalendarDays,
-  Stethoscope,
   RefreshCcw
 } from 'lucide-react';
 import { useI18nStore } from '@/store/useI18nStore';
 import { userPackageService } from '@/services/api/userPackageService';
 import { accountService } from '@/services/api/accountService';
 import { servicePackageService } from '@/services/api/servicePackageService';
-import { elderlyService } from '@/services/api/elderlyService';
 import { 
   UserPackageResponse, 
   AccountResponse, 
   ServicePackageResponse, 
-  ElderlyProfileResponse 
 } from '@/services/api/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -54,11 +52,12 @@ export function OrderTrackingTab() {
   const [orders, setOrders] = useState<UserPackageResponse[]>([]);
   const [accounts, setAccounts] = useState<Record<number, AccountResponse>>({});
   const [packages, setPackages] = useState<Record<number, ServicePackageResponse>>({});
-  const [elderly, setElderly] = useState<Record<number, ElderlyProfileResponse>>({});
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<UserPackageResponse | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   // Timezone correction for Vietnam (UTC+7)
   const adjustDateTime = (dateStr: string | undefined | null) => {
@@ -76,11 +75,10 @@ export function OrderTrackingTab() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [orderData, accountData, packageData, elderlyData] = await Promise.all([
+        const [orderData, accountData, packageData] = await Promise.all([
           userPackageService.getAll(),
           accountService.getAccounts(),
           servicePackageService.getAll(),
-          elderlyService.getAll()
         ]);
 
         setOrders(orderData || []);
@@ -98,13 +96,6 @@ export function OrderTrackingTab() {
           if (id !== undefined) pkgMap[String(id)] = p;
         });
         setPackages(pkgMap as any);
-
-        const eldMap: Record<string, ElderlyProfileResponse> = {};
-        (elderlyData || []).forEach((e: any) => {
-          const id = e.id ?? e.Id ?? e.ID;
-          if (id !== undefined) eldMap[String(id)] = e;
-        });
-        setElderly(eldMap as any);
 
       } catch (error) {
         console.error("Failed to fetch order data:", error);
@@ -147,6 +138,11 @@ export function OrderTrackingTab() {
     }
   };
 
+  const getAccountDisplayName = (acc: AccountResponse | null | undefined) => {
+    if (!acc) return '---';
+    return acc.fullName || acc.FullName || acc.email || '---';
+  };
+
   const getRemainingDays = (expiredAt: string | null) => {
     if (!expiredAt) return null;
     const now = new Date();
@@ -156,15 +152,13 @@ export function OrderTrackingTab() {
     return diffDays;
   };
 
-    const filteredOrders = orders.filter(order => {
+  const filteredOrders = useMemo(() => orders.filter(order => {
       const acc = accounts[order.accountId as number];
       const pkg = packages[order.servicePackageId as number];
-      const eld = elderly[order.elderlyProfileId as number];
   
       const matchesSearch = 
         (acc?.fullName || acc?.FullName || acc?.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (pkg?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (eld?.fullName || eld?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+        (pkg?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
   
@@ -173,7 +167,24 @@ export function OrderTrackingTab() {
        const dateA = a.assignedAt ? new Date(a.assignedAt).getTime() : 0;
        const dateB = b.assignedAt ? new Date(b.assignedAt).getTime() : 0;
        return dateB - dateA;
-    });
+    }), [orders, accounts, packages, searchTerm, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / itemsPerPage));
+
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredOrders.slice(start, start + itemsPerPage);
+  }, [filteredOrders, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   if (loading) {
     return (
@@ -283,7 +294,7 @@ export function OrderTrackingTab() {
             <TableHeader className="bg-slate-50/80">
               <TableRow className="hover:bg-transparent border-b border-slate-100">
                 <TableHead className="py-6 px-8 font-black text-slate-400 text-xs uppercase tracking-widest leading-none align-middle">{t('manager.orders.title') || 'Order Details'}</TableHead>
-                <TableHead className="py-6 px-4 font-black text-slate-400 text-xs uppercase tracking-widest leading-none align-middle">{t('manager.orders.table.elderly') || 'Elderly Profile'}</TableHead>
+                <TableHead className="py-6 px-4 font-black text-slate-400 text-xs uppercase tracking-widest leading-none align-middle">{t('common.roles.FAMILYMEMBER') || 'Family Member'}</TableHead>
                 <TableHead className="py-6 px-4 font-black text-slate-400 text-xs uppercase tracking-widest leading-none align-middle">{t('manager.orders.table.package') || 'Subscription Plan'}</TableHead>
                 <TableHead className="py-6 px-4 font-black text-slate-400 text-xs uppercase tracking-widest leading-none align-middle text-center">{t('manager.orders.table.status') || 'Status'}</TableHead>
                 <TableHead className="py-6 px-4 font-black text-slate-400 text-xs uppercase tracking-widest leading-none align-middle text-center">{t('manager.orders.table.remaining_days') || 'Expires In'}</TableHead>
@@ -303,15 +314,13 @@ export function OrderTrackingTab() {
                   </TableCell>
                 </TableRow>
               ) : (
-                  filteredOrders.map((order) => {
+                  paginatedOrders.map((order) => {
                     const o = order as any;
                     const accId = o.accountId ?? o.AccountId ?? o.account_id ?? o.AccountID;
                     const pkgId = o.servicePackageId ?? o.ServicePackageId ?? o.service_package_id ?? o.ServicePackageID;
-                    const eldId = o.elderlyProfileId ?? o.ElderlyProfileId ?? o.elderly_profile_id ?? o.ElderlyProfileID;
 
                     const acc = accId ? (accounts as any)[String(accId)] : null;
                     const pkg = pkgId ? (packages as any)[String(pkgId)] : null;
-                    const eld = eldId ? (elderly as any)[String(eldId)] : null;
                     
                     const orderDate = adjustDateTime(o.assignedAt ?? o.AssignedAt ?? o.assigned_at);
                     
@@ -323,9 +332,9 @@ export function OrderTrackingTab() {
                     
                     const daysLeft = getRemainingDays(effectiveExpiredAt || null);
                   
-                    // Simple check for upgrade if user has multiple packages for same elderly
+                    // Simple check for upgrade if family member has multiple paid packages
                     const previousOrders = orders.filter(o => 
-                      o.elderlyProfileId === order.elderlyProfileId && 
+                      o.accountId === order.accountId && 
                       o.status === 'PAID' && 
                       new Date(o.assignedAt).getTime() < new Date(order.assignedAt).getTime()
                     ).sort((a, b) => new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime());
@@ -356,7 +365,10 @@ export function OrderTrackingTab() {
                             <User className="h-5 w-5 text-slate-400" />
                           </div>
                           <div>
-                            <div className="font-bold text-slate-700 leading-none">{eld?.fullName || eld?.name || (eld as any)?.Name || '---'}</div>
+                            <div className="font-bold text-slate-700 leading-none">{getAccountDisplayName(acc)}</div>
+                            {acc?.email && (
+                              <div className="text-[10px] text-slate-400 font-medium mt-1">{acc.email}</div>
+                            )}
                           </div>
                         </div>
                       </TableCell>
@@ -424,11 +436,45 @@ export function OrderTrackingTab() {
         </CardContent>
         
         <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-            <p className="text-xs text-slate-400 font-bold italic uppercase tracking-wider leading-none">{t('common.showing') || 'Showing'} {filteredOrders.length} {t('common.results') || 'records'}</p>
-            <div className="flex items-center gap-4">
-              <HistoryIcon className="h-4 w-4 text-slate-300" />
-              <TrendingUp className="h-4 w-4 text-slate-300" />
-            </div>
+            <p className="text-xs text-slate-400 font-bold italic uppercase tracking-wider leading-none">
+              {filteredOrders.length === 0 ? (
+                <>{t('common.no_data')}</>
+              ) : (
+                <>
+                  {t('common.showing') || 'Showing'}{' '}
+                  <span className="text-slate-700">{((currentPage - 1) * itemsPerPage) + 1}</span>
+                  {' - '}
+                  <span className="text-slate-700">{Math.min(currentPage * itemsPerPage, filteredOrders.length)}</span>
+                  {' '}{t('common.of') || 'of'}{' '}
+                  <span className="text-slate-700 font-black">{filteredOrders.length}</span>
+                </>
+              )}
+            </p>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 w-10 p-0 rounded-lg hover:bg-white border border-transparent hover:border-slate-200"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(p => p - 1)}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+                <span className="text-xs font-bold text-slate-500 min-w-[3rem] text-center">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 w-10 p-0 rounded-lg hover:bg-white border border-transparent hover:border-slate-200"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(p => p + 1)}
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              </div>
+            )}
         </div>
       </Card>
       <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
@@ -474,7 +520,7 @@ export function OrderTrackingTab() {
                        <div className="flex items-center justify-between mt-1">
                           <p className="font-bold text-slate-900">{packages[selectedOrder.servicePackageId as number]?.name || '---'}</p>
                           {orders.filter(o => 
-                            o.elderlyProfileId === selectedOrder.elderlyProfileId && 
+                            o.accountId === selectedOrder.accountId && 
                             o.status === 'PAID' && 
                             new Date(o.assignedAt).getTime() < new Date(selectedOrder.assignedAt).getTime()
                           ).length > 0 && (
@@ -488,36 +534,31 @@ export function OrderTrackingTab() {
 
                 {(() => {
                   const so = selectedOrder as any;
-                  const eldId = so.elderlyProfileId ?? so.ElderlyProfileId ?? so.elderly_profile_id ?? so.ElderlyProfileID;
-                  const eld = eldId ? (elderly as any)[String(eldId)] : null;
-                  if (!eld) return null;
+                  const accId = so.accountId ?? so.AccountId ?? so.account_id ?? so.AccountID;
+                  const acc = accId ? (accounts as any)[String(accId)] : null;
+                  if (!acc) return null;
 
                   return (
                     <div className="p-5 rounded-3xl bg-indigo-50/50 border border-indigo-100/50 space-y-4">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-2xl bg-white flex items-center justify-center shadow-sm">
-                           <Stethoscope className="h-5 w-5 text-indigo-600" />
+                           <User className="h-5 w-5 text-indigo-600" />
                         </div>
                         <div>
-                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{t('manager.orders.table.elderly') || 'Elderly Profile'}</p>
-                           <p className="font-bold text-slate-900 mt-1">{eld.fullName || eld.name || (eld as any).Name || '---'}</p>
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{t('common.roles.FAMILYMEMBER') || 'Family Member'}</p>
+                           <p className="font-bold text-slate-900 mt-1">{getAccountDisplayName(acc)}</p>
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-1 gap-4">
+                      <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Date of Birth</p>
-                           <p className="text-xs font-bold text-slate-700">
-                             {eld.dateOfBirth ? format(new Date(eld.dateOfBirth), 'dd/MM/yyyy') : '---'}
-                           </p>
+                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Email</p>
+                           <p className="text-xs font-bold text-slate-700">{acc.email || '---'}</p>
                         </div>
-                      </div>
-
-                      <div className="space-y-1 bg-white/50 p-3 rounded-xl">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Health Notes</p>
-                        <p className="text-[11px] text-slate-600 font-medium italic leading-relaxed">
-                          {eld.healthNotes || 'No health notes recorded.'}
-                        </p>
+                        <div className="space-y-1">
+                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Phone</p>
+                           <p className="text-xs font-bold text-slate-700">{acc.phone || '---'}</p>
+                        </div>
                       </div>
                     </div>
                   );

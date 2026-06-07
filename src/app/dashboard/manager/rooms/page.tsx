@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { roomService } from '@/services/api/roomService';
+import { elderlyService } from '@/services/api/elderlyService';
+import { accountService } from '@/services/api/accountService';
 import { RoomResponse } from '@/services/api/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,6 +50,8 @@ export default function RoomsManagerPage() {
   const { t } = useI18nStore();
   const user = useAuthStore((state) => state.user);
   const [rooms, setRooms] = useState<RoomResponse[]>([]);
+  const [activeElderlyIds, setActiveElderlyIds] = useState<Set<number>>(new Set());
+  const [activeAccountIds, setActiveAccountIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [robotFilter, setRobotFilter] = useState<'all' | 'assigned' | 'none'>('all');
@@ -75,12 +79,20 @@ export default function RoomsManagerPage() {
   const fetchRooms = async () => {
     setLoading(true);
     try {
-      const data = await roomService.getAllRooms();
-      setRooms(data || []);
+      const [roomData, elderlyData, accountData] = await Promise.all([
+        roomService.getAllRooms(),
+        elderlyService.getAll().catch(() => []),
+        accountService.getAccounts().catch(() => []),
+      ]);
       
-      // Auto-update the selected room to reflect changes immediately
+      setRooms(roomData || []);
+      
+      // Store IDs of active (non-deleted) people
+      setActiveElderlyIds(new Set(elderlyData.map(e => e.id)));
+      setActiveAccountIds(new Set(accountData.filter(a => !a.deleted).map(a => a.id)));
+      
       if (selectedRoom) {
-        const updatedRoom = data.find(r => r.id === selectedRoom.id);
+        const updatedRoom = (roomData || []).find(r => r.id === selectedRoom.id);
         if (updatedRoom) {
           setSelectedRoom(updatedRoom);
         }
@@ -98,7 +110,17 @@ export default function RoomsManagerPage() {
   }, []);
 
   const filteredRooms = useMemo(() => {
-    return rooms.filter(r => {
+    return rooms.map(r => {
+      // FE Logic: Filter out members who are no longer in the active registry
+      const cleanElderlies = r.elderlies?.filter(e => activeElderlyIds.has(e.id)) || [];
+      const cleanCaregivers = r.caregivers?.filter(c => {
+         // Some caregivers might be using accountIds or specialized profile IDs
+         // Checking activeAccountIds is a safe fallback
+         return activeAccountIds.has(c.id);
+      }) || [];
+
+      return { ...r, elderlies: cleanElderlies, caregivers: cleanCaregivers };
+    }).filter(r => {
       const searchLower = searchQuery.toLowerCase();
       const matchesRoomName = (r.roomName || '').toLowerCase().includes(searchLower);
       const matchesElderlyName = r.elderlies?.some(e => (e.name || '').toLowerCase().includes(searchLower));
@@ -116,7 +138,7 @@ export default function RoomsManagerPage() {
 
       return matchesSearch && matchesRobot && matchesOccupancy;
     });
-  }, [rooms, searchQuery, robotFilter, occupancyFilter]);
+  }, [rooms, searchQuery, robotFilter, occupancyFilter, activeElderlyIds, activeAccountIds]);
 
   const handleCreate = () => {
     setSelectedRoom(null);

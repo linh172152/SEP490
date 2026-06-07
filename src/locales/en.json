@@ -20,9 +20,10 @@
     "name": "Full Name",
     "status_label": "Status",
     "status_labels": {
-      "success": "Success",
-      "error": "Error",
-      "pending": "Pending"
+      "success": "Paid",
+      "error": "Failed",
+      "pending": "Pending",
+      "replaced": "Replaced"
     },
     "loading": "Loading data...",
     "partial_data": "Syncing partial data",

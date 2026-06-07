@@ -214,7 +214,7 @@ export function ManagerDashboard() {
            // Check if this elderly already had a package before this one
            return userPackages.some(prev => 
              prev.elderlyProfileId === up.elderlyProfileId && 
-             prev.status === 'PAID' && 
+             (prev.status === 'PAID' || prev.status === 'REPLACED') && 
              new Date(prev.assignedAt).getTime() < new Date(up.assignedAt).getTime()
            );
          } catch (e) { return false; }
@@ -224,7 +224,7 @@ export function ManagerDashboard() {
       const totalUpgrades = userPackages.filter(up => {
          return userPackages.some(prev => 
            prev.elderlyProfileId === up.elderlyProfileId && 
-           prev.status === 'PAID' && 
+           (prev.status === 'PAID' || prev.status === 'REPLACED') && 
            new Date(prev.assignedAt).getTime() < new Date(up.assignedAt).getTime()
          );
       }).length;
@@ -246,7 +246,8 @@ export function ManagerDashboard() {
     // Group packages by elderly
     const elderlyPackages: Record<number, UserPackageResponse[]> = {};
     userPackages.forEach(up => {
-      if (up.status !== 'PAID') return;
+      // Include both PAID and REPLACED for transition analysis
+      if (up.status !== 'PAID' && up.status !== 'REPLACED') return;
       if (!elderlyPackages[up.elderlyProfileId as number]) {
         elderlyPackages[up.elderlyProfileId as number] = [];
       }

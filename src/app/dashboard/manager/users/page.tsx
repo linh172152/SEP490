@@ -91,7 +91,7 @@ export default function UserManagementPage() {
   const [loading, setLoading] = useState(true);
   
   // View States
-  const [activeTab, setActiveTab] = useState("elderly");
+  const [activeTab, setActiveTab] = useState("family");
   const [searchQuery, setSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState("ALL"); // ALL, TODAY, WEEK
   const [currentPage, setCurrentPage] = useState(1);
@@ -124,7 +124,7 @@ export default function UserManagementPage() {
       setLoading(true);
       const [accRes, eldRes, roomRes] = await Promise.all([
         accountService.getAccounts(),
-        elderlyService.getAll(),
+        elderlyService.getAll().catch(() => []),
         roomService.getAllRooms()
       ]);
       console.log("[DEBUG] Manager Users - Accounts:", accRes?.length);
@@ -301,28 +301,17 @@ export default function UserManagementPage() {
   };
 
   const handleDelete = (item: any) => {
-    const profileId = item.profileId;
     const accountId = item.accountId || item.id;
 
     setConfirmDelete({
       isOpen: true,
       title: t('common.confirm_delete') || "Delete Account?",
-      description: activeTab === "elderly" 
-        ? "Are you sure you want to delete this specific elderly profile? (The family account will remain active)"
-        : "Are you sure you want to deactivate this account and remove profile assignment?",
+      description: "Are you sure you want to deactivate this account and remove profile assignment?",
       onConfirm: async () => {
         try {
           setConfirmDelete(prev => ({ ...prev, isLoading: true }));
           
-          // 1. If deleting elderly, ONLY delete the profile (don't block the shared account)
-          if (activeTab === "elderly" && profileId) {
-            await elderlyService.delete(profileId);
-            if (item.roomId) {
-               await roomService.removeElderlyFromRoom(item.roomId, profileId).catch(err => console.warn("Unassign failed:", err));
-            }
-          } 
-          // 2. If deleting family/staff, soft delete the account
-          else if (accountId) {
+          if (accountId) {
              await accountService.updateAccount(accountId, { deleted: true });
              saveToBackup(item);
           }
@@ -669,7 +658,6 @@ export default function UserManagementPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48 p-1 rounded-xl shadow-2xl border-none">
                             <DropdownMenuLabel className="px-3 py-2 text-[10px] font-black uppercase opacity-30 tracking-widest">{t('common.actions')}</DropdownMenuLabel>
-                               {/* Caregivers/Family can only be removed. Elderly is now read-only View + Remove. */}
                             {activeTab === "elderly" ? (
                               <DropdownMenuItem 
                                 className="rounded-lg gap-2 font-bold py-2.5" 
@@ -677,15 +665,15 @@ export default function UserManagementPage() {
                               >
                                 <Users className="h-4 w-4 text-indigo-500" /> {t('common.view_profile')}
                               </DropdownMenuItem>
-                            ) : null}
-
-                            {!item.deleted && (
-                              <DropdownMenuItem 
-                                className="text-rose-600 rounded-lg gap-2 font-bold py-2.5" 
-                                onClick={() => handleDelete(item)}
-                              >
-                                <Trash2 className="h-4 w-4" /> {t('common.remove')}
-                              </DropdownMenuItem>
+                            ) : (
+                              !item.deleted && (
+                                <DropdownMenuItem 
+                                  className="text-rose-600 rounded-lg gap-2 font-bold py-2.5" 
+                                  onClick={() => handleDelete(item)}
+                                >
+                                  <Trash2 className="h-4 w-4" /> {t('common.remove')}
+                                </DropdownMenuItem>
+                              )
                             )}
                           </DropdownMenuContent>
                         </DropdownMenu>

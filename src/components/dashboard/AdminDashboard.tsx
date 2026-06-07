@@ -90,7 +90,8 @@ export function AdminDashboard() {
         accountService.getAccounts(),
         robotService.getAll(),
         exerciseService.getAllScripts(),
-        systemLogService.getAll()
+        systemLogService.getAll(),
+        servicePackageService.getAll()
       ]);
 
       // Check if any API failed
@@ -124,11 +125,14 @@ export function AdminDashboard() {
         else offline++;
       });
 
+      // Aggregate Service Packages
+      const packageList = results[4].status === 'fulfilled' ? (results[4].value as any[]) : [];
+
       setStats({
         totalAccounts: accList.length,
         totalRobots: robotList.length,
         activeRobots: active,
-        totalPackages: 0, 
+        totalPackages: packageList.length, 
         totalExercises: Array.isArray(exercises) ? exercises.length : 0,
         roleDistribution: Object.entries(roles)
           .map(([name, value]) => ({

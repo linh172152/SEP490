@@ -127,10 +127,13 @@ export default function UserManagementPage() {
         elderlyService.getAll(),
         roomService.getAllRooms()
       ]);
+      console.log("[DEBUG] Manager Users - Accounts:", accRes?.length);
+      console.log("[DEBUG] Manager Users - Elderly:", eldRes?.length);
       setAccounts(accRes || []);
       setElderlyList(eldRes || []);
       setRooms(roomRes || []);
     } catch (error) {
+      console.error("[DEBUG] Manager Fetch Error:", error);
       toast.error(t("common.error"));
     } finally {
       setLoading(false);
@@ -304,20 +307,22 @@ export default function UserManagementPage() {
     setConfirmDelete({
       isOpen: true,
       title: t('common.confirm_delete') || "Delete Account?",
-      description: "Are you sure you want to deactivate this account and remove profile assignment?",
+      description: activeTab === "elderly" 
+        ? "Are you sure you want to delete this specific elderly profile? (The family account will remain active)"
+        : "Are you sure you want to deactivate this account and remove profile assignment?",
       onConfirm: async () => {
         try {
           setConfirmDelete(prev => ({ ...prev, isLoading: true }));
           
-          // 1. Unassign from Room instead of deleting profile (Manager safe approach)
-          if (profileId && item.roomId) {
-            if (activeTab === "elderly") {
-              await roomService.removeElderlyFromRoom(item.roomId, profileId).catch(err => console.warn("Unassign failed:", err));
+          // 1. If deleting elderly, ONLY delete the profile (don't block the shared account)
+          if (activeTab === "elderly" && profileId) {
+            await elderlyService.delete(profileId);
+            if (item.roomId) {
+               await roomService.removeElderlyFromRoom(item.roomId, profileId).catch(err => console.warn("Unassign failed:", err));
             }
-          }
-
-          // 2. Soft delete Account to block login
-          if (accountId) {
+          } 
+          // 2. If deleting family/staff, soft delete the account
+          else if (accountId) {
              await accountService.updateAccount(accountId, { deleted: true });
              saveToBackup(item);
           }
@@ -352,23 +357,26 @@ export default function UserManagementPage() {
     const processedProfileIds = new Set<number>();
     const elderlyMap = new Map();
     
-    // 1. Start with Profiles
+    // 1. Start with Profiles (The primary source of truth for this tab)
     elderlyList.forEach(e => {
       const acc = e.accountId ? accountIdMap.get(e.accountId) : null;
       const roomInfo = roomElderlyMap.get(e.id);
+      
       elderlyMap.set(e.id, { 
-        ...acc,
-        ...e, 
+        ...e, // Primary data
         id: e.id,
         profileId: e.id, 
         accountId: e.accountId,
-        // Priority: Profile Name > Account Name
-        fullName: e.name || acc?.fullName || acc?.FullName,
-        roomId: roomInfo?.roomId || e.roomId,
+        // Priority: Profile Name (e.name) > Account Name
+        fullName: e.name || acc?.fullName || acc?.FullName || "Elderly-" + e.id,
+        roomId: e.roomId || roomInfo?.roomId,
         roomName: roomInfo?.roomName,
-        deleted: acc?.deleted,
+        email: acc?.email || 'N/A',
+        phone: acc?.phone || 'N/A',
+        role: acc?.role || 'ELDERLYUSER',
+        deleted: acc?.deleted || false,
         isProfileOnly: !acc,
-        email: acc?.email || 'N/A'
+        createdAt: (e as any).createdAt || acc?.createdAt
       });
       processedProfileIds.add(e.id);
     });
@@ -388,9 +396,13 @@ export default function UserManagementPage() {
     });
 
     return Array.from(elderlyMap.values()).filter(item => {
-      if (item.deleted) return false;
-      // Hide Ghost: Profile had an account but account is gone
-      if (item.profileId && item.accountId && item.isProfileOnly) return false;
+      // Priority 1: If account is soft-deleted, we still show it in the main list 
+      // unless the Manager specifically wants it hidden (Manager usually manages profile status)
+      // For now, let's show them but indicate status if needed.
+      
+      // Update: Only hide if the elderly profile itself is missing name (truly corrupt)
+      if (!item.fullName && !item.name) return false;
+      
       return true;
     }).sort((a, b) => b.id - a.id);
   }, [elderlyList, rooms, accounts]);
@@ -774,7 +786,7 @@ export default function UserManagementPage() {
           }
         }}
         isSubmitting={false}
-        allowedRoles={["CAREGIVER"]}
+        allowedRoles={["CAREGIVER", "FAMILYMEMBER"]}
       />
 
       <ElderlyFormModal 

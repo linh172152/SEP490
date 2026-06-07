@@ -20,9 +20,10 @@
     "name": "Họ và tên",
     "status_label": "Trạng thái",
     "status_labels": {
-      "success": "Thành công",
+      "success": "Đã thanh toán",
       "error": "Thất bại",
-      "pending": "Đang chờ"
+      "pending": "Đang chờ",
+      "replaced": "Đã thay thế"
     },
     "loading": "Đang tải dữ liệu...",
     "partial_data": "Dữ liệu đang đồng bộ",

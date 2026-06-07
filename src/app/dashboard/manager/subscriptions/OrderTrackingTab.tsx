@@ -17,7 +17,8 @@ import {
   TrendingUp,
   CreditCard,
   CalendarDays,
-  Stethoscope
+  Stethoscope,
+  RefreshCcw
 } from 'lucide-react';
 import { useI18nStore } from '@/store/useI18nStore';
 import { userPackageService } from '@/services/api/userPackageService';
@@ -133,6 +134,12 @@ export function OrderTrackingTab() {
         return (
           <Badge className="bg-rose-100 text-rose-700 border-rose-200 hover:bg-rose-200 gap-1 rounded-lg px-3 py-1 font-bold">
             <XCircle className="h-3 w-3" /> {t('common.status_labels.error') || 'FAILED'}
+          </Badge>
+        );
+      case 'REPLACED':
+        return (
+          <Badge className="bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200 gap-1 rounded-lg px-3 py-1 font-bold">
+            <RefreshCcw className="h-3 w-3" /> {t('common.status_labels.replaced') || 'REPLACED'}
           </Badge>
         );
       default:
@@ -261,10 +268,11 @@ export function OrderTrackingTab() {
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
-                <SelectItem value="all" className="font-bold">All Orders</SelectItem>
-                <SelectItem value="PAID" className="font-bold text-emerald-600">PAID</SelectItem>
-                <SelectItem value="PENDING" className="font-bold text-amber-600">PENDING</SelectItem>
-                <SelectItem value="FAILED" className="font-bold text-rose-600">FAILED</SelectItem>
+                <SelectItem value="all" className="font-bold">{t('common.roles.ALL') || 'All Orders'}</SelectItem>
+                <SelectItem value="PAID" className="font-bold text-emerald-600">{t('common.status_labels.success') || 'PAID'}</SelectItem>
+                <SelectItem value="PENDING" className="font-bold text-amber-600">{t('common.status_labels.pending') || 'PENDING'}</SelectItem>
+                <SelectItem value="FAILED" className="font-bold text-rose-600">{t('common.status_labels.error') || 'FAILED'}</SelectItem>
+                <SelectItem value="REPLACED" className="font-bold text-indigo-600">{t('common.status_labels.replaced') || 'REPLACED'}</SelectItem>
               </SelectContent>
             </Select>
           </div>
